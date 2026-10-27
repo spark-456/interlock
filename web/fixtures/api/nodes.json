@@ -89,7 +89,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Agent",
       "trigger": false,
       "typeId": "ai.agent",
@@ -180,7 +180,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Classify",
       "trigger": false,
       "typeId": "ai.classify",
@@ -284,7 +284,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Decide",
       "trigger": false,
       "typeId": "ai.decide",
@@ -351,7 +351,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Describe image",
       "trigger": false,
       "typeId": "ai.describe_image",
@@ -456,7 +456,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Extract fields",
       "trigger": false,
       "typeId": "ai.extract",
@@ -736,7 +736,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Summarise",
       "trigger": false,
       "typeId": "ai.summarise",
@@ -803,7 +803,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Transcribe audio",
       "trigger": false,
       "typeId": "ai.transcribe",
@@ -874,7 +874,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Translate",
       "trigger": false,
       "typeId": "ai.translate",
@@ -971,7 +971,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Write",
       "trigger": false,
       "typeId": "ai.write",

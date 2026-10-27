@@ -29,6 +29,7 @@ pub struct FakeServices {
     pub notifier: Arc<FakeNotifier>,
     pub media: Arc<FakeMedia>,
     pub clock: Arc<FakeClock>,
+    pub tools: Vec<Arc<dyn crate::services::AgentTool>>,
 }
 
 impl Default for FakeServices {
@@ -41,6 +42,7 @@ impl Default for FakeServices {
             notifier: Arc::new(FakeNotifier::default()),
             media: Arc::new(FakeMedia),
             clock: Arc::new(FakeClock::default()),
+            tools: Vec::new(),
         }
     }
 }
@@ -57,6 +59,7 @@ impl FakeServices {
             media: self.media.clone(),
             clock: self.clock.clone(),
             http: SafeHttp::permissive_for_tests(),
+            tools: self.tools.clone(),
         }
     }
 }
