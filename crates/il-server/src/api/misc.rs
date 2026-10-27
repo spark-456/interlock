@@ -1,7 +1,7 @@
 //! Me, demo sessions, files, templates, connections, knowledge.
 
 use axum::body::Body;
-use axum::extract::{Multipart, Path, State};
+use axum::extract::{DefaultBodyLimit, Multipart, Path, State};
 use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
@@ -13,14 +13,14 @@ use super::session::{SESSION_COOKIE, Session, session_key};
 use super::{ApiErr, ApiResult, Ws};
 use crate::wiring::AppState;
 
-/// Largest upload accepted (25 MB).
-const MAX_UPLOAD: usize = 25 * 1024 * 1024;
+/// Largest file accepted (50 MB, as the Create screen says).
+const MAX_UPLOAD: usize = 50 * 1024 * 1024;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/api/me", get(me))
         .route("/api/demo/session", post(demo_session))
-        .route("/api/files", post(upload))
+        .route("/api/files", post(upload).layer(DefaultBodyLimit::max(MAX_UPLOAD + 64 * 1024)))
         .route("/api/files/{id}", get(download))
         .route("/api/templates", get(templates))
         .route("/api/templates/{id}/use", post(use_template))
@@ -60,7 +60,7 @@ async fn upload(
         if bytes.len() > MAX_UPLOAD {
             return Err(ApiErr(
                 StatusCode::PAYLOAD_TOO_LARGE,
-                il_core::ApiError::new("too_large", "Files must be 25 MB or smaller."),
+                il_core::ApiError::new("too_large", "Files must be 50 MB or smaller."),
             ));
         }
         out.push(state.services.files.put(&name, &mime, bytes).await.map_err(ApiErr::internal)?);

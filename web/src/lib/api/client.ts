@@ -21,12 +21,28 @@ type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 /** Low-level request. Prefer the typed helpers in `api`. */
 export async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
   if (isFixtureMode()) return fixtureRequest<T>(method, path, body);
-  const res = await fetch(path, {
-    method,
-    headers: body === undefined ? {} : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    credentials: 'same-origin'
-  });
+  return parse<T>(
+    await fetch(path, {
+      method,
+      headers: body === undefined ? {} : { 'content-type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: 'same-origin'
+    })
+  );
+}
+
+/** Multipart upload (`POST /api/files`). Fixture mode echoes each file back as a `FileRef`. */
+export async function upload<T>(path: string, files: File[]): Promise<T> {
+  if (isFixtureMode()) {
+    const refs = files.map((f, i) => ({ id: `file_fx${i}`, mime: f.type, bytes: f.size, name: f.name, previewUrl: null }));
+    return refs as T;
+  }
+  const form = new FormData();
+  for (const f of files) form.append('file', f, f.name);
+  return parse<T>(await fetch(path, { method: 'POST', body: form, credentials: 'same-origin' }));
+}
+
+async function parse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let err: ApiError | null = null;
     try {

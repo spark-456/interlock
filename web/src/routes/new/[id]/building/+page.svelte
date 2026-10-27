@@ -4,13 +4,13 @@
   import { MediaQuery } from 'svelte/reactivity';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { api, buildEvents, type BuildEvent } from '$lib/api';
+  import { api, buildEvents, type BuildEvent, type BuildQuestion } from '$lib/api';
   import {
-    STAGES,
     currentStageIndex,
     initialBuildState,
     progress,
     reduce,
+    stagesOf,
     testsRun,
     timeLeft,
     type BuildState
@@ -23,8 +23,10 @@
   import StatusPill from '$lib/design/StatusPill.svelte';
   import TopBar from '$lib/design/TopBar.svelte';
   import { clock, usd } from '$lib/design/format';
+  import { toast } from '$lib/design/toasts.svelte';
   import BuildLog from './BuildLog.svelte';
   import FixCard from './FixCard.svelte';
+  import QuestionsCard from './QuestionsCard.svelte';
   import Stepper from './Stepper.svelte';
 
   const buildId = page.params.id ?? '';
@@ -63,7 +65,8 @@
   const labels = $derived(labelViews(build, cards));
   const groups = $derived(groupViews(build.flow.groups, cards));
   const stepIndex = $derived(currentStageIndex(build));
-  const stage = $derived(STAGES[stepIndex]!);
+  const stages = $derived(stagesOf(build));
+  const stage = $derived(stages[stepIndex]!);
   const pct = $derived(progress(build));
   const left = $derived(timeLeft(build));
   const run = $derived(testsRun(build));
@@ -73,13 +76,26 @@
   const stepLine = $derived(
     build.status === 'ready'
       ? 'All steps done'
-      : `Step ${stepIndex + 1} of ${STAGES.length} · ${stage.key === 'test' ? 'Testing' : stage.label}`
+      : `Step ${stepIndex + 1} of ${stages.length} · ${stage.key === 'test' ? 'Testing' : stage.label}`
   );
   const mobileStep = $derived(
     stage.key === 'test' && run && build.status !== 'ready'
-      ? `Step ${stepIndex + 1} of ${STAGES.length} · ${run.run} of ${run.total} tests run`
+      ? `Step ${stepIndex + 1} of ${stages.length} · ${run.run} of ${run.total} tests run`
       : stepLine
   );
+
+  // The questions just answered, hidden until the build moves on (or asks again).
+  let answered = $state.raw<BuildQuestion[] | null>(null);
+  const asking = $derived(build.questions.length > 0 && build.questions !== answered);
+
+  async function answer(answers: Record<string, string>) {
+    try {
+      await api.answerBuild(buildId, { answers });
+      answered = build.questions;
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  }
 
   function cancel() {
     void goto('/flows');
@@ -126,15 +142,15 @@
           {:else}<span class="live-pill"><Spinner size={12} />{stage.key === 'test' ? 'Testing' : stage.label}</span>{/if}
           <span class="m-clock mono">{clock(now)}</span>
         </div>
-        <div class="segments" role="progressbar" aria-label="Build progress, step {stepIndex + 1} of {STAGES.length}" aria-valuemin={0} aria-valuemax={STAGES.length} aria-valuenow={stepIndex + 1}>
-          {#each STAGES as s, i (s.key)}
+        <div class="segments" style:--n={stages.length} role="progressbar" aria-label="Build progress, step {stepIndex + 1} of {stages.length}" aria-valuemin={0} aria-valuemax={stages.length} aria-valuenow={stepIndex + 1}>
+          {#each stages as s, i (s.key)}
             {@const st = build.stages[s.key]?.status}
-            {@const frac = st === 'done' || build.status === 'ready' ? 100 : st === 'active' ? Math.round((pct * STAGES.length - i) * 100) : 0}
+            {@const frac = st === 'done' || build.status === 'ready' ? 100 : st === 'active' ? Math.round((pct * stages.length - i) * 100) : 0}
             <span class="seg" style:--fill="{Math.max(0, Math.min(100, frac))}%"></span>
           {/each}
         </div>
-        <div class="seg-labels">
-          {#each STAGES as s, i (s.key)}<span class:current={i === stepIndex && build.status !== 'ready'}>{s.short}</span>{/each}
+        <div class="seg-labels" style:--n={stages.length}>
+          {#each stages as s, i (s.key)}<span class:current={i === stepIndex && build.status !== 'ready'}>{s.short}</span>{/each}
         </div>
         <div class="m-foot"><span>{mobileStep}</span>{#if left}<span>About {Math.round(left / 1000)} s left</span>{/if}</div>
       </div>
@@ -147,6 +163,19 @@
         <NodeCanvas {cards} {edges} {labels} bind:selected />
       {/if}
       <div class="fix-slot"><FixCard fixes={build.fixes} {fixing} failing={build.tests?.failed ?? 0} /></div>
+      {#if asking || build.status === 'failed'}
+        <div class="ask-slot">
+          {#if asking}
+            <QuestionsCard questions={build.questions} onanswer={answer} />
+          {:else}
+            <div class="failed" role="alert">
+              <strong>The build stopped.</strong>
+              <p>{build.error ?? 'Something went wrong.'}</p>
+              <Button variant="primary" size="s" href="/new">Try again</Button>
+            </div>
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <!-- Mobile log + actions (M2) -->
@@ -192,6 +221,13 @@
   .stage.list { overflow: auto; }
   .list-wrap { max-width: 520px; margin: 0 auto; padding: 24px 16px 140px; }
   .fix-slot { position: absolute; left: 236px; bottom: 16px; width: 476px; z-index: 5; }
+  .ask-slot { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); width: min(476px, calc(100% - 32px)); z-index: 6; }
+  .failed {
+    display: flex; flex-direction: column; gap: 8px; padding: 16px 20px; border-radius: var(--r-panel);
+    background: var(--error-soft); border: 1px solid var(--error); color: var(--error-text);
+  }
+  .failed p { margin: 0; color: var(--text-2); font-size: 14px; }
+  .failed :global(.btn) { align-self: flex-start; }
 
   .panel {
     flex: 0 0 var(--inspector); width: var(--inspector); height: 100vh; display: flex; flex-direction: column;
@@ -222,13 +258,14 @@
     .stage { overflow: visible; flex: none; }
     .list-wrap { padding: 8px 16px 0; max-width: none; }
     .fix-slot { position: static; width: auto; padding: 16px 16px 0; }
+    .ask-slot { position: static; transform: none; width: auto; padding: 16px 16px 0; }
     .m-progress { display: block; padding: 16px 16px 0; }
     .m-card { padding: 16px; border-radius: var(--r-panel); background: var(--card-gradient); border: 1px solid var(--border); box-shadow: var(--shadow-pop); }
     .m-row { display: flex; align-items: center; justify-content: space-between; }
     .m-clock { font-size: 20px; font-weight: 600; }
-    .segments { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 14px; }
+    .segments { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; margin-top: 14px; }
     .seg { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--primary) var(--fill), var(--surface-4) var(--fill)); }
-    .seg-labels { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--text-4); text-align: center; }
+    .seg-labels { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--text-4); text-align: center; }
     .seg-labels .current { color: var(--primary); font-weight: 700; }
     .m-foot { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--surface-2); font-size: 13px; color: var(--text-2); }
     .m-log { display: block; padding: 20px 16px 24px; }

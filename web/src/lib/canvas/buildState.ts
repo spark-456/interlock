@@ -1,7 +1,7 @@
 // Build session state, reduced from build SSE events (PRD §8.4 + the additive `build.node` and
 // `build.cost`). Pure: the Building screen and tests call `reduce` for every event.
 
-import type { BuildEvent, BuildNodeStatus, Edge, Group, Node, NodeStat, StageStatus } from '$lib/api/types';
+import type { BuildEvent, BuildNodeStatus, BuildQuestion, Edge, Group, Node, NodeStat, StageStatus } from '$lib/api/types';
 import { applyPatch, type PatchOp } from './jsonPatch';
 
 /** The seven steps of the stepper, in order (key, desktop label, mobile label). */
@@ -14,6 +14,20 @@ export const STAGES = [
   { key: 'test', label: 'Test', short: 'Test' },
   { key: 'live', label: 'Go live', short: 'Live' }
 ] as const;
+
+/** Stages of an automation build (the architect's `understand` → `assemble` → `test`). */
+const AUTOMATION_STAGES = [
+  { key: 'understand', label: 'Understand the goal', short: 'Read' },
+  { key: 'assemble', label: 'Assemble the steps', short: 'Build' },
+  { key: 'test', label: 'Test', short: 'Test' }
+] as const;
+
+export type Stage = { key: string; label: string; short: string };
+
+/** The stage list this build reports: the design's AI-app stages, or the automation ones. */
+export function stagesOf(s: BuildState): readonly Stage[] {
+  return AUTOMATION_STAGES.some((st) => st.key !== 'test' && s.stages[st.key]) ? AUTOMATION_STAGES : STAGES;
+}
 
 export interface NodeState {
   status: BuildNodeStatus;
@@ -43,6 +57,8 @@ export interface BuildState {
   tests: { passed: number; failed: number } | null;
   fixes: Fix[];
   connections: string[];
+  /** Open clarifying questions; cleared once the build moves on. */
+  questions: BuildQuestion[];
   costUsd: number;
   /** Epoch ms of the first event, and elapsed ms of the latest one. */
   t0: number | null;
@@ -62,6 +78,7 @@ export function initialBuildState(): BuildState {
     tests: null,
     fixes: [],
     connections: [],
+    questions: [],
     costUsd: 0,
     t0: null,
     elapsed: 0,
@@ -76,6 +93,8 @@ export function initialBuildState(): BuildState {
 export function reduce(prev: BuildState, ev: BuildEvent): BuildState {
   if (ev.seq <= prev.lastSeq) return prev;
   const s: BuildState = { ...prev, lastSeq: ev.seq };
+  // Questions stay open while only the log and cost change; anything else means the build moved on.
+  if (ev.type !== 'build.log' && ev.type !== 'build.cost') s.questions = [];
   const at = Date.parse(ev.ts);
   s.t0 = prev.t0 ?? at;
   s.elapsed = Math.max(prev.elapsed, at - s.t0);
@@ -133,6 +152,9 @@ export function reduce(prev: BuildState, ev: BuildEvent): BuildState {
     case 'build.connection_needed':
       if (!prev.connections.includes(ev.data.app)) s.connections = [...prev.connections, ev.data.app];
       break;
+    case 'build.question':
+      s.questions = ev.data.questions;
+      break;
     case 'build.cost':
       s.costUsd = ev.data.costUsd;
       break;
@@ -152,10 +174,11 @@ export function reduce(prev: BuildState, ev: BuildEvent): BuildState {
 
 /** Index of the active stage (or the next pending one), 0-based. */
 export function currentStageIndex(s: BuildState): number {
-  const active = STAGES.findIndex((st) => s.stages[st.key]?.status === 'active');
+  const stages = stagesOf(s);
+  const active = stages.findIndex((st) => s.stages[st.key]?.status === 'active');
   if (active >= 0) return active;
-  const firstOpen = STAGES.findIndex((st) => s.stages[st.key]?.status !== 'done');
-  return firstOpen < 0 ? STAGES.length - 1 : firstOpen;
+  const firstOpen = stages.findIndex((st) => s.stages[st.key]?.status !== 'done');
+  return firstOpen < 0 ? stages.length - 1 : firstOpen;
 }
 
 /** Tests run / total from the test-suite node's "Run" stat (e.g. "21 / 30"). */
@@ -171,15 +194,16 @@ export function testsRun(s: BuildState): { run: number; total: number } | null {
 /** Overall progress 0–1: finished stages plus the active stage's fraction. */
 export function progress(s: BuildState): number {
   if (s.status === 'ready') return 1;
-  const done = STAGES.filter((st) => s.stages[st.key]?.status === 'done').length;
+  const stages = stagesOf(s);
+  const done = stages.filter((st) => s.stages[st.key]?.status === 'done').length;
   const idx = currentStageIndex(s);
-  const active = s.stages[STAGES[idx]!.key]?.status === 'active';
+  const active = s.stages[stages[idx]!.key]?.status === 'active';
   let frac = active ? 0.5 : 0;
-  if (active && STAGES[idx]!.key === 'test') {
+  if (active && stages[idx]!.key === 'test') {
     const r = testsRun(s);
     if (r && r.total > 0) frac = r.run / r.total;
   }
-  return Math.min(1, (done + frac) / STAGES.length);
+  return Math.min(1, (done + frac) / stages.length);
 }
 
 /** Rough time left in ms, rounded to 5 s (from the elapsed time and progress). */
