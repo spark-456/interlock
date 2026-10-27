@@ -1,5 +1,7 @@
 [
   { "seq": 1, "ts": "2026-10-27T11:00:00.000Z", "runId": "run_cap", "nodeId": null, "type": "run.started", "data": { "flowId": "flw_promos", "trigger": "trigger.schedule" } },
-  { "seq": 2, "ts": "2026-10-27T11:00:00.200Z", "runId": "run_cap", "nodeId": "n_script", "type": "node.started", "data": {} },
-  { "seq": 3, "ts": "2026-10-27T11:00:01.200Z", "runId": "run_cap", "nodeId": null, "type": "run.cap_reached", "data": { "cap": "run", "limitUsd": 1.0, "spentUsd": 1.02 } }
+  { "seq": 2, "ts": "2026-10-27T11:00:00.100Z", "runId": "run_cap", "nodeId": "n_products", "type": "node.started", "data": {} },
+  { "seq": 3, "ts": "2026-10-27T11:00:00.500Z", "runId": "run_cap", "nodeId": "n_products", "type": "node.succeeded", "data": { "count": 3, "ms": 400, "costUsd": 0.0 } },
+  { "seq": 4, "ts": "2026-10-27T11:00:00.600Z", "runId": "run_cap", "nodeId": "n_script", "type": "node.started", "data": {} },
+  { "seq": 5, "ts": "2026-10-27T11:00:01.600Z", "runId": "run_cap", "nodeId": null, "type": "run.cap_reached", "data": { "cap": "run", "limitUsd": 1.0, "spentUsd": 1.02 } }
 ]
