@@ -128,8 +128,60 @@ pub enum BuildEventKind {
     ConnectionNeeded { app: String },
     #[serde(rename = "build.test_result")]
     TestResult { passed: u32, failed: u32 },
+    /// `title`, `before`, `after` and `source` are optional extras for the "fixed" card (design S3).
     #[serde(rename = "build.fix")]
-    Fix { description: String },
+    Fix {
+        description: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        title: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        before: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        after: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        source: Option<String>,
+    },
+    /// State of one node during the build (envelope `nodeId`): status, type label and stat rows.
+    #[serde(rename = "build.node")]
+    Node {
+        status: BuildNodeStatus,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        subtitle: Option<String>,
+        /// Label shown in the status pill when it differs from the status (e.g. "8 endpoints skipped").
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        label: Option<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[ts(as = "Option<Vec<NodeStat>>", optional)]
+        stats: Vec<NodeStat>,
+        /// One-line summary for lists and mobile (e.g. "42 pages · 18 s").
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        summary: Option<String>,
+        /// Icon key override (default comes from the node type).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        icon: Option<String>,
+        /// Tile tone override: source, kb, router, agent, tool, guard, tests, output.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        tone: Option<String>,
+        /// 0–1 progress for the card's top bar while building.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        progress: Option<f32>,
+    },
+    /// Running build cost.
+    #[serde(rename = "build.cost")]
+    Cost {
+        #[serde(rename = "costUsd")]
+        cost_usd: f64,
+    },
     #[serde(rename = "build.ready")]
     Ready {
         #[serde(rename = "flowId")]
@@ -148,6 +200,27 @@ pub enum StageStatus {
     Active,
     Done,
     Failed,
+}
+
+/// Node state during a build.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "lowercase")]
+#[ts(export)]
+pub enum BuildNodeStatus {
+    Waiting,
+    Building,
+    Ready,
+    Fixed,
+    Warning,
+    Failed,
+}
+
+/// One stat row on a node card.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[ts(export)]
+pub struct NodeStat {
+    pub label: String,
+    pub value: String,
 }
 
 /// A clarifying question from the architect (AR-2).

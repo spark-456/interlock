@@ -27,6 +27,8 @@
     "vitest": "^3.2.7"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@xyflow/svelte": "^1.7.0"
   },
   "pnpm": {

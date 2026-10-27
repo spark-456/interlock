@@ -14,7 +14,12 @@ for (const path of screens) {
   });
 }
 
-test('build stream replays to the end', async ({ page }) => {
-  await page.goto('/new/bld_fa/building');
+test('run stream replays to the end', async ({ page }) => {
+  await page.goto('/flows/flw_promos/runs/run_fa');
   await expect(page.getByTestId('stream-status')).toContainText('done', { timeout: 30_000 });
+});
+
+test('F-A build stream replays to ready', async ({ page }) => {
+  await page.goto('/new/bld_fa/building?speed=60');
+  await expect(page.getByRole('link', { name: 'Open editor' }).first()).toBeVisible({ timeout: 30_000 });
 });

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S3 · Building · /build/:id</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="display: flex; height: 1000px; background: #F7F8FA; color: #101828; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums">
+
+<aside style="flex: 0 0 64px; width: 64px; height: 100%; background: #FFFFFF; border-right: 1px solid #E4E7EC; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 0; box-sizing: border-box"><a href="Landing.dc.html" aria-label="Interlock home" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px"><svg width="28" height="28" viewBox="0 0 48 48" aria-hidden="true"><defs><clipPath id="sb1Building"><rect x="24" y="0" width="24" height="24"></rect></clipPath></defs><g fill="none"><rect x="6.5" y="6.5" width="21" height="21" rx="8" stroke="#0B7A72" stroke-width="5.75"></rect><rect x="20.5" y="20.5" width="21" height="21" rx="8" stroke="#FFFFFF" stroke-width="13"></rect><rect x="20.5" y="20.5" width="21" height="21" rx="8" stroke="#0B7A72" stroke-width="5.75"></rect><g clip-path="url(#sb1Building)"><rect x="6.5" y="6.5" width="21" height="21" rx="8" stroke="#FFFFFF" stroke-width="13"></rect><rect x="6.5" y="6.5" width="21" height="21" rx="8" stroke="#0B7A72" stroke-width="5.75"></rect></g></g></svg></a><a href="NewBackend.dc.html" aria-label="New backend" style="width: 40px; height: 40px; border-radius: 10px; background: #0B7A72; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 0 #075E58"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg></a><a href="Backends.dc.html" aria-label="Backends" aria-current="page" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #E7F5F3"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5l9 4.5 9-4.5z"></path><path d="M3 12l9 4.5 9-4.5M3 16.5 12 21l9-4.5"></path></g></svg></a><a href="Playground.dc.html" aria-label="Playground" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; "><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.4A8 8 0 1 1 20.5 11.5z"></path></g></svg></a><a href="Backends.dc.html" aria-label="Logs" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; "><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></g></svg></a><a href="Connect.dc.html" aria-label="Docs" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; "><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"></path><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"></path></g></svg></a><a href="Backends.dc.html" aria-label="Settings" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; "><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></g></svg></a><span style="margin-top: auto; width: 36px; height: 36px; border-radius: 50%; background: #E7F5F3; color: #0B7A72; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center">DR</span></aside>
+
+<main style="flex: 1 1 auto; min-width: 0; height: 100%; display: flex; flex-direction: column">
+<header style="flex: 0 0 64px; height: 64px; display: flex; align-items: center; gap: 14px; padding: 0 20px 0 24px; background: #FFFFFF; border-bottom: 1px solid #E4E7EC; box-sizing: border-box">
+<a href="Backends.dc.html" style="font-size: 14px; font-weight: 600; color: #667085; text-decoration: none">Backends</a>
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="#98A2B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<h1 style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 700; letter-spacing: -0.01em">Building Larkspur Support</h1>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #E7F5F3; color: #0B7A72; font-size: 12px; font-weight: 600"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#B9DEDA" stroke-width="1.75"></circle><path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" fill="none" stroke="#0B7A72" stroke-width="1.75" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 6 6" to="360 6 6" dur="0.9s" repeatCount="indefinite"></animateTransform></path></svg>Building · <span style="font-family: 'JetBrains Mono', ui-monospace, monospace">1:28</span></span>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" aria-pressed="false" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 14px 'Plus Jakarta Sans', sans-serif; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z" fill="none" stroke="#475467" stroke-width="2" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#475467" stroke-width="2"></circle></svg>Inspect</button>
+<button type="button" style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 14px 'Plus Jakarta Sans', sans-serif; cursor: pointer">Cancel</button>
+</div>
+</header>
+
+<div style="position: relative; flex: 1 1 auto; min-height: 0">
+<dc-import name="BackendCanvas" mode="building" z="{{ 0.8 }}" px="{{ 24 }}" py="{{ 132 }}" h="{{ 936 }}" vw="{{ 976 }}" hint-size="100%,936px"></dc-import>
+
+<div style="position: absolute; left: 236px; bottom: 16px; width: 476px; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: 0 12px 32px rgba(16,24,40,0.10), 0 4px 0 -1px #E4E7EC; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #F9FAFB; border-bottom: 1px solid #E4E7EC">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #667085">Moments later</span>
+<span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; background: #E7F5F3; color: #0B7A72; font-size: 12px; font-weight: 600"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#B9DEDA" stroke-width="1.75"></circle><path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" fill="none" stroke="#0B7A72" stroke-width="1.75" stroke-linecap="round"></path></svg>Fixing 2…</span>
+</div>
+<div style="padding: 14px; display: flex; gap: 12px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 9px; background: #ECFDF3; border: 1px solid #C6F0D8; display: flex; align-items: center; justify-content: center; box-sizing: border-box"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M4 18h2" fill="none" stroke="#067647" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="font-size: 13px; line-height: 20px">
+<div style="font-weight: 700">Test 17 quoted the old 14-day refund window</div>
+<div style="color: #475467">It came from a 2025 help page. Interlock told the Billing agent to prefer the newest dated policy.</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px">
+<span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #FEF3F2; color: #B42318; font-size: 12px; font-weight: 600; text-decoration: line-through">14 days</span>
+<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #ECFDF3; color: #067647; font-size: 12px; font-weight: 600">30 days</span>
+<span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #F2F4F7; color: #344054; font-size: 12px; font-weight: 500">Refund policy 2026.pdf · p. 2</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<aside style="flex: 0 0 400px; width: 400px; height: 100%; background: #FFFFFF; border-left: 1px solid #E4E7EC; display: flex; flex-direction: column; box-sizing: border-box">
+<div style="padding: 20px 24px 16px; border-bottom: 1px solid #E4E7EC">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 700">Build log</h2>
+<span style="font-size: 12px; color: #667085">Live</span>
+</div>
+<div style="height: 8px; border-radius: 999px; background: #EAECF0; margin-top: 14px; overflow: hidden"><div style="width: 78%; height: 8px; border-radius: 999px; background: linear-gradient(90deg, #0B7A72, #14A094)"></div></div>
+<div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: #475467"><span>Step 6 of 7 · Testing</span><span>About 25 s left</span></div>
+</div>
+
+<div style="padding: 16px 24px 8px; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="7">
+<div style="display: flex; align-items: center; gap: 12px; height: 34px">
+<sc-if value="{{s.done}}" hint-placeholder-val="{{ true }}"><span style="flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; background: #079455; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25)"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if>
+<sc-if value="{{s.active}}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; background: #E7F5F3; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#B9DEDA" stroke-width="2"></circle><path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="0.9s" repeatCount="indefinite"></animateTransform></path></svg></span></sc-if>
+<sc-if value="{{s.todo}}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; border: 1.5px dashed #D0D5DD; box-sizing: border-box"></span></sc-if>
+<span style="flex: 1 1 auto; font-size: 14px; font-weight: {{s.fw}}; color: {{s.fg}}">{{s.name}}</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #667085">{{s.t}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="flex: 0 1 auto; min-height: 0; margin: 8px 16px 0; padding: 12px; border-radius: 12px; background: #F9FAFB; border: 1px solid #F2F4F7; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px">
+<sc-for list="{{log}}" as="l" hint-placeholder-count="10">
+<div style="display: flex; gap: 10px; font-size: 13px; line-height: 19px">
+<span style="flex: 0 0 34px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #98A2B3">{{l.t}}</span>
+<span style="color: {{l.c}}; font-weight: {{l.w}}">{{l.x}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px 24px 20px; margin-top: auto">
+<div style="padding: 10px 12px; border: 1px solid #E4E7EC; border-radius: 10px"><div style="font-size: 12px; color: #667085">Elapsed</div><div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 16px; font-weight: 600; margin-top: 2px">1:28</div></div>
+<div style="padding: 10px 12px; border: 1px solid #E4E7EC; border-radius: 10px"><div style="font-size: 12px; color: #667085">Cost so far</div><div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 16px; font-weight: 600; margin-top: 2px">$0.061</div></div>
+</div>
+</aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = [['Read', '0:24', 'done'], ['Index', '0:17', 'done'], ['Design team', '0:11', 'done'], ['Write prompts', '0:13', 'done'], ['Wire tools', '0:07', 'done'], ['Test', '21 / 30', 'active'], ['Go live', '', 'todo']];
+    const stages = S.map((s) => ({ name: s[0], t: s[1], done: s[2] === 'done', active: s[2] === 'active', todo: s[2] === 'todo', fw: s[2] === 'active' ? 700 : 500, fg: s[2] === 'todo' ? '#98A2B3' : '#101828' }));
+    const L = [
+      ['0:00', 'Understanding your goal…'],
+      ['0:03', 'Reading help.larkspur.example: 42 pages'],
+      ['0:21', 'Reading 4 documents: 22 pages'],
+      ['0:24', 'Building the knowledge base: 1,284 chunks'],
+      ['0:41', 'Reading the Larkspur Admin API: 11 endpoints, using 3'],
+      ['0:44', 'Skipped 8 endpoints, including one that deletes data'],
+      ['0:52', 'Designing the team: a router and 2 agents'],
+      ['1:05', 'Writing system prompts: Support (640 words), Billing (710 words)'],
+      ['1:12', 'Adding 4 guardrails'],
+      ['1:18', 'Generating 30 tests from your documents and API'],
+      ['1:28', 'Running tests: 21 of 30 done, 19 passed so far']
+    ];
+    const log = L.map((l, i) => ({ t: l[0], x: l[1], c: i === L.length - 1 ? '#0B7A72' : '#344054', w: i === L.length - 1 ? 600 : 400 }));
+    return { stages, log };
+  }
+}
+</script>
+</body>
+</html>

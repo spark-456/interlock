@@ -1,5 +1,9 @@
 {
-  "user": null,
-  "workspaceId": "ws_demo",
-  "demo": true
+  "user": {
+    "id": "usr_dana",
+    "name": "Dana Ruiz",
+    "avatarUrl": null
+  },
+  "workspaceId": "ws_larkspur",
+  "demo": false
 }

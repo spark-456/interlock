@@ -1,3 +1,7 @@
+@import '@fontsource-variable/plus-jakarta-sans/index.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
 @import './lib/design/tokens.css';
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -5,12 +9,16 @@ html, body { margin: 0; height: 100%; }
 body {
   background: var(--bg);
   color: var(--text);
-  font: var(--t-body);
+  font: 400 14px/20px var(--font-sans);
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
-h1 { font: var(--t-h1); margin: 0; }
-h2 { font: var(--t-h2); margin: 0; }
-h3 { font: var(--t-h3); margin: 0; }
-code, pre { font: var(--t-code); }
+h1, h2, h3 { margin: 0; }
+code, pre, .mono { font-family: var(--font-mono); }
 a { color: var(--primary); }
+button { font-family: inherit; }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}

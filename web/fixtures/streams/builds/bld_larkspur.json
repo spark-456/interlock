@@ -1,0 +1,2347 @@
+[
+  {
+    "seq": 1,
+    "ts": "2026-10-27T10:00:00.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/name",
+          "value": "Larkspur Support"
+        },
+        {
+          "op": "add",
+          "path": "/groups",
+          "value": [
+            {
+              "id": "g_inputs",
+              "label": "Inputs"
+            },
+            {
+              "id": "g_understanding",
+              "label": "Understanding"
+            },
+            {
+              "id": "g_agents",
+              "label": "Agents"
+            },
+            {
+              "id": "g_safety",
+              "label": "Safety"
+            },
+            {
+              "id": "g_outputs",
+              "label": "Outputs"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "seq": 2,
+    "ts": "2026-10-27T10:00:00.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "read",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 3,
+    "ts": "2026-10-27T10:00:00.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Understanding your goal…"
+    }
+  },
+  {
+    "seq": 4,
+    "ts": "2026-10-27T10:00:03.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_web",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_web",
+            "type": "knowledge.add",
+            "typeVersion": 1,
+            "name": "help.larkspur.example",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "group": "g_inputs",
+            "settings": {
+              "knowledgeBase": "kb_larkspur",
+              "content": "https://help.larkspur.example"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 5,
+    "ts": "2026-10-27T10:00:03.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_web",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Website",
+      "summary": "crawling…",
+      "progress": 0.2,
+      "icon": "globe",
+      "tone": "source",
+      "stats": [
+        {
+          "label": "Pages",
+          "value": "0"
+        },
+        {
+          "label": "Crawled in",
+          "value": "—"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 6,
+    "ts": "2026-10-27T10:00:03.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Reading help.larkspur.example: 42 pages"
+    }
+  },
+  {
+    "seq": 7,
+    "ts": "2026-10-27T10:00:03.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.002
+    }
+  },
+  {
+    "seq": 8,
+    "ts": "2026-10-27T10:00:06.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_web",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "summary": "12 pages",
+      "progress": 0.3,
+      "stats": [
+        {
+          "label": "Pages",
+          "value": "12"
+        },
+        {
+          "label": "Crawled in",
+          "value": "3 s"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 9,
+    "ts": "2026-10-27T10:00:10.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_web",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "summary": "25 pages",
+      "progress": 0.5,
+      "stats": [
+        {
+          "label": "Pages",
+          "value": "25"
+        },
+        {
+          "label": "Crawled in",
+          "value": "7 s"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 10,
+    "ts": "2026-10-27T10:00:10.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_docs",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_docs",
+            "type": "data.parse_document",
+            "typeVersion": 1,
+            "name": "4 documents",
+            "position": {
+              "x": 0,
+              "y": 196
+            },
+            "group": "g_inputs",
+            "settings": {
+              "file": "{{ item.files.document }}",
+              "format": "auto"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 11,
+    "ts": "2026-10-27T10:00:10.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_docs",
+    "type": "build.node",
+    "data": {
+      "status": "waiting",
+      "subtitle": "Documents",
+      "summary": "4 files",
+      "icon": "docs",
+      "tone": "source",
+      "stats": [
+        {
+          "label": "Files",
+          "value": "4"
+        },
+        {
+          "label": "Pages",
+          "value": "—"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 12,
+    "ts": "2026-10-27T10:00:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_api",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_api",
+            "type": "data.openapi",
+            "typeVersion": 1,
+            "name": "Larkspur Admin API",
+            "position": {
+              "x": 0,
+              "y": 392
+            },
+            "group": "g_inputs",
+            "settings": {
+              "spec": "https://api.larkspur.example/openapi.json",
+              "operationId": "*"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 13,
+    "ts": "2026-10-27T10:00:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_api",
+    "type": "build.node",
+    "data": {
+      "status": "waiting",
+      "subtitle": "API · OpenAPI 3.1",
+      "summary": "11 endpoints",
+      "icon": "plug",
+      "tone": "source",
+      "stats": [
+        {
+          "label": "Endpoints",
+          "value": "11"
+        },
+        {
+          "label": "Using",
+          "value": "—"
+        },
+        {
+          "label": "Skipped",
+          "value": "—"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 14,
+    "ts": "2026-10-27T10:00:14.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_web",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "summary": "36 pages",
+      "progress": 0.7,
+      "stats": [
+        {
+          "label": "Pages",
+          "value": "36"
+        },
+        {
+          "label": "Crawled in",
+          "value": "11 s"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 15,
+    "ts": "2026-10-27T10:00:21.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_web",
+    "type": "build.node",
+    "data": {
+      "status": "ready",
+      "summary": "42 pages · 18 s",
+      "stats": [
+        {
+          "label": "Pages",
+          "value": "42"
+        },
+        {
+          "label": "Crawled in",
+          "value": "18 s"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 16,
+    "ts": "2026-10-27T10:00:21.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_docs",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.5
+    }
+  },
+  {
+    "seq": 17,
+    "ts": "2026-10-27T10:00:21.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Reading 4 documents: 22 pages"
+    }
+  },
+  {
+    "seq": 18,
+    "ts": "2026-10-27T10:00:21.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.009
+    }
+  },
+  {
+    "seq": 19,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_docs",
+    "type": "build.node",
+    "data": {
+      "status": "ready",
+      "summary": "4 files · 22 pages",
+      "stats": [
+        {
+          "label": "Files",
+          "value": "4"
+        },
+        {
+          "label": "Pages",
+          "value": "22"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 20,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "read",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 21,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "index",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 22,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_kb",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_kb",
+            "type": "knowledge.base",
+            "typeVersion": 1,
+            "name": "Larkspur knowledge",
+            "position": {
+              "x": 304,
+              "y": 0
+            },
+            "group": "g_understanding",
+            "settings": {
+              "name": "Larkspur knowledge",
+              "sources": [
+                {
+                  "kind": "url",
+                  "value": "https://help.larkspur.example"
+                }
+              ],
+              "crawlLimit": 50
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 23,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_web_kb",
+            "from": {
+              "node": "n_web",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_kb",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 24,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_docs_kb",
+            "from": {
+              "node": "n_docs",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_kb",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 25,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_kb",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Knowledge base",
+      "summary": "indexing…",
+      "progress": 0.1,
+      "stats": [
+        {
+          "label": "Chunks",
+          "value": "0"
+        },
+        {
+          "label": "Search",
+          "value": "Hybrid · top 6"
+        },
+        {
+          "label": "Sources",
+          "value": "5"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 26,
+    "ts": "2026-10-27T10:00:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Building the knowledge base: 1,284 chunks"
+    }
+  },
+  {
+    "seq": 27,
+    "ts": "2026-10-27T10:00:28.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_kb",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.3,
+      "stats": [
+        {
+          "label": "Chunks",
+          "value": "320"
+        },
+        {
+          "label": "Search",
+          "value": "Hybrid · top 6"
+        },
+        {
+          "label": "Sources",
+          "value": "5"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 28,
+    "ts": "2026-10-27T10:00:28.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.012
+    }
+  },
+  {
+    "seq": 29,
+    "ts": "2026-10-27T10:00:32.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_kb",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.5,
+      "stats": [
+        {
+          "label": "Chunks",
+          "value": "760"
+        },
+        {
+          "label": "Search",
+          "value": "Hybrid · top 6"
+        },
+        {
+          "label": "Sources",
+          "value": "5"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 30,
+    "ts": "2026-10-27T10:00:32.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.016
+    }
+  },
+  {
+    "seq": 31,
+    "ts": "2026-10-27T10:00:36.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_kb",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.7,
+      "stats": [
+        {
+          "label": "Chunks",
+          "value": "1,104"
+        },
+        {
+          "label": "Search",
+          "value": "Hybrid · top 6"
+        },
+        {
+          "label": "Sources",
+          "value": "5"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 32,
+    "ts": "2026-10-27T10:00:36.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.02
+    }
+  },
+  {
+    "seq": 33,
+    "ts": "2026-10-27T10:00:41.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_kb",
+    "type": "build.node",
+    "data": {
+      "status": "ready",
+      "summary": "1,284 chunks · hybrid",
+      "stats": [
+        {
+          "label": "Chunks",
+          "value": "1,284"
+        },
+        {
+          "label": "Search",
+          "value": "Hybrid · top 6"
+        },
+        {
+          "label": "Sources",
+          "value": "5"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 34,
+    "ts": "2026-10-27T10:00:41.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "index",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 35,
+    "ts": "2026-10-27T10:00:41.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "team",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 36,
+    "ts": "2026-10-27T10:00:41.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_api",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.4
+    }
+  },
+  {
+    "seq": 37,
+    "ts": "2026-10-27T10:00:41.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Reading the Larkspur Admin API: 11 endpoints, using 3"
+    }
+  },
+  {
+    "seq": 38,
+    "ts": "2026-10-27T10:00:44.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_api",
+    "type": "build.node",
+    "data": {
+      "status": "warning",
+      "label": "8 endpoints skipped",
+      "summary": "11 endpoints · using 3",
+      "stats": [
+        {
+          "label": "Endpoints",
+          "value": "11"
+        },
+        {
+          "label": "Using",
+          "value": "3"
+        },
+        {
+          "label": "Skipped",
+          "value": "8"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 39,
+    "ts": "2026-10-27T10:00:44.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Skipped 8 endpoints, including one that deletes data"
+    }
+  },
+  {
+    "seq": 40,
+    "ts": "2026-10-27T10:00:44.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tools",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_tools",
+            "type": "data.openapi",
+            "typeVersion": 1,
+            "name": "Admin API tools",
+            "position": {
+              "x": 304,
+              "y": 218
+            },
+            "group": "g_understanding",
+            "settings": {
+              "spec": "https://api.larkspur.example/openapi.json",
+              "operationId": "lookup_customer"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 41,
+    "ts": "2026-10-27T10:00:44.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_api_tools",
+            "from": {
+              "node": "n_api",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_tools",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 42,
+    "ts": "2026-10-27T10:00:44.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tools",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Tools",
+      "summary": "3 tools · GET GET POST",
+      "progress": 0.5,
+      "icon": "wrench",
+      "tone": "tool",
+      "stats": [
+        {
+          "label": "lookup_customer",
+          "value": "GET"
+        },
+        {
+          "label": "list_invoices",
+          "value": "GET"
+        },
+        {
+          "label": "open_ticket",
+          "value": "POST"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 43,
+    "ts": "2026-10-27T10:00:44.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.026
+    }
+  },
+  {
+    "seq": 44,
+    "ts": "2026-10-27T10:00:50.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tools",
+    "type": "build.node",
+    "data": {
+      "status": "ready"
+    }
+  },
+  {
+    "seq": 45,
+    "ts": "2026-10-27T10:00:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_router",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_router",
+            "type": "ai.decide",
+            "typeVersion": 1,
+            "name": "Request router",
+            "position": {
+              "x": 304,
+              "y": 436
+            },
+            "group": "g_understanding",
+            "settings": {
+              "question": "Is this about billing (plans, invoices, refunds) or general support?",
+              "mode": "labels",
+              "labels": [
+                {
+                  "name": "billing"
+                },
+                {
+                  "name": "support"
+                }
+              ]
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 46,
+    "ts": "2026-10-27T10:00:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_router",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Router",
+      "summary": "Billing · Support",
+      "progress": 0.5,
+      "icon": "split",
+      "tone": "router",
+      "stats": [
+        {
+          "label": "Routes",
+          "value": "Billing · Support"
+        },
+        {
+          "label": "Decides in",
+          "value": "~0.2 s"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 47,
+    "ts": "2026-10-27T10:00:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Designing the team: a router and 2 agents"
+    }
+  },
+  {
+    "seq": 48,
+    "ts": "2026-10-27T10:00:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "team",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 49,
+    "ts": "2026-10-27T10:00:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "prompts",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 50,
+    "ts": "2026-10-27T10:00:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.031
+    }
+  },
+  {
+    "seq": 51,
+    "ts": "2026-10-27T10:00:55.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_support",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_support",
+            "type": "ai.agent",
+            "typeVersion": 1,
+            "name": "Support agent",
+            "position": {
+              "x": 608,
+              "y": 40
+            },
+            "group": "g_agents",
+            "settings": {
+              "instructions": "You are Larkspur's support assistant. Answer from the help center and cite sources. Open a ticket when you can't help.",
+              "knowledgeBases": [
+                "kb_larkspur"
+              ],
+              "tools": [
+                "open_ticket"
+              ]
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 52,
+    "ts": "2026-10-27T10:00:55.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_kb_support",
+            "from": {
+              "node": "n_kb",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_support",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 53,
+    "ts": "2026-10-27T10:00:55.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_tools_support",
+            "from": {
+              "node": "n_tools",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_support",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 54,
+    "ts": "2026-10-27T10:00:55.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_router_support",
+            "from": {
+              "node": "n_router",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_support",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 55,
+    "ts": "2026-10-27T10:00:55.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_support",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Agent",
+      "summary": "writing prompt…",
+      "progress": 0.2,
+      "stats": [
+        {
+          "label": "Prompt",
+          "value": "—"
+        },
+        {
+          "label": "Tools",
+          "value": "open_ticket"
+        },
+        {
+          "label": "Knowledge",
+          "value": "All"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 56,
+    "ts": "2026-10-27T10:00:57.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_billing",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_billing",
+            "type": "ai.agent",
+            "typeVersion": 1,
+            "name": "Billing agent",
+            "position": {
+              "x": 608,
+              "y": 258
+            },
+            "group": "g_agents",
+            "settings": {
+              "instructions": "You handle plans, invoices and refunds. Prefer the newest dated policy.",
+              "knowledgeBases": [
+                "kb_larkspur"
+              ],
+              "tools": [
+                "lookup_customer",
+                "list_invoices",
+                "open_ticket"
+              ]
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 57,
+    "ts": "2026-10-27T10:00:57.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_kb_billing",
+            "from": {
+              "node": "n_kb",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_billing",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 58,
+    "ts": "2026-10-27T10:00:57.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_tools_billing",
+            "from": {
+              "node": "n_tools",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_billing",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 59,
+    "ts": "2026-10-27T10:00:57.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_router_billing",
+            "from": {
+              "node": "n_router",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_billing",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 60,
+    "ts": "2026-10-27T10:00:57.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_billing",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Agent",
+      "summary": "writing prompt…",
+      "progress": 0.2,
+      "stats": [
+        {
+          "label": "Prompt",
+          "value": "—"
+        },
+        {
+          "label": "Tools",
+          "value": "3"
+        },
+        {
+          "label": "Knowledge",
+          "value": "Policies, plans"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 61,
+    "ts": "2026-10-27T10:00:58.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_router",
+    "type": "build.node",
+    "data": {
+      "status": "ready"
+    }
+  },
+  {
+    "seq": 62,
+    "ts": "2026-10-27T10:01:01.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_support",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.6,
+      "stats": [
+        {
+          "label": "Prompt",
+          "value": "410 words"
+        },
+        {
+          "label": "Tools",
+          "value": "open_ticket"
+        },
+        {
+          "label": "Knowledge",
+          "value": "All"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 63,
+    "ts": "2026-10-27T10:01:02.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_billing",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.5,
+      "stats": [
+        {
+          "label": "Prompt",
+          "value": "380 words"
+        },
+        {
+          "label": "Tools",
+          "value": "3"
+        },
+        {
+          "label": "Knowledge",
+          "value": "Policies, plans"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 64,
+    "ts": "2026-10-27T10:01:02.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.042
+    }
+  },
+  {
+    "seq": 65,
+    "ts": "2026-10-27T10:01:05.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Writing system prompts: Support (640 words), Billing (710 words)"
+    }
+  },
+  {
+    "seq": 66,
+    "ts": "2026-10-27T10:01:05.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_support",
+    "type": "build.node",
+    "data": {
+      "status": "ready",
+      "summary": "640 words · 1 tool",
+      "stats": [
+        {
+          "label": "Prompt",
+          "value": "640 words"
+        },
+        {
+          "label": "Tools",
+          "value": "open_ticket"
+        },
+        {
+          "label": "Knowledge",
+          "value": "All"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 67,
+    "ts": "2026-10-27T10:01:05.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "prompts",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 68,
+    "ts": "2026-10-27T10:01:05.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "tools",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 69,
+    "ts": "2026-10-27T10:01:09.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_billing",
+    "type": "build.node",
+    "data": {
+      "status": "ready",
+      "summary": "710 words · 3 tools",
+      "stats": [
+        {
+          "label": "Prompt",
+          "value": "710 words"
+        },
+        {
+          "label": "Tools",
+          "value": "3"
+        },
+        {
+          "label": "Knowledge",
+          "value": "Policies, plans"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 70,
+    "ts": "2026-10-27T10:01:10.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.047
+    }
+  },
+  {
+    "seq": 71,
+    "ts": "2026-10-27T10:01:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "tools",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 72,
+    "ts": "2026-10-27T10:01:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "test",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 73,
+    "ts": "2026-10-27T10:01:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_guard",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_guard",
+            "type": "ai.decide",
+            "typeVersion": 1,
+            "name": "Safety rules",
+            "position": {
+              "x": 912,
+              "y": 160
+            },
+            "group": "g_safety",
+            "settings": {
+              "question": "Does this answer follow the safety rules (no refunds over $100 without a person)?",
+              "mode": "yesno"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 74,
+    "ts": "2026-10-27T10:01:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_support_guard",
+            "from": {
+              "node": "n_support",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_guard",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 75,
+    "ts": "2026-10-27T10:01:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_billing_guard",
+            "from": {
+              "node": "n_billing",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_guard",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 76,
+    "ts": "2026-10-27T10:01:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_guard",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Guardrails",
+      "summary": "4 rules · refunds over $100",
+      "progress": 0.5,
+      "icon": "shield",
+      "tone": "guard",
+      "stats": [
+        {
+          "label": "Rules",
+          "value": "4"
+        },
+        {
+          "label": "Hand-off",
+          "value": "Refunds over $100"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 77,
+    "ts": "2026-10-27T10:01:12.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Adding 4 guardrails"
+    }
+  },
+  {
+    "seq": 78,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_api",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_out_api",
+            "type": "output.respond",
+            "typeVersion": 1,
+            "name": "API",
+            "position": {
+              "x": 1216,
+              "y": 40
+            },
+            "group": "g_outputs",
+            "settings": {
+              "body": "{{ item.answer }}",
+              "format": "text"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 79,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_guard_out_api",
+            "from": {
+              "node": "n_guard",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_out_api",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 80,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_api",
+    "type": "build.node",
+    "data": {
+      "status": "waiting",
+      "subtitle": "Output",
+      "summary": "OpenAI-compatible",
+      "icon": "api",
+      "tone": "output",
+      "stats": [
+        {
+          "label": "Format",
+          "value": "OpenAI-compatible"
+        },
+        {
+          "label": "Streaming",
+          "value": "Yes"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 81,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_mcp",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_out_mcp",
+            "type": "output.respond",
+            "typeVersion": 1,
+            "name": "MCP server",
+            "position": {
+              "x": 1216,
+              "y": 236
+            },
+            "group": "g_outputs",
+            "settings": {
+              "body": "{{ item.answer }}",
+              "format": "text"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 82,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_guard_out_mcp",
+            "from": {
+              "node": "n_guard",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_out_mcp",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 83,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_mcp",
+    "type": "build.node",
+    "data": {
+      "status": "waiting",
+      "subtitle": "Output",
+      "summary": "4 tools",
+      "icon": "mcp",
+      "tone": "output",
+      "stats": [
+        {
+          "label": "Tools",
+          "value": "4"
+        },
+        {
+          "label": "Clients",
+          "value": "Any MCP client"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 84,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_widget",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_out_widget",
+            "type": "output.respond",
+            "typeVersion": 1,
+            "name": "Chat widget",
+            "position": {
+              "x": 1216,
+              "y": 432
+            },
+            "group": "g_outputs",
+            "settings": {
+              "body": "{{ item.answer }}",
+              "format": "text"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 85,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_guard_out_widget",
+            "from": {
+              "node": "n_guard",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_out_widget",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 86,
+    "ts": "2026-10-27T10:01:13.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_widget",
+    "type": "build.node",
+    "data": {
+      "status": "waiting",
+      "subtitle": "Output",
+      "summary": "1 script tag",
+      "icon": "chat",
+      "tone": "output",
+      "stats": [
+        {
+          "label": "Install",
+          "value": "1 script tag"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 87,
+    "ts": "2026-10-27T10:01:16.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_guard",
+    "type": "build.node",
+    "data": {
+      "status": "ready"
+    }
+  },
+  {
+    "seq": 88,
+    "ts": "2026-10-27T10:01:18.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tests",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_tests",
+            "type": "build.tests",
+            "typeVersion": 1,
+            "name": "30 tests",
+            "position": {
+              "x": 608,
+              "y": 496
+            },
+            "group": "g_agents",
+            "settings": {},
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 89,
+    "ts": "2026-10-27T10:01:18.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_billing_tests",
+            "from": {
+              "node": "n_billing",
+              "port": "bottom"
+            },
+            "to": {
+              "node": "n_tests",
+              "port": "top"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 90,
+    "ts": "2026-10-27T10:01:18.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tests",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "subtitle": "Test suite",
+      "summary": "0 / 30 run",
+      "progress": 0.05,
+      "icon": "tests",
+      "tone": "tests",
+      "stats": [
+        {
+          "label": "Run",
+          "value": "0 / 30"
+        },
+        {
+          "label": "Passed",
+          "value": "0"
+        },
+        {
+          "label": "Generated from",
+          "value": "docs + API"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 91,
+    "ts": "2026-10-27T10:01:18.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Generating 30 tests from your documents and API"
+    }
+  },
+  {
+    "seq": 92,
+    "ts": "2026-10-27T10:01:18.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.052
+    }
+  },
+  {
+    "seq": 93,
+    "ts": "2026-10-27T10:01:20.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tests",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "summary": "6 / 30 run · 6 passed",
+      "progress": 0.2,
+      "stats": [
+        {
+          "label": "Run",
+          "value": "6 / 30"
+        },
+        {
+          "label": "Passed",
+          "value": "6"
+        },
+        {
+          "label": "Generated from",
+          "value": "docs + API"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 94,
+    "ts": "2026-10-27T10:01:20.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.test_result",
+    "data": {
+      "passed": 6,
+      "failed": 0
+    }
+  },
+  {
+    "seq": 95,
+    "ts": "2026-10-27T10:01:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tests",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "summary": "13 / 30 run · 12 passed",
+      "progress": 0.43333333333333335,
+      "stats": [
+        {
+          "label": "Run",
+          "value": "13 / 30"
+        },
+        {
+          "label": "Passed",
+          "value": "12"
+        },
+        {
+          "label": "Generated from",
+          "value": "docs + API"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 96,
+    "ts": "2026-10-27T10:01:24.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.test_result",
+    "data": {
+      "passed": 12,
+      "failed": 1
+    }
+  },
+  {
+    "seq": 97,
+    "ts": "2026-10-27T10:01:27.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.061
+    }
+  },
+  {
+    "seq": 98,
+    "ts": "2026-10-27T10:01:28.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tests",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "summary": "21 / 30 run · 19 passed",
+      "progress": 0.7,
+      "stats": [
+        {
+          "label": "Run",
+          "value": "21 / 30"
+        },
+        {
+          "label": "Passed",
+          "value": "19"
+        },
+        {
+          "label": "Generated from",
+          "value": "docs + API"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 99,
+    "ts": "2026-10-27T10:01:28.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.test_result",
+    "data": {
+      "passed": 19,
+      "failed": 2
+    }
+  },
+  {
+    "seq": 100,
+    "ts": "2026-10-27T10:01:28.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Running tests: 21 of 30 done, 19 passed so far"
+    }
+  },
+  {
+    "seq": 101,
+    "ts": "2026-10-27T10:01:28.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_billing",
+    "type": "build.fix",
+    "data": {
+      "description": "It came from a 2025 help page. Interlock told the Billing agent to prefer the newest dated policy.",
+      "title": "Test 17 quoted the old 14-day refund window",
+      "before": "14 days",
+      "after": "30 days",
+      "source": "Refund policy 2026.pdf · p. 2"
+    }
+  },
+  {
+    "seq": 102,
+    "ts": "2026-10-27T10:01:33.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Test 17 quoted the old 14-day refund window: the Billing agent now prefers the newest policy"
+    }
+  },
+  {
+    "seq": 103,
+    "ts": "2026-10-27T10:01:36.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tests",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "label": "Fixing 2…",
+      "summary": "30 / 30 run · 28 passed",
+      "progress": 0.92,
+      "stats": [
+        {
+          "label": "Run",
+          "value": "30 / 30"
+        },
+        {
+          "label": "Passed",
+          "value": "28"
+        },
+        {
+          "label": "Fixing",
+          "value": "2"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 104,
+    "ts": "2026-10-27T10:01:36.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.test_result",
+    "data": {
+      "passed": 28,
+      "failed": 2
+    }
+  },
+  {
+    "seq": 105,
+    "ts": "2026-10-27T10:01:36.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.069
+    }
+  },
+  {
+    "seq": 106,
+    "ts": "2026-10-27T10:01:40.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_support",
+    "type": "build.fix",
+    "data": {
+      "description": "The Support agent now searches the help center before opening a ticket.",
+      "title": "Test 23 opened a ticket for a question the docs answer",
+      "before": "open_ticket",
+      "after": "search first",
+      "source": "Shipping FAQ · help.larkspur.example"
+    }
+  },
+  {
+    "seq": 107,
+    "ts": "2026-10-27T10:01:40.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Test 23 opened a ticket the docs could answer: Support now searches first"
+    }
+  },
+  {
+    "seq": 108,
+    "ts": "2026-10-27T10:01:46.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Re-ran the 2 fixed tests: both pass"
+    }
+  },
+  {
+    "seq": 109,
+    "ts": "2026-10-27T10:01:46.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.test_result",
+    "data": {
+      "passed": 30,
+      "failed": 0
+    }
+  },
+  {
+    "seq": 110,
+    "ts": "2026-10-27T10:01:46.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_tests",
+    "type": "build.node",
+    "data": {
+      "status": "fixed",
+      "label": "Fixed 2 issues",
+      "summary": "30 / 30 passed · 2 fixed",
+      "stats": [
+        {
+          "label": "Passed",
+          "value": "30 / 30"
+        },
+        {
+          "label": "Fixed automatically",
+          "value": "2"
+        },
+        {
+          "label": "Knowledge · tools",
+          "value": "24 · 6"
+        }
+      ]
+    }
+  },
+  {
+    "seq": 111,
+    "ts": "2026-10-27T10:01:46.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.078
+    }
+  },
+  {
+    "seq": 112,
+    "ts": "2026-10-27T10:01:47.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "test",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 113,
+    "ts": "2026-10-27T10:01:47.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "live",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 114,
+    "ts": "2026-10-27T10:01:47.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_api",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.6
+    }
+  },
+  {
+    "seq": 115,
+    "ts": "2026-10-27T10:01:48.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_mcp",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.6
+    }
+  },
+  {
+    "seq": 116,
+    "ts": "2026-10-27T10:01:49.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_api",
+    "type": "build.node",
+    "data": {
+      "status": "ready"
+    }
+  },
+  {
+    "seq": 117,
+    "ts": "2026-10-27T10:01:49.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_widget",
+    "type": "build.node",
+    "data": {
+      "status": "building",
+      "progress": 0.6
+    }
+  },
+  {
+    "seq": 118,
+    "ts": "2026-10-27T10:01:49.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Publishing the API, MCP server and chat widget"
+    }
+  },
+  {
+    "seq": 119,
+    "ts": "2026-10-27T10:01:50.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_mcp",
+    "type": "build.node",
+    "data": {
+      "status": "ready"
+    }
+  },
+  {
+    "seq": 120,
+    "ts": "2026-10-27T10:01:51.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": "n_out_widget",
+    "type": "build.node",
+    "data": {
+      "status": "ready"
+    }
+  },
+  {
+    "seq": 121,
+    "ts": "2026-10-27T10:01:51.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.cost",
+    "data": {
+      "costUsd": 0.084
+    }
+  },
+  {
+    "seq": 122,
+    "ts": "2026-10-27T10:01:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Larkspur Support is live"
+    }
+  },
+  {
+    "seq": 123,
+    "ts": "2026-10-27T10:01:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "live",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 124,
+    "ts": "2026-10-27T10:01:52.000Z",
+    "buildId": "bld_larkspur",
+    "nodeId": null,
+    "type": "build.ready",
+    "data": {
+      "flowId": "flw_larkspur"
+    }
+  }
+]

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const RUN = new Set(['run.started', 'node.started', 'node.progress', 'node.items', 'node.succeeded', 'node.failed',
   'node.waiting', 'approval.decided', 'run.cap_reached', 'run.succeeded', 'run.failed', 'run.cancelled']);
 const BUILD = new Set(['build.stage', 'build.log', 'build.question', 'build.flow_patch', 'build.connection_needed',
-  'build.test_result', 'build.fix', 'build.ready', 'build.failed']);
+  'build.test_result', 'build.fix', 'build.ready', 'build.failed', 'build.node', 'build.cost']);
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {

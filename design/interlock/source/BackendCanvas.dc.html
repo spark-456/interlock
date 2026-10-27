@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Backend canvas — Larkspur Support</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div onPointerDown="{{onDown}}" onPointerMove="{{onMove}}" onPointerUp="{{onUp}}" onPointerLeave="{{onUp}}" style="position: relative; width: 100%; height: {{h}}px; overflow: hidden; background-color: #F7F8FA; background-image: radial-gradient(rgba(208,213,221,0.75) 1.1px, transparent 1.1px); background-size: {{grid}}px {{grid}}px; background-position: {{gridPos}}; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #101828; touch-action: none; user-select: none; -webkit-user-select: none; cursor: {{cursor}}">
+<svg width="0" height="0" style="position: absolute; width: 0; height: 0" aria-hidden="true">
+<defs>
+<symbol id="bi-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></symbol>
+<symbol id="bi-docs" viewBox="0 0 24 24"><path d="M9 6.5V5a2 2 0 0 1 2-2h6l4 4v9a2 2 0 0 1-2 2h-1.5"></path><path d="M3.5 10a2 2 0 0 1 2-2h6l3.5 3.5V19a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2z"></path></symbol>
+<symbol id="bi-plug" viewBox="0 0 24 24"><path d="M9 2.5v4.5M15 2.5v4.5M6 7h12v3.5a6 6 0 0 1-12 0zM12 16.5v5"></path></symbol>
+<symbol id="bi-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"></ellipse><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></symbol>
+<symbol id="bi-wrench" viewBox="0 0 24 24"><path d="M14.5 6.5a4.5 4.5 0 0 0 5.6 5.6l-8.4 8.4a2.4 2.4 0 0 1-3.4-3.4l8.4-8.4A4.5 4.5 0 0 0 14.5 6.5l2.6-2.6a4.5 4.5 0 0 0-5.6 5.6"></path></symbol>
+<symbol id="bi-split" viewBox="0 0 24 24"><path d="M12 21v-6.5M12 14.5 5.5 8M12 14.5 18.5 8M4.5 12V7h5M19.5 12V7h-5"></path></symbol>
+<symbol id="bi-agent" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5.5"></rect><circle cx="12" cy="10" r="3"></circle><path d="M7.5 17.5c1-2 2.6-3 4.5-3s3.5 1 4.5 3"></path></symbol>
+<symbol id="bi-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"></path><path d="M9 12l2 2 4-4"></path></symbol>
+<symbol id="bi-tests" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M4 18h2"></path></symbol>
+<symbol id="bi-api" viewBox="0 0 24 24"><path d="M8 4H6.5A2.5 2.5 0 0 0 4 6.5V10l-2 2 2 2v3.5A2.5 2.5 0 0 0 6.5 20H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V10l2 2-2 2v3.5a2.5 2.5 0 0 1-2.5 2.5H16"></path></symbol>
+<symbol id="bi-mcp" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.75"></circle><circle cx="18" cy="6" r="2.75"></circle><circle cx="12" cy="18" r="2.75"></circle><path d="M8.75 6h6.5M7.4 8.4l3.3 7.2M16.6 8.4l-3.3 7.2"></path></symbol>
+<symbol id="bi-chat" viewBox="0 0 24 24"><path d="M20.5 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.4A8 8 0 1 1 20.5 11.5z"></path><path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01"></path></symbol>
+</defs>
+</svg>
+
+<div style="position: absolute; left: 0; top: 0; width: 1px; height: 1px; transform: translate({{px}}px, {{py}}px) scale({{z}}); transform-origin: 0 0">
+
+<sc-for list="{{labels}}" as="l" hint-placeholder-count="5">
+<div style="position: absolute; left: {{l.x}}px; top: -44px; width: 264px; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #98A2B3"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{l.c}}"></span>{{l.t}}</div>
+</sc-for>
+
+<sc-for list="{{edges}}" as="e" hint-placeholder-count="14">
+<svg width="1" height="1" style="position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none" aria-hidden="true"><path d="{{e.d}}" fill="none" stroke="{{e.c}}" stroke-width="{{e.w}}" stroke-linecap="round" stroke-dasharray="{{e.dash}}" opacity="{{e.op}}"></path></svg>
+</sc-for>
+<sc-for list="{{liveEdges}}" as="e" hint-placeholder-count="1">
+<svg width="1" height="1" style="position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none" aria-hidden="true"><path d="{{e.d}}" fill="none" stroke="#B9DEDA" stroke-width="2" stroke-linecap="round"></path><path d="{{e.d}}" fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 8"><animate attributeName="stroke-dashoffset" values="28;0" dur="0.9s" repeatCount="indefinite"></animate></path></svg>
+</sc-for>
+
+<sc-for list="{{nodes}}" as="n" hint-placeholder-count="12">
+<div onPointerDown="{{n.down}}" onPointerEnter="{{n.enter}}" onPointerLeave="{{n.leave}}" role="button" tabindex="0" aria-label="{{n.aria}}" aria-pressed="{{n.pressed}}" style="position: absolute; left: {{n.x}}px; top: {{n.y}}px; width: 264px; height: {{n.h}}px; box-sizing: border-box; padding: 14px 14px 14px; border-radius: 12px; background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFD 100%); border: {{n.border}}; box-shadow: {{n.shadow}}; transform: {{n.lift}}; opacity: {{n.op}}; display: flex; flex-direction: column; gap: 12px; cursor: {{n.cursor}}; transition: box-shadow 160ms ease, transform 160ms ease; outline: none">
+<sc-if value="{{n.building}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 12px; right: 12px; top: -1px; height: 3px; border-radius: 0 0 3px 3px; background: #D3ECE9; overflow: hidden"><div style="width: {{n.prog}}; height: 3px; background: #0B7A72"></div></div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(180deg, #FFFFFF -40%, {{n.tile}} 70%); border: 1px solid {{n.tileEdge}}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(16,24,40,0.06); box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#bi-{{n.icon}}" fill="none" stroke="{{n.ink}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></div>
+<div style="min-width: 0; flex: 1 1 auto">
+<div style="font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{n.title}}</div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #667085">{{n.type}}</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid #F2F4F7">
+<sc-for list="{{n.stats}}" as="s" hint-placeholder-count="3">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; height: 16px; font-size: 12px; line-height: 16px">
+<span style="color: #475467; font-weight: 500; font-family: {{s.kf}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.k}}</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; color: #101828; white-space: nowrap">{{s.v}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; margin-top: auto">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; background: {{n.pill.bg}}; color: {{n.pill.fg}}; font-size: 12px; font-weight: 600; white-space: nowrap">
+<sc-if value="{{n.pill.dot}}" hint-placeholder-val="{{ true }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{n.pill.dc}}"></span></sc-if>
+<sc-if value="{{n.pill.spin}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#B9DEDA" stroke-width="1.75"></circle><path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" fill="none" stroke="#0B7A72" stroke-width="1.75" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 6 6" to="360 6 6" dur="0.9s" repeatCount="indefinite"></animateTransform></path></svg></sc-if>
+<sc-if value="{{n.pill.check}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="{{n.pill.fg}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+{{n.pill.t}}</span>
+</div>
+<span style="position: absolute; left: -6px; top: {{n.hy}}px; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid {{n.handle}}; box-sizing: border-box; display: {{n.inH}}"></span>
+<span style="position: absolute; right: -6px; top: {{n.hy}}px; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid {{n.handle}}; box-sizing: border-box; display: {{n.outH}}"></span>
+</div>
+</sc-for>
+</div>
+
+<sc-if value="{{chrome}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 2px; padding: 4px; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; box-shadow: 0 4px 12px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.04)" onPointerDown="{{stop}}">
+<button type="button" aria-label="Zoom out" onClick="{{zoomOut}}" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="#475467" stroke-width="2" stroke-linecap="round"></path></svg></button>
+<span style="min-width: 44px; text-align: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; color: #344054">{{zoomPct}}</span>
+<button type="button" aria-label="Zoom in" onClick="{{zoomIn}}" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="#475467" stroke-width="2" stroke-linecap="round"></path></svg></button>
+<span style="width: 1px; height: 20px; background: #E4E7EC; margin: 0 2px"></span>
+<button type="button" aria-label="Fit to screen" onClick="{{fit}}" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<button type="button" aria-label="Toggle minimap" aria-pressed="{{miniPressed}}" onClick="{{toggleMini}}" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: {{miniBtnBg}}; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="#475467" stroke-width="2"></rect><rect x="12" y="11" width="6" height="5" rx="1" fill="#475467"></rect></svg></button>
+</div>
+<sc-if value="{{mini}}" hint-placeholder-val="{{ true }}">
+<div aria-label="Minimap" role="img" onPointerDown="{{stop}}" style="position: absolute; right: 16px; bottom: 16px; width: 180px; height: 120px; box-sizing: border-box; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; box-shadow: 0 4px 12px rgba(16,24,40,0.06), 0 1px 3px rgba(16,24,40,0.04); overflow: hidden">
+<sc-for list="{{miniNodes}}" as="m" hint-placeholder-count="12">
+<div style="position: absolute; left: {{m.x}}px; top: {{m.y}}px; width: {{m.w}}px; height: {{m.h}}px; border-radius: 2px; background: {{m.c}}"></div>
+</sc-for>
+<div style="position: absolute; left: {{vp.x}}px; top: {{vp.y}}px; width: {{vp.w}}px; height: {{vp.h}}px; border: 1.5px solid #0B7A72; border-radius: 3px; background: rgba(11,122,114,0.06); box-sizing: border-box"></div>
+</div>
+</sc-if>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["building","fixing","ready"],"default":"building"},"sel":{"editor":"enum","options":["","web","docs","api","kb","tools","router","support","billing","tests","guard","outApi","outMcp","outWidget"],"default":""},"z":{"editor":"float","default":0.8,"min":0.3,"max":1.5,"step":0.05},"px":{"editor":"int","default":24},"py":{"editor":"int","default":150},"h":{"editor":"int","default":900},"vw":{"editor":"int","default":976},"chrome":{"editor":"boolean","default":true},"$preview":{"width":976,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      pos: null,
+      z: props.z ?? 0.8,
+      px: props.px ?? 24,
+      py: props.py ?? 150,
+      sel: props.sel ?? '',
+      hover: '',
+      mini: true,
+      dragging: ''
+    };
+    this.drag = null;
+    this.pan = null;
+  }
+  base() {
+    return {
+      web:      { x: 0,    y: 0,   rows: 2 },
+      docs:     { x: 0,    y: 196, rows: 2 },
+      api:      { x: 0,    y: 392, rows: 3 },
+      kb:       { x: 304,  y: 0,   rows: 3 },
+      tools:    { x: 304,  y: 218, rows: 3 },
+      router:   { x: 304,  y: 436, rows: 2 },
+      support:  { x: 608,  y: 40,  rows: 3 },
+      billing:  { x: 608,  y: 258, rows: 3 },
+      tests:    { x: 608,  y: 496, rows: 3 },
+      guard:    { x: 912,  y: 160, rows: 2 },
+      outApi:   { x: 1216, y: 40,  rows: 2 },
+      outMcp:   { x: 1216, y: 236, rows: 2 },
+      outWidget:{ x: 1216, y: 432, rows: 1 }
+    };
+  }
+  renderVals() {
+    const mode = this.props.mode ?? 'building';
+    const B = this.base();
+    const pos = this.state.pos || Object.fromEntries(Object.entries(B).map(([k, v]) => [k, { x: v.x, y: v.y }]));
+    const z = this.state.z, px = this.state.px, py = this.state.py;
+    const sel = this.state.sel;
+    const cat = {
+      source: ['#EFF8FF', '#1570EF', '#D1E9FF'], kb: ['#F4F3FF', '#6938EF', '#E0DCFD'], router: ['#F0F9FF', '#026AA2', '#CCE9F7'],
+      agent: ['#E7F5F3', '#0B7A72', '#C4E6E2'], tool: ['#FFFAEB', '#B54708', '#FEE9B8'], guard: ['#FFF1F3', '#C01048', '#FFD5DC'],
+      tests: ['#ECFDF3', '#067647', '#C6F0D8'], output: ['#EEF4FF', '#3538CD', '#D6E0FD']
+    };
+    const P = {
+      ready: { t: 'Ready', bg: '#ECFDF3', fg: '#067647', dot: true, dc: '#17B26A' },
+      waiting: { t: 'Waiting', bg: '#F2F4F7', fg: '#475467', dot: true, dc: '#98A2B3' },
+      building: { t: 'Building', bg: '#E7F5F3', fg: '#0B7A72', spin: true },
+      fixing: { t: 'Fixing 2…', bg: '#E7F5F3', fg: '#0B7A72', spin: true },
+      fixed: { t: 'Fixed 2 issues', bg: '#E7F5F3', fg: '#0B7A72', check: true },
+      skipped: { t: '8 endpoints skipped', bg: '#FFFAEB', fg: '#B54708', dot: true, dc: '#F79009' }
+    };
+    const testsStats = mode === 'ready'
+      ? [['Passed', '30 / 30'], ['Fixed automatically', '2'], ['Knowledge · tools', '24 · 6']]
+      : (mode === 'fixing' ? [['Run', '30 / 30'], ['Passed', '28'], ['Fixing', '2']] : [['Run', '21 / 30'], ['Passed', '19'], ['Generated from', 'docs + API']]);
+    const D = {
+      web: ['help.larkspur.example', 'Website', 'source', 'globe', [['Pages', '42'], ['Crawled in', '18 s']], 'ready'],
+      docs: ['4 documents', 'Documents', 'source', 'docs', [['Files', '4'], ['Pages', '22']], 'ready'],
+      api: ['Larkspur Admin API', 'API · OpenAPI 3.1', 'source', 'plug', [['Endpoints', '11'], ['Using', '3'], ['Skipped', '8']], 'skipped'],
+      kb: ['Larkspur knowledge', 'Knowledge base', 'kb', 'db', [['Chunks', '1,284'], ['Search', 'Hybrid · top 6'], ['Sources', '5']], 'ready'],
+      tools: ['Admin API tools', 'Tools', 'tool', 'wrench', [['lookup_customer', 'GET'], ['list_invoices', 'GET'], ['open_ticket', 'POST']], 'ready', true],
+      router: ['Request router', 'Router', 'router', 'split', [['Routes', 'Billing · Support'], ['Decides in', '~0.2 s']], 'ready'],
+      support: ['Support agent', 'Agent', 'agent', 'agent', [['Prompt', '640 words'], ['Tools', 'open_ticket'], ['Knowledge', 'All']], 'ready'],
+      billing: ['Billing agent', 'Agent', 'agent', 'agent', [['Prompt', '710 words'], ['Tools', '3'], ['Knowledge', 'Policies, plans']], 'ready'],
+      tests: ['30 tests', 'Test suite', 'tests', 'tests', testsStats, mode === 'ready' ? 'fixed' : (mode === 'fixing' ? 'fixing' : 'building')],
+      guard: ['Safety rules', 'Guardrails', 'guard', 'shield', [['Rules', '4'], ['Hand-off', 'Refunds over $100']], 'ready'],
+      outApi: ['API', 'Output', 'output', 'api', [['Format', 'OpenAI-compatible'], ['Streaming', 'Yes']], mode === 'ready' ? 'ready' : 'waiting'],
+      outMcp: ['MCP server', 'Output', 'output', 'mcp', [['Tools', '4'], ['Clients', 'Any MCP client']], mode === 'ready' ? 'ready' : 'waiting'],
+      outWidget: ['Chat widget', 'Output', 'output', 'chat', [['Install', '1 script tag']], mode === 'ready' ? 'ready' : 'waiting']
+    };
+    const H = (rows) => 116 + rows * 22;
+    const nodes = Object.keys(B).map((id) => {
+      const d = D[id];
+      const c = cat[d[2]];
+      const st = d[5];
+      const p = pos[id];
+      const h = H(B[id].rows);
+      const queued = st === 'waiting';
+      const isSel = sel === id;
+      const isHover = this.state.hover === id;
+      const isDrag = this.state.dragging === id;
+      let shadow = 'inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26)';
+      let lift = 'translateY(0)';
+      if (isHover) { shadow = 'inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 5px 0 -1px #DDE2E8, 0 22px 36px -12px rgba(16,24,40,0.30)'; lift = 'translateY(-2px)'; }
+      if (isSel) { shadow = '0 0 0 2px #F7F8FA, 0 0 0 4px #0B7A72, 0 6px 0 -1px #C4E6E2, 0 24px 40px -12px rgba(11,122,114,0.38)'; lift = 'translateY(-3px)'; }
+      if (isDrag) { shadow = '0 0 0 2px #F7F8FA, 0 0 0 4px #0B7A72, 0 30px 48px -14px rgba(16,24,40,0.35)'; lift = 'translateY(-6px) rotate(-0.6deg)'; }
+      if (queued) shadow = 'none';
+      return {
+        id, x: p.x, y: p.y, h, hy: Math.round(h / 2) - 5,
+        title: d[0], type: d[1], icon: d[3], tile: c[0], ink: c[1], tileEdge: c[2],
+        stats: d[4].map((s) => ({ k: s[0], v: s[1], kf: d[6] ? "'JetBrains Mono', ui-monospace, monospace" : 'inherit' })),
+        pill: { dot: false, spin: false, check: false, dc: '#98A2B3', ...P[st] },
+        building: st === 'building' || st === 'fixing', prog: st === 'fixing' ? '92%' : '70%',
+        border: queued ? '1px dashed #D0D5DD' : '1px solid #E4E7EC',
+        op: queued ? 0.6 : 1, shadow, lift,
+        cursor: isDrag ? 'grabbing' : 'grab',
+        handle: isSel || isHover ? '#0B7A72' : '#D0D5DD',
+        inH: d[2] === 'source' ? 'none' : 'block', outH: d[2] === 'output' ? 'none' : 'block',
+        aria: d[1] + ': ' + d[0] + ', ' + P[st].t, pressed: isSel ? 'true' : 'false',
+        down: (e) => {
+          e.stopPropagation();
+          this.drag = { id, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y, moved: false };
+          try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+        },
+        enter: () => { if (!this.drag) this.setState({ hover: id }); },
+        leave: () => { if (!this.drag) this.setState({ hover: '' }); }
+      };
+    });
+    const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+    const out = (n) => [n.x + 264, n.y + n.h / 2];
+    const inn = (n) => [n.x, n.y + n.h / 2];
+    const curve = (a, b) => {
+      const dx = Math.max(48, Math.abs(b[0] - a[0]) * 0.5);
+      return 'M' + a[0] + ' ' + a[1] + ' C' + (a[0] + dx) + ' ' + a[1] + ' ' + (b[0] - dx) + ' ' + b[1] + ' ' + b[0] + ' ' + b[1];
+    };
+    const pairs = [['web','kb'],['docs','kb'],['api','tools'],['kb','support'],['kb','billing'],['tools','support'],['tools','billing'],['router','support'],['router','billing'],['support','guard'],['billing','guard'],['guard','outApi'],['guard','outMcp'],['guard','outWidget']];
+    const edges = pairs.map(([a, b]) => {
+      const A = byId[a], Bn = byId[b];
+      const queued = mode !== 'ready' && b.indexOf('out') === 0;
+      return { d: curve(out(A), inn(Bn)), c: queued ? '#D0D5DD' : '#B4BCC8', w: 1.5, dash: queued ? '4 6' : 'none', op: queued ? 0.8 : 1 };
+    });
+    const bil = byId.billing, tst = byId.tests;
+    const tA = [bil.x + 132, bil.y + bil.h], tB = [tst.x + 132, tst.y];
+    const testPath = 'M' + tA[0] + ' ' + tA[1] + ' C' + tA[0] + ' ' + (tA[1] + 24) + ' ' + tB[0] + ' ' + (tB[1] - 24) + ' ' + tB[0] + ' ' + tB[1];
+    const liveEdges = [];
+    if (mode === 'ready') edges.push({ d: testPath, c: '#B4BCC8', w: 1.5, dash: '2 5', op: 1 });
+    else liveEdges.push({ d: testPath });
+    const labels = [
+      { x: 0, t: 'Inputs', c: '#1570EF' }, { x: 304, t: 'Understanding', c: '#6938EF' }, { x: 608, t: 'Agents', c: '#0B7A72' },
+      { x: 912, t: 'Safety', c: '#C01048' }, { x: 1216, t: 'Outputs', c: '#3538CD' }
+    ];
+    const s = 0.105, ox = 10, oy = 16;
+    const miniNodes = nodes.map((n) => ({ x: Math.round(ox + n.x * s), y: Math.round(oy + n.y * s), w: Math.round(264 * s), h: Math.max(6, Math.round(n.h * s)), c: byId[n.id].op < 1 ? '#E4E7EC' : (n.id === sel ? '#0B7A72' : '#C2C9D3') }));
+    const vw = this.props.vw ?? 976, vh = this.props.h ?? 900;
+    const vp = { x: Math.round(ox + (-px / z) * s), y: Math.round(oy + (-py / z) * s), w: Math.round((vw / z) * s), h: Math.round((vh / z) * s) };
+    const setZ = (nz) => {
+      nz = Math.max(0.35, Math.min(1.5, nz));
+      const cx = vw / 2, cy = vh / 2;
+      this.setState({ z: nz, px: cx - (cx - px) * (nz / z), py: cy - (cy - py) * (nz / z) });
+    };
+    return {
+      h: vh, z, px, py, nodes, edges, liveEdges, labels, miniNodes, vp,
+      grid: Math.max(10, Math.round(20 * z)), gridPos: px + 'px ' + py + 'px',
+      cursor: this.pan ? 'grabbing' : 'default',
+      chrome: this.props.chrome ?? true, mini: this.state.mini,
+      miniPressed: this.state.mini ? 'true' : 'false', miniBtnBg: this.state.mini ? '#F2F4F7' : 'transparent',
+      zoomPct: Math.round(z * 100) + '%',
+      stop: (e) => e.stopPropagation(),
+      zoomIn: () => setZ(z + 0.1), zoomOut: () => setZ(z - 0.1),
+      fit: () => { const nz = Math.min(1, (vw - 48) / 1480); this.setState({ z: nz, px: 24, py: Math.max(48, (vh - 680 * nz) / 2 + 30) }); },
+      toggleMini: () => this.setState({ mini: !this.state.mini }),
+      onDown: (e) => {
+        this.pan = { sx: e.clientX, sy: e.clientY, ox: px, oy: py };
+        this.setState({ sel: '' });
+      },
+      onMove: (e) => {
+        if (this.drag) {
+          const d = this.drag;
+          const dx = (e.clientX - d.sx) / z, dy = (e.clientY - d.sy) / z;
+          if (!d.moved && Math.abs(dx) + Math.abs(dy) < 3) return;
+          d.moved = true;
+          const np = { ...pos, [d.id]: { x: Math.round(d.ox + dx), y: Math.round(d.oy + dy) } };
+          this.setState({ pos: np, dragging: d.id, sel: d.id });
+        } else if (this.pan) {
+          this.setState({ px: this.pan.ox + (e.clientX - this.pan.sx), py: this.pan.oy + (e.clientY - this.pan.sy) });
+        }
+      },
+      onUp: () => {
+        if (this.drag) { const d = this.drag; this.drag = null; this.setState({ dragging: '', sel: d.id }); }
+        if (this.pan) { this.pan = null; this.forceUpdate(); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -101,6 +101,7 @@ Only `docs/WORKBOARD.md` edits may be pushed directly to `main`. Everything else
 - Public items get a one-line doc comment. Keep modules under ~400 lines; split when larger.
 
 **Web**
+- Web tasks must match `design/interlock/` (the visual source of truth) and its `MAPPING.md`, which maps each design screen to its PRD route and task; the PRD wins on routes, data, API and events.
 - Svelte 5 runes, TypeScript strict, no `any` in app code.
 - Components are small and live in the owning module's folder. New npm dependencies must be justified in the PR (bundle budget: first screen < 150 KB gzipped).
 - All server calls go through `src/lib/api/`; all live updates through the SSE helper.

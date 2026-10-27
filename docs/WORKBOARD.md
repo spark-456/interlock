@@ -12,7 +12,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 1 | T00 | Contracts & skeleton | P0 | — | done | claude-a | t/T00-skeleton | 2026-10-27 05:15 | Merged locally (no remote yet), commit 90af90f. Read its commit message for notes to later tasks |
 | 2 | B03 | Engine: executor, events, approvals, caps | P0 | T00 | ready | | | | |
 | 3 | B02 | Model gateway (Token Factory + fake) | P0 | T00 | ready | | | | |
-| 4 | W01 | Design system & app shell | P0 | T00 | claimed | claude-a | t/W01-design-foundation | 2026-10-27 05:20 | Design v3 foundation PR (also covers W04 Building + canvas NodeCard/edges/toolbar/minimap) |
+| 4 | W01 | Design system & app shell | P0 | T00 | done | claude-a | t/W01-design-foundation | 2026-10-27 06:10 | Design v3 foundation merged (tokens, fonts, base components, shell, canvas foundation, Building). Remaining components moved to W01b |
 | 5 | W02 | Canvas editor + Ask diff view | P0 | T00 | ready | | | | Canvas foundation (NodeCard, edges, toolbar, minimap) lands in the design PR; build the editor on it |
 | 6 | B01 | Store: SQLite, migrations, files, secrets | P0 | T00 | ready | | | | |
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
@@ -21,7 +21,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | ready | | | | |
 | 11 | W03 | Node panel, schema forms, previews | P0 | T00 | ready | | | | |
 | 12 | B05 | Triggers & scheduler | P0 | T00 | ready | | | | |
-| 13 | W04 | Create & Building screens | P0 | T00 | claimed | claude-a | t/W01-design-foundation | 2026-10-27 05:20 | Building screen ships in the design PR; Create (`/new`) still open after it merges |
+| 13 | W04 | Create & Building screens | P0 | T00 | ready | | | 2026-10-27 06:10 | Building (`/new/[id]/building`) is done (design PR). Still to do: Create (`/new`, design S2) and wiring Building to live `POST /api/builds` |
 | 14 | K01 | Knowledge: ingest, Tavily, hybrid search | P0 | T00 | ready | | | | |
 | 15 | B08 | Nodes: human & output | P0 | T00 | ready | | | | |
 | 16 | P01 | Publish: OpenAI API, MCP, widget, guide | P0 | T00 | ready | | | | |
@@ -39,6 +39,8 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 28 | R02 | Deploy to Nebius | P0 | B04 | ready | | | | Prep (Dockerfile, account checks) can start before B04 is done |
 | 29 | R03 | Integration pass & E2E | P0 | B03, B04, A01, W02, W03 | ready | | | | Integrator role; start Thu |
 | 30 | R04 | README, docs, video script, Devpost | P0 | — | ready | | | | Draft any time; finalise Fri |
+| 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | ready | | | | Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow, ApiCard; gallery page with every SpecV3 state; vitest for interactive components |
+| 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | ready | | | | New node in `il-nodes/src/ai/guardrails.rs`: rules list, pass/blocked outputs, hand-off rule. Used by F-C; the design's "Safety rules" node |
 
 ### Contract log (breaking changes only)
 
@@ -205,6 +207,14 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 - **Owns**: `web/e2e/**`, `tests/e2e/**`; cross-cutting fixes by agreement (note each in the PR).
 - **Hard deps**: B03, B04, A01, W02, W03.
 - **Acceptance**: F-A, F-B, F-C run end to end against real services on a staging deploy; fixture mode turned off in production builds; Playwright smoke (create → building → editor → test run → publish → chat) green in CI using fake providers; a bug list turned into new task rows.
+
+### W01b · Remaining design components + gallery
+- **Owns**: `web/src/lib/design/**`, `web/src/routes/dev/**`.
+- **Acceptance**: the W01 components not yet built (Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow with the Knowledge/Instructions toggle, ApiCard), matching `design/interlock/screens/SpecV3.png`; a `/dev/components` gallery showing every state; vitest for interactive components.
+
+### N01 · Node: ai.guardrails
+- **Owns**: `crates/il-nodes/src/ai/guardrails.rs` (+ its line in `ai/mod.rs`).
+- **Acceptance**: manifest (rules array, hand-off rules such as "refunds over $100", outputs `pass`/`blocked`), harness tests with the fake gateway, and `cargo xtask catalog` regenerated. The architect uses it for F-C (AR-9). The design's "Safety rules" node maps to it (see `design/interlock/MAPPING.md`).
 
 ### R04 · README, docs, video script, Devpost
 - **Owns**: `README.md`, `docs/**` (except PRD and WORKBOARD), `assets/**`.

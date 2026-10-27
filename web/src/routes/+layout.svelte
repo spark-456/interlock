@@ -1,41 +1,38 @@
 <script lang="ts">
-  // T00 shell: replaced by the design-system shell (W01).
+  // App shell (W01): Sidebar (240 / 64 px on canvas screens), page content, mobile TabBar.
   import '../app.css';
   import type { Snippet } from 'svelte';
   import { page } from '$app/state';
-  import { isFixtureMode } from '$lib/api';
+  import { api, type Me } from '$lib/api';
+  import Banner from '$lib/design/Banner.svelte';
+  import Sidebar from '$lib/design/Sidebar.svelte';
+  import TabBar from '$lib/design/TabBar.svelte';
+  import Toast from '$lib/design/Toast.svelte';
+  import { isCanvasRoute } from '$lib/design/nav';
 
   let { children }: { children: Snippet } = $props();
+  let me = $state<Me | null>(null);
 
-  const nav = [
-    { href: '/new', label: 'New' },
-    { href: '/flows', label: 'Flows' },
-    { href: '/templates', label: 'Templates' },
-    { href: '/approvals', label: 'Approvals' },
-    { href: '/connections', label: 'Connections' },
-    { href: '/settings', label: 'Settings' },
-    { href: '/demo', label: 'Demo' }
-  ];
+  $effect(() => {
+    api.me().then((m) => (me = m)).catch(() => (me = null));
+  });
+
+  const user = $derived(me?.user?.name ?? (me?.demo ? 'Demo visitor' : 'Guest'));
+  const plan = $derived(me?.demo ? 'Demo workspace' : 'Free plan');
 </script>
 
-<div class="shell">
-  <nav aria-label="Main">
-    <a class="brand" href="/">Interlock</a>
-    {#each nav as item (item.href)}
-      <a href={item.href} aria-current={page.url.pathname.startsWith(item.href) ? 'page' : undefined}>{item.label}</a>
-    {/each}
-    {#if isFixtureMode()}<span class="fixture">Fixture mode</span>{/if}
-  </nav>
-  <main>{@render children()}</main>
+<div class="app">
+  <Sidebar collapsed={isCanvasRoute(page.route.id)} path={page.url.pathname} {user} {plan} />
+  <div class="content">
+    {#if me?.demo}<Banner kind="demo">You're in the demo. Builds use recorded media and small limits.</Banner>{/if}
+    <main>{@render children()}</main>
+    <TabBar path={page.url.pathname} />
+  </div>
 </div>
+<Toast />
 
 <style>
-  .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-  nav { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-4); background: var(--surface); border-right: 1px solid var(--border); }
-  nav a { padding: var(--s-2) var(--s-3); border-radius: var(--r-md); color: var(--text-2); text-decoration: none; font: var(--t-small); }
-  nav a[aria-current='page'] { background: var(--primary-soft); color: var(--primary); }
-  .brand { font: var(--t-h3); color: var(--text); margin-bottom: var(--s-4); }
-  .fixture { margin-top: auto; font: var(--t-caption); color: var(--text-3); }
-  main { padding: var(--s-8); }
-  @media (max-width: 767px) { .shell { grid-template-columns: 1fr; } nav { flex-direction: row; overflow-x: auto; } }
+  .app { display: flex; min-height: 100vh; }
+  .content { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 </style>

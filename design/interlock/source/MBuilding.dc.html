@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>M2 · Building (mobile) · /build/:id</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 390px; min-height: 1745px; background: #F7F8FA; color: #101828; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; display: flex; flex-direction: column">
+<svg width="0" height="0" style="position: absolute; width: 0; height: 0" aria-hidden="true"><defs>
+<symbol id="mb-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></symbol>
+<symbol id="mb-docs" viewBox="0 0 24 24"><path d="M9 6.5V5a2 2 0 0 1 2-2h6l4 4v9a2 2 0 0 1-2 2h-1.5"></path><path d="M3.5 10a2 2 0 0 1 2-2h6l3.5 3.5V19a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2z"></path></symbol>
+<symbol id="mb-plug" viewBox="0 0 24 24"><path d="M9 2.5v4.5M15 2.5v4.5M6 7h12v3.5a6 6 0 0 1-12 0zM12 16.5v5"></path></symbol>
+<symbol id="mb-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"></ellipse><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></symbol>
+<symbol id="mb-wrench" viewBox="0 0 24 24"><path d="M14.5 6.5a4.5 4.5 0 0 0 5.6 5.6l-8.4 8.4a2.4 2.4 0 0 1-3.4-3.4l8.4-8.4A4.5 4.5 0 0 0 14.5 6.5l2.6-2.6a4.5 4.5 0 0 0-5.6 5.6"></path></symbol>
+<symbol id="mb-split" viewBox="0 0 24 24"><path d="M12 21v-6.5M12 14.5 5.5 8M12 14.5 18.5 8M4.5 12V7h5M19.5 12V7h-5"></path></symbol>
+<symbol id="mb-agent" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5.5"></rect><circle cx="12" cy="10" r="3"></circle><path d="M7.5 17.5c1-2 2.6-3 4.5-3s3.5 1 4.5 3"></path></symbol>
+<symbol id="mb-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"></path><path d="M9 12l2 2 4-4"></path></symbol>
+<symbol id="mb-tests" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M4 18h2"></path></symbol>
+<symbol id="mb-api" viewBox="0 0 24 24"><path d="M8 4H6.5A2.5 2.5 0 0 0 4 6.5V10l-2 2 2 2v3.5A2.5 2.5 0 0 0 6.5 20H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V10l2 2-2 2v3.5a2.5 2.5 0 0 1-2.5 2.5H16"></path></symbol>
+<symbol id="mb-mcp" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.75"></circle><circle cx="18" cy="6" r="2.75"></circle><circle cx="12" cy="18" r="2.75"></circle><path d="M8.75 6h6.5M7.4 8.4l3.3 7.2M16.6 8.4l-3.3 7.2"></path></symbol>
+<symbol id="mb-chat" viewBox="0 0 24 24"><path d="M20.5 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.4A8 8 0 1 1 20.5 11.5z"></path></symbol>
+</defs></svg>
+
+<header style="flex: 0 0 60px; height: 60px; display: flex; align-items: center; gap: 4px; padding: 0 8px; background: #FFFFFF; border-bottom: 1px solid #E4E7EC; box-sizing: border-box">
+<a href="MLanding.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="#344054" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
+<div style="flex: 1 1 auto; min-width: 0; line-height: 18px">
+<div style="font-size: 16px; font-weight: 700">Larkspur Support</div>
+<div style="font-size: 12px; color: #667085">Building your backend</div>
+</div>
+<button type="button" aria-label="Open menu" style="width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="#344054" stroke-width="2" stroke-linecap="round"></path></svg></button>
+</header>
+
+<div style="padding: 16px 16px 0">
+<div style="padding: 16px; border-radius: 16px; background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFD 100%); border: 1px solid #E4E7EC; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26)">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #E7F5F3; color: #0B7A72; font-size: 12px; font-weight: 600"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#B9DEDA" stroke-width="1.75"></circle><path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" fill="none" stroke="#0B7A72" stroke-width="1.75" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 6 6" to="360 6 6" dur="0.9s" repeatCount="indefinite"></animateTransform></path></svg>Testing</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 20px; font-weight: 600">1:28</span>
+</div>
+<div role="progressbar" aria-label="Build progress, step 6 of 7" aria-valuemin="0" aria-valuemax="7" aria-valuenow="6" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 14px">
+<span style="height: 6px; border-radius: 3px; background: #0B7A72"></span><span style="height: 6px; border-radius: 3px; background: #0B7A72"></span><span style="height: 6px; border-radius: 3px; background: #0B7A72"></span><span style="height: 6px; border-radius: 3px; background: #0B7A72"></span><span style="height: 6px; border-radius: 3px; background: #0B7A72"></span><span style="height: 6px; border-radius: 3px; background: linear-gradient(90deg, #0B7A72 70%, #D3ECE9 70%)"></span><span style="height: 6px; border-radius: 3px; background: #EAECF0"></span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 6px; font-size: 12px; line-height: 16px; color: #98A2B3; text-align: center">
+<span>Read</span><span>Index</span><span>Team</span><span>Write</span><span>Wire</span><span style="color: #0B7A72; font-weight: 700">Test</span><span>Live</span>
+</div>
+<div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #F2F4F7; font-size: 13px; color: #475467">
+<span>Step 6 of 7 · 21 of 30 tests run</span><span>About 25 s left</span>
+</div>
+</div>
+</div>
+
+<div style="padding: 8px 16px 0; display: flex; flex-direction: column">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+<sc-if value="{{g.connector}}" hint-placeholder-val="{{ true }}">
+<div style="height: 22px; display: flex; justify-content: center"><span style="width: 2px; height: 22px; background: {{g.line}}; border-radius: 1px"></span></div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 2px 8px; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #667085"><span style="width: 6px; height: 6px; border-radius: 2px; background: {{g.c}}"></span>{{g.t}}<span style="margin-left: auto; font-weight: 600; letter-spacing: 0; text-transform: none; color: #98A2B3">{{g.count}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{g.nodes}}" as="n" hint-placeholder-count="3">
+<button type="button" aria-label="{{n.aria}}" style="position: relative; width: 100%; min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 12px; text-align: left; border-radius: 12px; background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFD 100%); border: {{n.border}}; box-shadow: {{n.shadow}}; opacity: {{n.op}}; box-sizing: border-box; font-family: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{n.building}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: 12px; right: 12px; top: -1px; height: 3px; border-radius: 0 0 3px 3px; background: #D3ECE9; overflow: hidden"><span style="display: block; width: 70%; height: 3px; background: #0B7A72"></span></span></sc-if>
+<span style="flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(180deg, #FFFFFF -40%, {{n.tile}} 70%); border: 1px solid {{n.edge}}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(16,24,40,0.06); box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#mb-{{n.icon}}" fill="none" stroke="{{n.ink}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 14px; line-height: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{n.title}}</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; line-height: 17px; color: #667085; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{n.sub}}</span>
+</span>
+<span style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 999px; background: {{n.pbg}}; color: {{n.pfg}}; font-size: 12px; font-weight: 600; white-space: nowrap">
+<sc-if value="{{n.spin}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#B9DEDA" stroke-width="1.75"></circle><path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" fill="none" stroke="#0B7A72" stroke-width="1.75" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 6 6" to="360 6 6" dur="0.9s" repeatCount="indefinite"></animateTransform></path></svg></sc-if>
+<sc-if value="{{n.dot}}" hint-placeholder-val="{{ true }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{n.dc}}"></span></sc-if>
+{{n.pill}}</span>
+</button>
+</sc-for>
+</div>
+</sc-for>
+</div>
+
+<div style="padding: 20px 16px 0">
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px"><span style="font-size: 15px; font-weight: 700">Build log</span><span style="font-size: 12px; color: #667085">Latest</span></div>
+<div style="padding: 12px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E4E7EC; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{log}}" as="l" hint-placeholder-count="4">
+<div style="display: flex; gap: 10px; font-size: 13px; line-height: 19px">
+<span style="flex: 0 0 34px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #98A2B3">{{l.t}}</span>
+<span style="color: {{l.c}}; font-weight: {{l.w}}">{{l.x}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px">
+<div style="padding: 10px 12px; border: 1px solid #E4E7EC; border-radius: 10px; background: #FFFFFF"><div style="font-size: 12px; color: #667085">Cost so far</div><div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600">$0.061</div></div>
+<button type="button" style="height: 100%; min-height: 52px; border-radius: 10px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 14px 'Plus Jakarta Sans', sans-serif; cursor: pointer">Cancel build</button>
+</div>
+</div>
+
+<nav aria-label="Tabs" style="margin-top: 24px; height: 72px; padding: 0 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #FFFFFF; border-top: 1px solid #E4E7EC; box-sizing: border-box">
+<a href="MBuilding.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #0B7A72; font-size: 12px; font-weight: 700; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 7.5l9 4.5 9-4.5zM3 12l9 4.5 9-4.5M3 16.5 12 21l9-4.5" fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Backends</a>
+<a href="MLanding.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #667085; font-size: 12px; font-weight: 600; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="6" fill="none" stroke="#667085" stroke-width="2"></rect><path d="M12 8v8M8 12h8" fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round"></path></svg>New</a>
+<a href="MPlayground.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #667085; font-size: 12px; font-weight: 600; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.4A8 8 0 1 1 20.5 11.5z" fill="none" stroke="#667085" stroke-width="2" stroke-linejoin="round"></path></svg>Playground</a>
+<a href="MConnect.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #667085; font-size: 12px; font-weight: 600; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round"></path><circle cx="15" cy="7" r="2" fill="none" stroke="#667085" stroke-width="2"></circle><circle cx="9" cy="17" r="2" fill="none" stroke="#667085" stroke-width="2"></circle></svg>Settings</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1745}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cat = {
+      source: ['#EFF8FF', '#1570EF', '#D1E9FF'], kb: ['#F4F3FF', '#6938EF', '#E0DCFD'], router: ['#F0F9FF', '#026AA2', '#CCE9F7'],
+      agent: ['#E7F5F3', '#0B7A72', '#C4E6E2'], tool: ['#FFFAEB', '#B54708', '#FEE9B8'], guard: ['#FFF1F3', '#C01048', '#FFD5DC'],
+      tests: ['#ECFDF3', '#067647', '#C6F0D8'], output: ['#EEF4FF', '#3538CD', '#D6E0FD']
+    };
+    const P = {
+      ready: ['Ready', '#ECFDF3', '#067647', '#17B26A'],
+      waiting: ['Waiting', '#F2F4F7', '#475467', '#98A2B3'],
+      building: ['Building', '#E7F5F3', '#0B7A72', ''],
+      skipped: ['8 skipped', '#FFFAEB', '#B54708', '#F79009']
+    };
+    const G = [
+      ['Inputs', '#1570EF', [
+        ['help.larkspur.example', '42 pages · 18 s', 'source', 'globe', 'ready'],
+        ['4 documents', '4 files · 22 pages', 'source', 'docs', 'ready'],
+        ['Larkspur Admin API', '11 endpoints · using 3', 'source', 'plug', 'skipped']]],
+      ['Understanding', '#6938EF', [
+        ['Larkspur knowledge', '1,284 chunks · hybrid', 'kb', 'db', 'ready'],
+        ['Admin API tools', '3 tools · GET GET POST', 'tool', 'wrench', 'ready'],
+        ['Request router', 'Billing · Support', 'router', 'split', 'ready']]],
+      ['Agents', '#0B7A72', [
+        ['Support agent', '640 words · 1 tool', 'agent', 'agent', 'ready'],
+        ['Billing agent', '710 words · 3 tools', 'agent', 'agent', 'ready'],
+        ['30 tests', '21 / 30 run · 19 passed', 'tests', 'tests', 'building']]],
+      ['Safety', '#C01048', [
+        ['Safety rules', '4 rules · refunds over $100', 'guard', 'shield', 'ready']]],
+      ['Outputs', '#3538CD', [
+        ['API', 'OpenAI-compatible', 'output', 'api', 'waiting'],
+        ['MCP server', '4 tools', 'output', 'mcp', 'waiting'],
+        ['Chat widget', '1 script tag', 'output', 'chat', 'waiting']]]
+    ];
+    const groups = G.map((g, gi) => {
+      const nodes = g[2].map((n) => {
+        const c = cat[n[2]], p = P[n[4]];
+        const q = n[4] === 'waiting';
+        return {
+          title: n[0], sub: n[1], icon: n[3], tile: c[0], ink: c[1], edge: c[2],
+          pill: p[0], pbg: p[1], pfg: p[2], dc: p[3], dot: !!p[3], spin: n[4] === 'building', building: n[4] === 'building',
+          border: q ? '1px dashed #D0D5DD' : (n[4] === 'building' ? '1.5px solid #0B7A72' : '1px solid #E4E7EC'),
+          shadow: q ? 'none' : (n[4] === 'building' ? '0 0 0 3px rgba(11,122,114,0.12), 0 4px 0 -1px #C4E6E2, 0 14px 24px -12px rgba(11,122,114,0.35)' : 'inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 3px 0 -1px #DDE2E8, 0 12px 20px -12px rgba(16,24,40,0.22)'),
+          op: q ? 0.6 : 1,
+          aria: n[0] + ', ' + p[0] + '. Open details'
+        };
+      });
+      const allReady = g[2].every((n) => n[4] === 'ready' || n[4] === 'skipped');
+      return { t: g[0], c: g[1], nodes, connector: gi > 0, line: gi <= 3 ? '#B4BCC8' : '#D0D5DD', count: allReady ? 'Ready' : (g[0] === 'Outputs' ? 'Next' : 'In progress') };
+    });
+    const L = [
+      ['1:05', 'Writing system prompts: Support (640 words), Billing (710 words)'],
+      ['1:12', 'Adding 4 guardrails'],
+      ['1:18', 'Generating 30 tests from your documents and API'],
+      ['1:28', 'Running tests: 21 of 30 done, 19 passed so far']
+    ];
+    const log = L.map((l, i) => ({ t: l[0], x: l[1], c: i === L.length - 1 ? '#0B7A72' : '#344054', w: i === L.length - 1 ? 600 : 400 }));
+    return { groups, log };
+  }
+}
+</script>
+</body>
+</html>

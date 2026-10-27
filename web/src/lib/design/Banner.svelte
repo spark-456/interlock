@@ -1,0 +1,22 @@
+<script lang="ts">
+  // Page banners: demo mode, offline, cap reached.
+  import type { Snippet } from 'svelte';
+  import Icon from './Icon.svelte';
+
+  let { kind, children, action }: { kind: 'demo' | 'offline' | 'cap'; children: Snippet; action?: Snippet } = $props();
+  const icon = $derived(kind === 'demo' ? 'info' : kind === 'offline' ? 'alert' : 'bolt');
+</script>
+
+<div class="banner {kind}" role={kind === 'demo' ? 'note' : 'alert'}>
+  <Icon name={icon} size={16} />
+  <span class="text">{@render children()}</span>
+  {#if action}{@render action()}{/if}
+</div>
+
+<style>
+  .banner { display: flex; align-items: center; gap: var(--s-2); min-height: 40px; padding: 8px 16px; font-size: 13px; font-weight: 500; }
+  .text { flex: 1; }
+  .demo { background: var(--primary-soft); color: var(--primary); }
+  .offline { background: var(--surface-2); color: var(--control-text); }
+  .cap { background: var(--warning-soft); color: var(--warning-text); }
+</style>

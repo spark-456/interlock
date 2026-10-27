@@ -25,6 +25,8 @@ export interface SubscribeOptions {
   onEnd?: () => void;
   /** Replay speed multiplier in fixture mode (default from VITE_FIXTURE_SPEED or 1). */
   speed?: number;
+  /** Fixture mode: stop the replay this many ms after the first event (to freeze a moment). */
+  until?: number;
 }
 
 const TERMINAL = new Set(['run.succeeded', 'run.failed', 'run.cancelled', 'build.ready', 'build.failed']);
@@ -102,7 +104,10 @@ function replayFixture<E extends StreamEvent>(
       opts.onEnd?.();
       return;
     }
-    const pending = events.filter((e) => e.seq > (opts.after ?? 0));
+    const t0 = events.length ? Date.parse(events[0]!.ts) : 0;
+    const pending = events.filter(
+      (e) => e.seq > (opts.after ?? 0) && (opts.until === undefined || Date.parse(e.ts) - t0 <= opts.until)
+    );
     let i = 0;
     let prev: string | undefined;
     const next = () => {

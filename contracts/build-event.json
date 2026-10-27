@@ -1,5 +1,17 @@
 {
   "$defs": {
+    "BuildNodeStatus": {
+      "description": "Node state during a build.",
+      "enum": [
+        "waiting",
+        "building",
+        "ready",
+        "fixed",
+        "warning",
+        "failed"
+      ],
+      "type": "string"
+    },
     "BuildQuestion": {
       "description": "A clarifying question from the architect (AR-2).",
       "properties": {
@@ -20,6 +32,22 @@
         "id",
         "text",
         "options"
+      ],
+      "type": "object"
+    },
+    "NodeStat": {
+      "description": "One stat row on a node card.",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "value"
       ],
       "type": "object"
     },
@@ -197,11 +225,36 @@
       "type": "object"
     },
     {
+      "description": "`title`, `before`, `after` and `source` are optional extras for the \"fixed\" card (design S3).",
       "properties": {
         "data": {
           "properties": {
+            "after": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "before": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "description": {
               "type": "string"
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           "required": [
@@ -211,6 +264,105 @@
         },
         "type": {
           "const": "build.fix",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "State of one node during the build (envelope `nodeId`): status, type label and stat rows.",
+      "properties": {
+        "data": {
+          "properties": {
+            "icon": {
+              "description": "Icon key override (default comes from the node type).",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "label": {
+              "description": "Label shown in the status pill when it differs from the status (e.g. \"8 endpoints skipped\").",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "progress": {
+              "description": "0–1 progress for the card's top bar while building.",
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "stats": {
+              "items": {
+                "$ref": "#/$defs/NodeStat"
+              },
+              "type": "array"
+            },
+            "status": {
+              "$ref": "#/$defs/BuildNodeStatus"
+            },
+            "subtitle": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "summary": {
+              "description": "One-line summary for lists and mobile (e.g. \"42 pages · 18 s\").",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "tone": {
+              "description": "Tile tone override: source, kb, router, agent, tool, guard, tests, output.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.node",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Running build cost.",
+      "properties": {
+        "data": {
+          "properties": {
+            "costUsd": {
+              "format": "double",
+              "type": "number"
+            }
+          },
+          "required": [
+            "costUsd"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.cost",
           "type": "string"
         }
       },

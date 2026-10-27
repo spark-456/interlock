@@ -1,0 +1,437 @@
+{
+  "id": "flw_larkspur",
+  "workspaceId": "ws_larkspur",
+  "version": 1,
+  "name": "Larkspur Support",
+  "kind": "app",
+  "nodes": [
+    {
+      "id": "n_web",
+      "type": "knowledge.add",
+      "typeVersion": 1,
+      "name": "help.larkspur.example",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "g_inputs",
+      "settings": {
+        "knowledgeBase": "kb_larkspur",
+        "content": "https://help.larkspur.example"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_docs",
+      "type": "data.parse_document",
+      "typeVersion": 1,
+      "name": "4 documents",
+      "position": {
+        "x": 0,
+        "y": 196
+      },
+      "group": "g_inputs",
+      "settings": {
+        "file": "{{ item.files.document }}",
+        "format": "auto"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_api",
+      "type": "data.openapi",
+      "typeVersion": 1,
+      "name": "Larkspur Admin API",
+      "position": {
+        "x": 0,
+        "y": 392
+      },
+      "group": "g_inputs",
+      "settings": {
+        "spec": "https://api.larkspur.example/openapi.json",
+        "operationId": "*"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_kb",
+      "type": "knowledge.base",
+      "typeVersion": 1,
+      "name": "Larkspur knowledge",
+      "position": {
+        "x": 304,
+        "y": 0
+      },
+      "group": "g_understanding",
+      "settings": {
+        "name": "Larkspur knowledge",
+        "sources": [
+          {
+            "kind": "url",
+            "value": "https://help.larkspur.example"
+          }
+        ],
+        "crawlLimit": 50
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_tools",
+      "type": "data.openapi",
+      "typeVersion": 1,
+      "name": "Admin API tools",
+      "position": {
+        "x": 304,
+        "y": 218
+      },
+      "group": "g_understanding",
+      "settings": {
+        "spec": "https://api.larkspur.example/openapi.json",
+        "operationId": "lookup_customer"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_router",
+      "type": "ai.decide",
+      "typeVersion": 1,
+      "name": "Request router",
+      "position": {
+        "x": 304,
+        "y": 436
+      },
+      "group": "g_understanding",
+      "settings": {
+        "question": "Is this about billing (plans, invoices, refunds) or general support?",
+        "mode": "labels",
+        "labels": [
+          {
+            "name": "billing"
+          },
+          {
+            "name": "support"
+          }
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_support",
+      "type": "ai.agent",
+      "typeVersion": 1,
+      "name": "Support agent",
+      "position": {
+        "x": 608,
+        "y": 40
+      },
+      "group": "g_agents",
+      "settings": {
+        "instructions": "You are Larkspur's support assistant. Answer from the help center and cite sources. Open a ticket when you can't help.",
+        "knowledgeBases": [
+          "kb_larkspur"
+        ],
+        "tools": [
+          "open_ticket"
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_billing",
+      "type": "ai.agent",
+      "typeVersion": 1,
+      "name": "Billing agent",
+      "position": {
+        "x": 608,
+        "y": 258
+      },
+      "group": "g_agents",
+      "settings": {
+        "instructions": "You handle plans, invoices and refunds. Prefer the newest dated policy.",
+        "knowledgeBases": [
+          "kb_larkspur"
+        ],
+        "tools": [
+          "lookup_customer",
+          "list_invoices",
+          "open_ticket"
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_guard",
+      "type": "ai.decide",
+      "typeVersion": 1,
+      "name": "Safety rules",
+      "position": {
+        "x": 912,
+        "y": 160
+      },
+      "group": "g_safety",
+      "settings": {
+        "question": "Does this answer follow the safety rules (no refunds over $100 without a person)?",
+        "mode": "yesno"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_out_api",
+      "type": "output.respond",
+      "typeVersion": 1,
+      "name": "API",
+      "position": {
+        "x": 1216,
+        "y": 40
+      },
+      "group": "g_outputs",
+      "settings": {
+        "body": "{{ item.answer }}",
+        "format": "text"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_out_mcp",
+      "type": "output.respond",
+      "typeVersion": 1,
+      "name": "MCP server",
+      "position": {
+        "x": 1216,
+        "y": 236
+      },
+      "group": "g_outputs",
+      "settings": {
+        "body": "{{ item.answer }}",
+        "format": "text"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_out_widget",
+      "type": "output.respond",
+      "typeVersion": 1,
+      "name": "Chat widget",
+      "position": {
+        "x": 1216,
+        "y": 432
+      },
+      "group": "g_outputs",
+      "settings": {
+        "body": "{{ item.answer }}",
+        "format": "text"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_web_kb",
+      "from": {
+        "node": "n_web",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_kb",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_docs_kb",
+      "from": {
+        "node": "n_docs",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_kb",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_api_tools",
+      "from": {
+        "node": "n_api",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_tools",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_kb_support",
+      "from": {
+        "node": "n_kb",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_support",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_kb_billing",
+      "from": {
+        "node": "n_kb",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_billing",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_tools_support",
+      "from": {
+        "node": "n_tools",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_support",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_tools_billing",
+      "from": {
+        "node": "n_tools",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_billing",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_router_support",
+      "from": {
+        "node": "n_router",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_support",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_router_billing",
+      "from": {
+        "node": "n_router",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_billing",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_support_guard",
+      "from": {
+        "node": "n_support",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_guard",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_billing_guard",
+      "from": {
+        "node": "n_billing",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_guard",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_out_api",
+      "from": {
+        "node": "n_guard",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_out_api",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_out_mcp",
+      "from": {
+        "node": "n_guard",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_out_mcp",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_out_widget",
+      "from": {
+        "node": "n_guard",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_out_widget",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_inputs",
+      "label": "Inputs"
+    },
+    {
+      "id": "g_understanding",
+      "label": "Understanding"
+    },
+    {
+      "id": "g_agents",
+      "label": "Agents"
+    },
+    {
+      "id": "g_safety",
+      "label": "Safety"
+    },
+    {
+      "id": "g_outputs",
+      "label": "Outputs"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": 0.5
+  },
+  "meta": {
+    "createdBy": "architect",
+    "goal": "A support assistant for Larkspur that answers customer questions from our help center and policies, can look up a customer's plan and invoices, and opens a ticket when it can't help."
+  }
+}

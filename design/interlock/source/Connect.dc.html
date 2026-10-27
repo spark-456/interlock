@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S4 · Ready / Connect · /b/:id/connect</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="display: flex; height: {{H}}px; background: #F7F8FA; color: #101828; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 15px; line-height: 24px; font-variant-numeric: tabular-nums">
+
+<aside style="flex: 0 0 240px; width: 240px; height: 100%; background: #FFFFFF; border-right: 1px solid #E4E7EC; display: flex; flex-direction: column; gap: 2px; padding: 20px 16px 16px; box-sizing: border-box"><a href="Landing.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 0 8px; margin-bottom: 20px; color: #101828; text-decoration: none"><svg width="28" height="28" viewBox="0 0 48 48" aria-hidden="true"><defs><clipPath id="sb1Connect"><rect x="24" y="0" width="24" height="24"></rect></clipPath></defs><g fill="none"><rect x="6.5" y="6.5" width="21" height="21" rx="8" stroke="#0B7A72" stroke-width="5.75"></rect><rect x="20.5" y="20.5" width="21" height="21" rx="8" stroke="#FFFFFF" stroke-width="13"></rect><rect x="20.5" y="20.5" width="21" height="21" rx="8" stroke="#0B7A72" stroke-width="5.75"></rect><g clip-path="url(#sb1Connect)"><rect x="6.5" y="6.5" width="21" height="21" rx="8" stroke="#FFFFFF" stroke-width="13"></rect><rect x="6.5" y="6.5" width="21" height="21" rx="8" stroke="#0B7A72" stroke-width="5.75"></rect></g></g></svg><span style="font-size: 19px; font-weight: 700; letter-spacing: -0.02em">Interlock</span></a><a href="NewBackend.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 8px; background: #0B7A72; color: #FFFFFF; font-weight: 600; font-size: 14px; text-decoration: none; margin-bottom: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 2px rgba(16,24,40,0.10), 0 2px 0 #075E58"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>New backend</a><a href="Backends.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; background: #E7F5F3; color: #0B7A72; font-weight: 600; font-size: 14px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5l9 4.5 9-4.5z"></path><path d="M3 12l9 4.5 9-4.5M3 16.5 12 21l9-4.5"></path></g></svg>Backends</a><a href="Playground.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #344054; font-weight: 600; font-size: 14px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.4A8 8 0 1 1 20.5 11.5z"></path></g></svg>Playground</a><a href="Backends.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #344054; font-weight: 600; font-size: 14px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"></path></g></svg>Logs</a><a href="Connect.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #344054; font-weight: 600; font-size: 14px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"></path><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"></path></g></svg>Docs</a><a href="Backends.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #344054; font-weight: 600; font-size: 14px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#667085" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></g></svg>Settings</a><div style="margin-top: auto; display: flex; flex-direction: column; gap: 14px"><div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid #E4E7EC; border-radius: 12px; background: #F9FAFB"><span style="font-size: 12px; font-weight: 600; color: #667085">Built with</span><div style="display: flex; gap: 6px"><span style="flex: 1 1 auto; height: 20px; border-radius: 5px; background: #EAECF0; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 12px; font-weight: 700; color: #475467">NVIDIA</span><span style="flex: 1 1 auto; height: 20px; border-radius: 5px; background: #EAECF0; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 12px; font-weight: 700; color: #475467">Nebius</span><span style="flex: 1 1 auto; height: 20px; border-radius: 5px; background: #EAECF0; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 12px; font-weight: 700; color: #475467">Tavily</span></div></div><div style="display: flex; align-items: center; gap: 10px; padding: 0 4px"><span style="width: 36px; height: 36px; border-radius: 50%; background: #E7F5F3; color: #0B7A72; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center">DR</span><div style="line-height: 18px; min-width: 0"><div style="font-weight: 600; font-size: 14px">Dana Ruiz</div><div style="font-size: 12px; color: #667085">Larkspur · Free</div></div></div></div></aside>
+
+<main style="flex: 1 1 auto; min-width: 0; height: 100%; overflow: auto">
+<svg width="0" height="0" style="position: absolute; width: 0; height: 0" aria-hidden="true">
+<defs>
+<symbol id="cn-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2.5"></rect><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"></path></symbol>
+<symbol id="cn-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></symbol>
+<symbol id="cn-api" viewBox="0 0 24 24"><path d="M8 4H6.5A2.5 2.5 0 0 0 4 6.5V10l-2 2 2 2v3.5A2.5 2.5 0 0 0 6.5 20H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V10l2 2-2 2v3.5a2.5 2.5 0 0 1-2.5 2.5H16"></path></symbol>
+<symbol id="cn-mcp" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.75"></circle><circle cx="18" cy="6" r="2.75"></circle><circle cx="12" cy="18" r="2.75"></circle><path d="M8.75 6h6.5M7.4 8.4l3.3 7.2M16.6 8.4l-3.3 7.2"></path></symbol>
+<symbol id="cn-chat" viewBox="0 0 24 24"><path d="M20.5 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.4A8 8 0 1 1 20.5 11.5z"></path></symbol>
+<symbol id="cn-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path></symbol>
+<symbol id="cn-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"></path></symbol>
+<symbol id="cn-down" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"></path></symbol>
+</defs>
+</svg>
+<div style="max-width: 1120px; margin: 0 auto; padding: 40px 40px 56px; display: flex; flex-direction: column; gap: 24px">
+
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #667085"><a href="Backends.dc.html" style="color: #667085; text-decoration: none">Backends</a><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="#98A2B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color: #101828">Larkspur Support</span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="#98A2B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color: #101828">Connect</span></div>
+
+<section style="position: relative; overflow: hidden; background: linear-gradient(180deg, #F3FBF7 0%, #FFFFFF 70%); border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26); padding: 28px 32px; display: flex; align-items: center; gap: 22px">
+<div style="flex: 0 0 64px; width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(180deg, #2EBD7A 0%, #079455 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 0 -1px #06703F, 0 12px 20px -8px rgba(7,148,85,0.45); display: flex; align-items: center; justify-content: center"><svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="flex: 1 1 auto; min-width: 0">
+<div style="display: flex; align-items: center; gap: 12px">
+<h1 style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em">Larkspur Support is live</h1>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #ECFDF3; color: #067647; font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1px #ABEFC6"><span style="width: 7px; height: 7px; border-radius: 50%; background: #17B26A; box-shadow: 0 0 0 3px #D3F8DF"></span>Live</span>
+</div>
+<p style="margin: 6px 0 0; font-size: 15px; line-height: 24px; color: #475467">Built in <b style="color: #101828; font-weight: 600">1 min 52 s</b> · <b style="color: #101828; font-weight: 600">30 of 30</b> tests passed · <b style="color: #101828; font-weight: 600">63 pages</b> learned · <b style="color: #101828; font-weight: 600">3 tools</b> wired to your API</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E4E7EC; font-size: 12px; color: #475467">Average answer <b style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; color: #101828">1.9 s</b></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E4E7EC; font-size: 12px; color: #475467">Cost per answer <b style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; color: #101828">$0.0011</b></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E4E7EC; font-size: 12px; color: #475467">Build cost <b style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; color: #101828">$0.084</b></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; background: #E7F5F3; font-size: 12px; font-weight: 600; color: #0B7A72"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-check" fill="none" stroke="#0B7A72" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></use></svg>2 issues fixed during testing</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; flex: 0 0 auto">
+<a href="Playground.dc.html" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 8px; background: #0B7A72; color: #FFFFFF; font-size: 15px; font-weight: 600; text-decoration: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 2px rgba(16,24,40,0.10), 0 2px 0 #075E58"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-chat" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg>Open playground</a>
+<a href="Overview.dc.html" style="display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px; border-radius: 8px; background: #FFFFFF; border: 1px solid #D0D5DD; color: #344054; font-size: 15px; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px rgba(16,24,40,0.05), 0 2px 0 -1px #E4E7EC; box-sizing: border-box">View architecture</a>
+</div>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch">
+
+<section aria-labelledby="c-api" style="background: linear-gradient(180deg, #FFFFFF, #FBFCFD); border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="flex: 0 0 40px; width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(180deg, #FFFFFF -40%, #EEF4FF 70%); border: 1px solid #D6E0FD; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 0 -1px #D6E0FD; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-api" fill="none" stroke="#3538CD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></div>
+<div style="min-width: 0"><h2 id="c-api" style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 600">API</h2><div style="font-size: 13px; line-height: 18px; color: #667085">OpenAI-compatible · streaming</div></div>
+</div>
+<div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 600; color: #475467; margin-bottom: 6px">Base URL</div>
+<div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 4px 0 12px; border: 1px solid #E4E7EC; border-radius: 8px; background: #F9FAFB; box-sizing: border-box"><span style="flex: 1 1 auto; min-width: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">https://interlock.example/v1</span><button type="button" aria-label="Copy base URL" style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 6px; border: 1px solid #E4E7EC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></button></div>
+</div>
+<div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 600; color: #475467; margin-bottom: 6px">Model</div>
+<div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 4px 0 12px; border: 1px solid #E4E7EC; border-radius: 8px; background: #F9FAFB; box-sizing: border-box"><span style="flex: 1 1 auto; min-width: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">larkspur-support</span><button type="button" aria-label="Copy model name" style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 6px; border: 1px solid #E4E7EC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></button></div>
+</div>
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; font-weight: 600; color: #475467; margin-bottom: 6px"><span>Key</span><span style="color: #B54708">Shown once</span></div>
+<div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 4px 0 12px; border: 1px solid #FEC84B; border-radius: 8px; background: #FFFCF5; box-sizing: border-box"><span style="flex: 1 1 auto; min-width: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">il_live_5Hq8Lw2Zp9Vt3f9a</span><button type="button" aria-label="Key copied" style="flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #ABEFC6; background: #ECFDF3; color: #067647; font: 600 12px 'Plus Jakarta Sans', sans-serif; cursor: pointer"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-check" fill="none" stroke="#067647" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></use></svg>Copied</button></div>
+</div>
+<div style="display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #FFFAEB; border: 1px solid #FEF0C7; font-size: 13px; line-height: 20px; color: #93370D">
+<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex: 0 0 16px; margin-top: 2px"><circle cx="8" cy="15" r="4" fill="none" stroke="#DC6803" stroke-width="2"></circle><path d="M10.8 12.2 20 3M17 6l3 3M15 8l2 2" fill="none" stroke="#DC6803" stroke-width="2" stroke-linecap="round"></path></svg>
+<span>This key is shown once. Store it somewhere safe.</span>
+</div>
+</section>
+
+<section aria-labelledby="c-mcp" style="background: linear-gradient(180deg, #FFFFFF, #FBFCFD); border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="flex: 0 0 40px; width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(180deg, #FFFFFF -40%, #EEF4FF 70%); border: 1px solid #D6E0FD; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 0 -1px #D6E0FD; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-mcp" fill="none" stroke="#3538CD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></div>
+<div style="min-width: 0"><h2 id="c-mcp" style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 600">MCP server</h2><div style="font-size: 13px; line-height: 18px; color: #667085">Use it from any MCP client</div></div>
+</div>
+<div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 600; color: #475467; margin-bottom: 6px">Server URL</div>
+<div style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 4px 6px 12px; border: 1px solid #E4E7EC; border-radius: 8px; background: #F9FAFB; box-sizing: border-box"><span style="flex: 1 1 auto; min-width: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; line-height: 18px; word-break: break-all">https://interlock.example/mcp/larkspur-support</span><button type="button" aria-label="Copy MCP server URL" style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 6px; border: 1px solid #E4E7EC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></button></div>
+</div>
+<div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 600; color: #475467; margin-bottom: 8px">4 tools</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{mcpTools}}" as="t" hint-placeholder-count="4">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; background: #FFFAEB; border: 1px solid #FEE9B8; color: #93370D; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">{{t}}</span>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto">
+<sc-for list="{{addTo}}" as="a" hint-placeholder-count="3">
+<button type="button" style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px 0 6px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 14px 'Plus Jakarta Sans', sans-serif; box-shadow: 0 1px 2px rgba(16,24,40,0.05), 0 2px 0 -1px #E4E7EC; cursor: pointer"><span style="width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(180deg, #FFFFFF, #F2F4F7); border: 1px solid #E4E7EC; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #344054">{{a.l}}</span><span>Add to {{a.n}}</span><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="margin-left: auto"><use href="#cn-copy" fill="none" stroke="#98A2B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></button>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="c-widget" style="background: linear-gradient(180deg, #FFFFFF, #FBFCFD); border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="flex: 0 0 40px; width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(180deg, #FFFFFF -40%, #EEF4FF 70%); border: 1px solid #D6E0FD; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 0 -1px #D6E0FD; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-chat" fill="none" stroke="#3538CD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></div>
+<div style="min-width: 0"><h2 id="c-widget" style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 600">Chat widget</h2><div style="font-size: 13px; line-height: 18px; color: #667085">Paste one line into your site</div></div>
+</div>
+<div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 6px 10px 12px; border: 1px solid #E4E7EC; border-radius: 8px; background: #F9FAFB">
+<code style="flex: 1 1 auto; min-width: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; line-height: 18px; color: #344054; word-break: break-all">&lt;script src="https://interlock.example/w/larkspur-support.js" defer&gt;&lt;/script&gt;</code>
+<button type="button" aria-label="Copy script tag" style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 6px; border: 1px solid #E4E7EC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></button>
+</div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 600; color: #475467">Live preview</div>
+<div style="position: relative; flex: 1 1 auto; min-height: 196px; border: 1px solid #E4E7EC; border-radius: 12px; background: #FFFFFF; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; background: #F2F4F7; border-bottom: 1px solid #E4E7EC"><span style="width: 7px; height: 7px; border-radius: 50%; background: #D0D5DD"></span><span style="width: 7px; height: 7px; border-radius: 50%; background: #D0D5DD"></span><span style="width: 7px; height: 7px; border-radius: 50%; background: #D0D5DD"></span></div>
+<div style="padding: 14px; display: flex; flex-direction: column; gap: 7px" aria-hidden="true">
+<span style="width: 46%; height: 9px; border-radius: 4px; background: #E4E7EC"></span>
+<span style="width: 72%; height: 7px; border-radius: 4px; background: #F2F4F7"></span>
+<span style="width: 64%; height: 7px; border-radius: 4px; background: #F2F4F7"></span>
+<span style="width: 38%; height: 7px; border-radius: 4px; background: #F2F4F7"></span>
+</div>
+<div style="position: absolute; right: 12px; bottom: 60px; width: 196px; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; box-shadow: 0 12px 24px -8px rgba(16,24,40,0.22), 0 3px 0 -1px #E4E7EC; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 6px; padding: 7px 10px; background: #0B7A72; color: #FFFFFF; font-size: 12px; font-weight: 700"><span style="width: 6px; height: 6px; border-radius: 50%; background: #7CE3BE"></span>Larkspur Support</div>
+<div style="padding: 9px 10px; font-size: 12px; line-height: 17px; color: #344054">Hi, ask me about plans, invoices or refunds.</div>
+</div>
+<span style="position: absolute; right: 12px; bottom: 12px; width: 40px; height: 40px; border-radius: 50%; background: #0B7A72; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 3px 0 #075E58, 0 8px 16px -6px rgba(11,122,114,0.6); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-chat" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></span>
+</div>
+</section>
+</div>
+
+<section aria-labelledby="c-quick" style="background: linear-gradient(180deg, #FFFFFF, #FBFCFD); border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26); padding: 22px 24px 24px">
+<div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+<div style="flex: 1 1 auto; min-width: 0">
+<h2 id="c-quick" style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 600">Quick start</h2>
+<div style="font-size: 14px; line-height: 22px; color: #475467">Works with any OpenAI SDK, LangChain or the Vercel AI SDK. Change the base URL and the model name.</div>
+</div>
+<div role="tablist" aria-label="Language" style="display: flex; padding: 3px; border-radius: 10px; background: #F2F4F7">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+<button type="button" role="tab" aria-selected="{{t.sel}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: {{t.bg}}; color: {{t.fg}}; box-shadow: {{t.sh}}; font: 600 13px 'Plus Jakarta Sans', sans-serif; cursor: pointer">{{t.n}}</button>
+</sc-for>
+</div>
+</div>
+<div style="position: relative; margin-top: 16px; border-radius: 12px; background: #0E1116; border: 1px solid #1D222B; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 0 -1px #C9CFD8; padding: 18px 20px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; line-height: 22px; color: #E4E7EC; overflow-x: auto">
+<button type="button" style="position: absolute; right: 12px; top: 12px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #2A303B; background: #161A21; color: #D0D5DD; font: 600 12px 'Plus Jakarta Sans', sans-serif; cursor: pointer"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#D0D5DD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg>Copy</button>
+<div style="white-space: pre"><span style="color: #4A5260; user-select: none">1  </span><span style="color: #7FD1C7">import</span> OpenAI <span style="color: #7FD1C7">from</span> <span style="color: #F5C77E">"openai"</span>;</div>
+<div style="white-space: pre"><span style="color: #4A5260; user-select: none">2  </span><span style="color: #7FD1C7">const</span> client = <span style="color: #7FD1C7">new</span> OpenAI({ <span style="color: #A5B4FC">baseURL</span>: <span style="color: #F5C77E">"https://interlock.example/v1"</span>, <span style="color: #A5B4FC">apiKey</span>: process.env.INTERLOCK_KEY });</div>
+<div style="white-space: pre"><span style="color: #4A5260; user-select: none">3  </span><span style="color: #7FD1C7">const</span> res = <span style="color: #7FD1C7">await</span> client.chat.completions.<span style="color: #8FD3FF">create</span>({</div>
+<div style="white-space: pre"><span style="color: #4A5260; user-select: none">4  </span>  <span style="color: #A5B4FC">model</span>: <span style="color: #F5C77E">"larkspur-support"</span>,</div>
+<div style="white-space: pre"><span style="color: #4A5260; user-select: none">5  </span>  <span style="color: #A5B4FC">messages</span>: [{ <span style="color: #A5B4FC">role</span>: <span style="color: #F5C77E">"user"</span>, <span style="color: #A5B4FC">content</span>: <span style="color: #F5C77E">"Can I get a refund for last month?"</span> }],</div>
+<div style="white-space: pre"><span style="color: #4A5260; user-select: none">6  </span>});</div>
+</div>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<section aria-labelledby="c-pack" style="background: linear-gradient(180deg, #FFFFFF, #FBFCFD); border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="flex: 0 0 40px; width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(180deg, #FFFFFF -40%, #F2F4F7 70%); border: 1px solid #E4E7EC; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 0 -1px #E4E7EC; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-doc" fill="none" stroke="#344054" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></div>
+<div style="min-width: 0; flex: 1 1 auto"><h2 id="c-pack" style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 600">Integration pack</h2><div style="font-size: 13px; line-height: 18px; color: #667085"><span style="font-family: 'JetBrains Mono', ui-monospace, monospace">INTERLOCK.md</span> · 2.1 KB · endpoints, auth, schemas, examples</div></div>
+</div>
+<div style="border: 1px solid #E4E7EC; border-radius: 10px; background: #F9FAFB; padding: 12px 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; line-height: 19px; color: #344054; overflow: hidden">
+<sc-for list="{{md}}" as="m" hint-placeholder-count="12">
+<div style="display: flex; gap: 12px; white-space: pre"><span style="flex: 0 0 18px; color: #98A2B3; text-align: right">{{m.n}}</span><span style="color: {{m.c}}; font-weight: {{m.w}}">{{m.t}}</span></div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 8px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 14px 'Plus Jakarta Sans', sans-serif; box-shadow: 0 1px 2px rgba(16,24,40,0.05), 0 2px 0 -1px #E4E7EC; cursor: pointer"><span style="width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(180deg, #FFFFFF, #F2F4F7); border: 1px solid #E4E7EC; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">C</span>Copy for Claude Code</button>
+<button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 8px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 14px 'Plus Jakarta Sans', sans-serif; box-shadow: 0 1px 2px rgba(16,24,40,0.05), 0 2px 0 -1px #E4E7EC; cursor: pointer"><span style="width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(180deg, #FFFFFF, #F2F4F7); border: 1px solid #E4E7EC; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">C</span>Copy for Cursor</button>
+<button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-radius: 8px; border: 0; background: transparent; color: #0B7A72; font: 600 14px 'Plus Jakarta Sans', sans-serif; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-down" fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg>Download</button>
+</div>
+</section>
+
+<section aria-labelledby="c-agent" style="background: linear-gradient(180deg, #FFFFFF, #FBFCFD); border: 1px solid #E4E7EC; border-radius: 16px; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="flex: 0 0 40px; width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(180deg, #FFFFFF -40%, #E7F5F3 70%); border: 1px solid #C4E6E2; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 0 -1px #C4E6E2; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-code" fill="none" stroke="#0B7A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></div>
+<div style="min-width: 0"><h2 id="c-agent" style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 600">Let your coding agent build the integration</h2><div style="font-size: 13px; line-height: 18px; color: #667085">It fetches the guide and writes the code into your project</div></div>
+</div>
+<div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 600; color: #475467; margin-bottom: 6px">Interlock MCP</div>
+<div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 4px 0 12px; border: 1px solid #E4E7EC; border-radius: 8px; background: #F9FAFB; box-sizing: border-box"><span style="flex: 1 1 auto; min-width: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px">https://interlock.example/mcp</span><button type="button" aria-label="Copy Interlock MCP URL" style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 6px; border: 1px solid #E4E7EC; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></button></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: flex-start; gap: 10px">
+<span style="flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; background: #E7F5F3; color: #0B7A72; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 7px">1</span>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 6px 8px 12px; border-radius: 8px; background: #0E1116; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; line-height: 18px; color: #E4E7EC"><span style="flex: 1 1 auto; min-width: 0; word-break: break-all"><span style="color: #7FD1C7">claude</span> mcp add interlock https://interlock.example/mcp</span><button type="button" aria-label="Copy command" style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 6px; border: 1px solid #2A303B; background: #161A21; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#D0D5DD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg></button></div>
+</div>
+<div style="display: flex; align-items: flex-start; gap: 10px">
+<span style="flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; background: #E7F5F3; color: #0B7A72; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 9px">2</span>
+<div style="flex: 1 1 auto; min-width: 0; padding: 10px 12px; border-radius: 12px 12px 12px 4px; background: #F2F4F7; border: 1px solid #E4E7EC; font-size: 14px; line-height: 21px; color: #101828">“Add the Larkspur support assistant as a chat panel in this app.”<div style="margin-top: 6px"><button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 12px 'Plus Jakarta Sans', sans-serif; cursor: pointer"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><use href="#cn-copy" fill="none" stroke="#475467" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></use></svg>Copy prompt</button></div></div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{platTools}}" as="t" hint-placeholder-count="4">
+<span style="display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: #F2F4F7; color: #344054; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px">{{t}}</span>
+</sc-for>
+</div>
+</section>
+</div>
+
+<section aria-labelledby="c-works" style="display: flex; align-items: center; gap: 32px; padding: 22px 24px; border: 1px solid #E4E7EC; border-radius: 16px; background: #FFFFFF">
+<div style="flex: 0 0 200px">
+<h2 id="c-works" style="margin: 0; font-size: 18px; line-height: 26px; font-weight: 600">Works with</h2>
+<div style="font-size: 12px; line-height: 16px; color: #667085; margin-top: 2px">Logo slots · official files added later</div>
+</div>
+<div style="flex: 1 1 auto; display: flex; justify-content: space-between; gap: 16px">
+<sc-for list="{{works}}" as="w" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 96px">
+<span style="width: 40px; height: 40px; border-radius: 10px; box-sizing: border-box; background: linear-gradient(180deg, #FFFFFF, #F6F7F9); border: 1px solid #E4E7EC; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 3px 0 -1px #DDE2E8; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #344054">{{w.l}}</span>
+<span style="font-size: 12px; line-height: 16px; font-weight: 500; color: #475467; white-space: nowrap">{{w.n}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1740}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tabs = ['cURL', 'JavaScript', 'Python', 'Rust', 'Claude Code'].map((n) => {
+      const on = n === 'JavaScript';
+      return { n, sel: on ? 'true' : 'false', bg: on ? '#FFFFFF' : 'transparent', fg: on ? '#0B7A72' : '#475467', sh: on ? '0 1px 2px rgba(16,24,40,0.10), 0 1px 0 #E4E7EC' : 'none' };
+    });
+    const MD = [
+      ['# Larkspur Support · integration guide', '#101828', 700],
+      ['', '#344054', 400],
+      ['Base URL   https://interlock.example/v1', '#344054', 400],
+      ['Model      larkspur-support', '#344054', 400],
+      ['Auth       Authorization: Bearer $INTERLOCK_KEY', '#344054', 400],
+      ['', '#344054', 400],
+      ['## Endpoints', '#101828', 700],
+      ['POST /chat/completions   ask, with streaming', '#344054', 400],
+      ['POST /search             search the help center', '#344054', 400],
+      ['POST /documents          add documents later', '#344054', 400],
+      ['', '#344054', 400],
+      ['## Tools the assistant can call', '#101828', 700]
+    ];
+    const md = MD.map((m, i) => ({ n: String(i + 1), t: m[0] || ' ', c: m[1], w: m[2] }));
+    return {
+      H: 1740, tabs, md,
+      mcpTools: ['ask_larkspur_support', 'search_help_center', 'lookup_customer', 'open_ticket'],
+      platTools: ['list_backends', 'get_integration_guide', 'add_documents', 'create_backend'],
+      addTo: [{ l: 'C', n: 'Claude Code' }, { l: 'C', n: 'Cursor' }, { l: 'V', n: 'VS Code' }],
+      works: [{ l: 'O', n: 'OpenAI SDK' }, { l: 'L', n: 'LangChain' }, { l: 'V', n: 'Vercel AI SDK' }, { l: 'C', n: 'Claude Code' }, { l: 'C', n: 'Cursor' }, { l: 'V', n: 'VS Code' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

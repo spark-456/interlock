@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>M4 · Playground (mobile) · /b/:id/playground</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F7F8FA; color: #101828; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 15px; line-height: 23px; font-variant-numeric: tabular-nums">
+
+<header style="height: 60px; display: flex; align-items: center; gap: 4px; padding: 0 8px; background: #FFFFFF; border-bottom: 1px solid #E4E7EC; box-sizing: border-box">
+<a href="MConnect.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="#344054" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
+<div style="flex: 1 1 auto; min-width: 0; line-height: 18px"><div style="font-size: 16px; font-weight: 700">Larkspur Support</div><div style="font-size: 12px; color: #667085">Playground</div></div>
+<button type="button" aria-label="Open menu" style="width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="#344054" stroke-width="2" stroke-linecap="round"></path></svg></button>
+</header>
+
+<div role="log" aria-live="polite" aria-label="Conversation" style="padding: 18px 16px 0; display: flex; flex-direction: column; gap: 12px">
+<div style="align-self: flex-end; max-width: 300px; padding: 12px 14px; border-radius: 18px 18px 4px 18px; background: #0B7A72; color: #FFFFFF; font-size: 15px; line-height: 22px; box-shadow: 0 2px 0 #075E58, 0 8px 16px -8px rgba(11,122,114,0.5)">Hi, I’m maya@northfield.example. Can I still get a refund for last month’s invoice?</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E4E7EC; font-size: 12px; font-weight: 600; color: #344054"><span style="width: 6px; height: 6px; border-radius: 50%; background: #0B7A72"></span>Routed to Billing</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 999px; background: #FFFAEB; border: 1px solid #FEE9B8; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #93370D">lookup_customer · 120 ms</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 999px; background: #FFFAEB; border: 1px solid #FEE9B8; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #93370D">list_invoices · 98 ms</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 999px; background: #F4F3FF; border: 1px solid #E0DCFD; font-size: 12px; font-weight: 600; color: #5925DC">Searched policies · 3 passages</span>
+</div>
+
+<div style="padding: 14px; border-radius: 4px 18px 18px 18px; background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFD 100%); border: 1px solid #E4E7EC; box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(16,24,40,0.06), 0 4px 0 -1px #DDE2E8, 0 16px 28px -12px rgba(16,24,40,0.26)">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
+<svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="#0B7A72"></rect><g transform="translate(9 9) scale(0.625)" fill="none"><rect x="6.5" y="6.5" width="21" height="21" rx="8" stroke="#FFFFFF" stroke-width="5.75"></rect><rect x="20.5" y="20.5" width="21" height="21" rx="8" stroke="#0B7A72" stroke-width="13"></rect><rect x="20.5" y="20.5" width="21" height="21" rx="8" stroke="#FFFFFF" stroke-width="5.75"></rect></g></svg>
+<span style="font-size: 13px; font-weight: 700">Larkspur Support</span><span style="font-size: 12px; color: #667085">· Billing agent</span>
+</div>
+<p style="margin: 0; font-size: 15px; line-height: 23px">Yes. Your invoice <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px">INV-2291</span> from 3 October (<span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px">$48.00</span>) is within the 30-day refund window. Would you like me to open a refund request?</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px">
+<button type="button" aria-pressed="true" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; background: #E7F5F3; border: 1.5px solid #0B7A72; font: 600 12px 'Plus Jakarta Sans', sans-serif; color: #0B7A72; cursor: pointer">Refund policy 2026 · p. 2</button>
+<button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; background: #F2F4F7; border: 1px solid #E4E7EC; font: 600 12px 'Plus Jakarta Sans', sans-serif; color: #344054; cursor: pointer">Plans and limits · p. 4</button>
+</div>
+<div style="display: flex; gap: 8px; margin-top: 12px">
+<button type="button" style="flex: 1 1 auto; height: 44px; border: 0; border-radius: 10px; background: #0B7A72; color: #FFFFFF; font: 700 14px 'Plus Jakarta Sans', sans-serif; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 0 #075E58; cursor: pointer">Open refund request</button>
+<button type="button" style="flex: 0 0 auto; height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font: 600 14px 'Plus Jakarta Sans', sans-serif; box-shadow: 0 2px 0 #E4E7EC; cursor: pointer">No thanks</button>
+</div>
+</div>
+</div>
+
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(16,24,40,0.45)"></div>
+
+<section role="dialog" aria-modal="true" aria-label="Source: Refund policy 2026, page 2" style="position: absolute; left: 0; right: 0; bottom: 72px; padding: 10px 16px 6px; border-radius: 22px 22px 0 0; background: #FFFFFF; box-shadow: 0 -12px 32px rgba(16,24,40,0.18)">
+<div style="width: 40px; height: 5px; border-radius: 3px; background: #D0D5DD; margin: 0 auto 14px"></div>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="flex: 0 0 40px; width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(180deg, #FFFFFF -40%, #EFF8FF 70%); border: 1px solid #D1E9FF; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9z M14 3v6h6 M8 13h8 M8 17h5" fill="none" stroke="#1570EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<div style="flex: 1 1 auto; min-width: 0; line-height: 19px"><div style="font-size: 16px; font-weight: 700">Refund policy 2026.pdf</div><div style="font-size: 12px; color: #667085">Page 2 · Knowledge · newest refund policy</div></div>
+<button type="button" aria-label="Close source" style="width: 44px; height: 44px; border-radius: 10px; border: 0; background: #F2F4F7; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="#344054" stroke-width="2" stroke-linecap="round"></path></svg></button>
+</div>
+<div style="margin-top: 14px; padding: 14px; border-radius: 12px; background: #F9FAFB; border: 1px solid #F2F4F7; font-size: 14px; line-height: 22px; color: #344054">
+<div style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #667085; margin-bottom: 6px">2.1 Refund window</div>
+<span style="background: #FFF6D6; box-shadow: 0 0 0 2px #FFF6D6; border-radius: 3px; color: #101828; font-weight: 600">Customers can request a full refund within 30 days of the invoice date.</span> Requests above $100 are reviewed by the billing team. Annual plans are refunded pro rata after the first 30 days.
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 12px; color: #667085"><span>Used in this answer · match 0.91</span><a href="#open" style="color: #0B7A72; font-weight: 700; text-decoration: none; padding: 12px 0">Open document</a></div>
+
+
+</section>
+<form style="position: absolute; left: 0; right: 0; bottom: 0; height: 72px; box-sizing: border-box; padding: 12px; border-top: 1px solid #E4E7EC; display: flex; align-items: center; gap: 8px; background: #FFFFFF">
+<label for="mp-ask" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask Larkspur Support</label>
+<input id="mp-ask" type="text" placeholder="Ask Larkspur Support…" style="flex: 1 1 auto; min-width: 0; height: 48px; padding: 0 14px; border-radius: 12px; border: 1px solid #D0D5DD; background: #FFFFFF; font: 400 15px 'Plus Jakarta Sans', sans-serif; color: #101828; box-sizing: border-box">
+<button type="submit" aria-label="Send" style="flex: 0 0 48px; width: 48px; height: 48px; border-radius: 12px; border: 0; background: #0B7A72; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 0 #075E58; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
