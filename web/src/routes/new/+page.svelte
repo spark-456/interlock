@@ -2,7 +2,7 @@
   // S2 Create (AR-1): the goal (typed, picked from an example or spoken), what it should know
   // (files, links, voice memos as Knowledge or Instructions), and the apps and APIs it may use.
   import { goto } from '$app/navigation';
-  import { api } from '$lib/api';
+  import { api, appNames as loadAppNames } from '$lib/api';
   import AppTile from '$lib/design/AppTile.svelte';
   import Button from '$lib/design/Button.svelte';
   import Chip from '$lib/design/Chip.svelte';
@@ -28,12 +28,7 @@
   let filePicker = $state<HTMLInputElement>();
   let specPicker = $state<HTMLInputElement>();
 
-  // App display names come from the catalog: "Reply (Gmail)" → gmail: Gmail.
-  api.nodes().then((c) => {
-    appNames = Object.fromEntries(
-      c.nodes.filter((n) => n.app).map((n) => [n.app!, n.title.match(/\(([^)]+)\)$/)?.[1] ?? n.app!])
-    );
-  }, () => {});
+  loadAppNames().then((names) => (appNames = names), () => {});
 
   const knowledge = $derived(drafts.filter((d) => d.kind !== 'api'));
   const apis = $derived(drafts.filter((d) => d.kind === 'api'));
