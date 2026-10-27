@@ -3,10 +3,10 @@
   // what you get, and the one-line integration.
   import BuiltWithStrip from '$lib/design/BuiltWithStrip.svelte';
   import Button from '$lib/design/Button.svelte';
+  import CodeTabs from '$lib/design/CodeTabs.svelte';
   import Icon from '$lib/design/Icon.svelte';
   import Logo from '$lib/design/Logo.svelte';
   import PartnerSlot from '$lib/design/PartnerSlot.svelte';
-  import Tabs from '$lib/design/Tabs.svelte';
   import { endpoints, quickStart } from './flows/[id]/publish/publish';
 
   const GITHUB = 'https://github.com/spark-456/interlock';
@@ -26,7 +26,6 @@
   const WORKS_WITH = ['OpenAI SDK', 'LangChain', 'Vercel AI SDK', 'Claude Code', 'Cursor', 'VS Code'];
   const ends = endpoints('https://interlock.example', 'Larkspur Support');
   const code = quickStart(ends, 'Can I get a refund for last month?').filter((t) => ['js', 'python', 'curl'].includes(t.value));
-  let tab = $state('js');
 </script>
 
 <svelte:head>
@@ -103,8 +102,7 @@
       </ul>
     </div>
     <div class="code">
-      <Tabs label="Language" tabs={code} bind:value={tab} />
-      <pre><code>{code.find((c) => c.value === tab)?.code}</code></pre>
+      <CodeTabs snippets={code} value="js" />
       <pre class="cc"><code><span>Claude Code</span> claude mcp add interlock {ends.platformMcp}</code></pre>
     </div>
   </section>
