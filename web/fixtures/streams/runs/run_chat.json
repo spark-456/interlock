@@ -1,0 +1,347 @@
+[
+  {
+    "seq": 1,
+    "ts": "2026-10-27T10:00:00.150Z",
+    "runId": "run_chat",
+    "nodeId": null,
+    "type": "run.started",
+    "data": {
+      "flowId": "flw_larkspur",
+      "trigger": "test"
+    }
+  },
+  {
+    "seq": 2,
+    "ts": "2026-10-27T10:00:00.300Z",
+    "runId": "run_chat",
+    "nodeId": "n_router",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 3,
+    "ts": "2026-10-27T10:00:00.600Z",
+    "runId": "run_chat",
+    "nodeId": "n_router",
+    "type": "node.items",
+    "data": {
+      "port": "billing",
+      "items": [
+        {
+          "json": {
+            "message": "Can I still get a refund for last month's invoice?"
+          },
+          "files": {}
+        }
+      ],
+      "total": 1
+    }
+  },
+  {
+    "seq": 4,
+    "ts": "2026-10-27T10:00:00.750Z",
+    "runId": "run_chat",
+    "nodeId": "n_router",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 320,
+      "costUsd": 0.0002
+    }
+  },
+  {
+    "seq": 5,
+    "ts": "2026-10-27T10:00:00.900Z",
+    "runId": "run_chat",
+    "nodeId": "n_billing",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 6,
+    "ts": "2026-10-27T10:00:02.500Z",
+    "runId": "run_chat",
+    "nodeId": "n_billing",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "message": "Can I still get a refund for last month's invoice?",
+            "answer": "Yes. Your invoice INV-2291 from 3 October ($48.00) is within the 30-day refund window. Would you like me to open a refund request?",
+            "sources": [
+              {
+                "sourceId": "src_refund",
+                "title": "Refund policy 2026.pdf",
+                "section": "2. Refunds on subscriptions",
+                "url": null
+              },
+              {
+                "sourceId": "src_plans",
+                "title": "Plans and limits",
+                "section": "Page 4",
+                "url": null
+              }
+            ],
+            "activity": [
+              {
+                "tool": "lookup_customer",
+                "result": {
+                  "email": "maya@northfield.example",
+                  "plan": "Team"
+                }
+              },
+              {
+                "tool": "list_invoices",
+                "result": [
+                  {
+                    "id": "INV-2291",
+                    "date": "2026-10-03",
+                    "amount": 48.0
+                  }
+                ]
+              },
+              {
+                "tool": "search_kb_larkspur",
+                "result": [
+                  {
+                    "text": "Customers can request a full refund within 30 days of the invoice date for any monthly or annual plan. Refunds above $100 are reviewed by a person before they are paid.",
+                    "score": 0.91,
+                    "sourceId": "src_refund",
+                    "title": "Refund policy 2026.pdf",
+                    "section": "2. Refunds on subscriptions",
+                    "url": null
+                  },
+                  {
+                    "text": "Plans can be changed at any time; refunds follow the refund policy.",
+                    "score": 0.74,
+                    "sourceId": "src_plans",
+                    "title": "Plans and limits",
+                    "section": "Page 4",
+                    "url": null
+                  },
+                  {
+                    "text": "Older help page: refunds are available within 14 days.",
+                    "score": 0.52,
+                    "sourceId": "src_help_2025",
+                    "title": "Help center (2025)",
+                    "section": "Billing",
+                    "url": "https://help.larkspur.example/billing"
+                  }
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "label": "Open refund request",
+                "message": "Yes, open a refund request for INV-2291."
+              },
+              {
+                "label": "No thanks",
+                "message": "No thanks."
+              }
+            ]
+          },
+          "files": {}
+        }
+      ],
+      "total": 1
+    }
+  },
+  {
+    "seq": 7,
+    "ts": "2026-10-27T10:00:02.650Z",
+    "runId": "run_chat",
+    "nodeId": "n_billing",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 1900,
+      "costUsd": 0.0009
+    }
+  },
+  {
+    "seq": 8,
+    "ts": "2026-10-27T10:00:02.800Z",
+    "runId": "run_chat",
+    "nodeId": "n_guard",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 9,
+    "ts": "2026-10-27T10:00:03.050Z",
+    "runId": "run_chat",
+    "nodeId": "n_guard",
+    "type": "node.items",
+    "data": {
+      "port": "yes",
+      "items": [
+        {
+          "json": {
+            "message": "Can I still get a refund for last month's invoice?",
+            "answer": "Yes. Your invoice INV-2291 from 3 October ($48.00) is within the 30-day refund window. Would you like me to open a refund request?",
+            "sources": [
+              {
+                "sourceId": "src_refund",
+                "title": "Refund policy 2026.pdf",
+                "section": "2. Refunds on subscriptions",
+                "url": null
+              },
+              {
+                "sourceId": "src_plans",
+                "title": "Plans and limits",
+                "section": "Page 4",
+                "url": null
+              }
+            ],
+            "activity": [
+              {
+                "tool": "lookup_customer",
+                "result": {
+                  "email": "maya@northfield.example",
+                  "plan": "Team"
+                }
+              },
+              {
+                "tool": "list_invoices",
+                "result": [
+                  {
+                    "id": "INV-2291",
+                    "date": "2026-10-03",
+                    "amount": 48.0
+                  }
+                ]
+              },
+              {
+                "tool": "search_kb_larkspur",
+                "result": [
+                  {
+                    "text": "Customers can request a full refund within 30 days of the invoice date for any monthly or annual plan. Refunds above $100 are reviewed by a person before they are paid.",
+                    "score": 0.91,
+                    "sourceId": "src_refund",
+                    "title": "Refund policy 2026.pdf",
+                    "section": "2. Refunds on subscriptions",
+                    "url": null
+                  },
+                  {
+                    "text": "Plans can be changed at any time; refunds follow the refund policy.",
+                    "score": 0.74,
+                    "sourceId": "src_plans",
+                    "title": "Plans and limits",
+                    "section": "Page 4",
+                    "url": null
+                  },
+                  {
+                    "text": "Older help page: refunds are available within 14 days.",
+                    "score": 0.52,
+                    "sourceId": "src_help_2025",
+                    "title": "Help center (2025)",
+                    "section": "Billing",
+                    "url": "https://help.larkspur.example/billing"
+                  }
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "label": "Open refund request",
+                "message": "Yes, open a refund request for INV-2291."
+              },
+              {
+                "label": "No thanks",
+                "message": "No thanks."
+              }
+            ]
+          },
+          "files": {}
+        }
+      ],
+      "total": 1
+    }
+  },
+  {
+    "seq": 10,
+    "ts": "2026-10-27T10:00:03.200Z",
+    "runId": "run_chat",
+    "nodeId": "n_guard",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 260,
+      "costUsd": 0.0001
+    }
+  },
+  {
+    "seq": 11,
+    "ts": "2026-10-27T10:00:03.250Z",
+    "runId": "run_chat",
+    "nodeId": "n_out_api",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 12,
+    "ts": "2026-10-27T10:00:03.300Z",
+    "runId": "run_chat",
+    "nodeId": "n_out_api",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 2,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 13,
+    "ts": "2026-10-27T10:00:03.350Z",
+    "runId": "run_chat",
+    "nodeId": "n_out_mcp",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 14,
+    "ts": "2026-10-27T10:00:03.400Z",
+    "runId": "run_chat",
+    "nodeId": "n_out_mcp",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 2,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 15,
+    "ts": "2026-10-27T10:00:03.450Z",
+    "runId": "run_chat",
+    "nodeId": "n_out_widget",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 16,
+    "ts": "2026-10-27T10:00:03.500Z",
+    "runId": "run_chat",
+    "nodeId": "n_out_widget",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 2,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 17,
+    "ts": "2026-10-27T10:00:03.650Z",
+    "runId": "run_chat",
+    "nodeId": null,
+    "type": "run.succeeded",
+    "data": {
+      "ms": 2600,
+      "costUsd": 0.0012
+    }
+  }
+]

@@ -40,7 +40,7 @@ export const api = {
   guide: (flowId: string) => get<{ markdown: string }>(`/api/flows/${flowId}/guide`),
   /** Creates an API key; the full key is in this response only. */
   createKey: (name: string) => post<{ id: string; key: string }>('/api/keys', { name }),
-  testRun: (flowId: string) => post<RunCreated>(`/api/flows/${flowId}/test`, { items: [] }),
+  testRun: (flowId: string, items: JsonValue[] = []) => post<RunCreated>(`/api/flows/${flowId}/test`, { items }),
   runStep: (flowId: string, nodeId: string, items: JsonValue[]) =>
     post<RunCreated>(`/api/flows/${flowId}/nodes/${nodeId}/run`, { items }),
   connections: () => get<ConnectionSummary[]>('/api/connections'),
