@@ -81,6 +81,24 @@ impl SafeHttp {
     pub fn post(&self, url: &str) -> Result<RequestBuilder, HttpError> {
         self.request(Method::POST, url)
     }
+
+    /// Checks a URL before handing it to a remote fetching service.
+    pub async fn validate_destination(&self, url: &str) -> Result<(), HttpError> {
+        let parsed = Url::parse(url).map_err(|e| HttpError::InvalidUrl(e.to_string()))?;
+        check_url(&parsed, self.allow_private)?;
+        if self.allow_private {
+            return Ok(());
+        }
+        if let Some(url::Host::Domain(host)) = parsed.host() {
+            let port = parsed.port_or_known_default().unwrap_or(443);
+            let addrs: Vec<_> =
+                tokio::net::lookup_host((host, port)).await.map_err(|e| HttpError::Client(e.to_string()))?.collect();
+            if addrs.is_empty() || addrs.iter().any(|addr| is_blocked_ip(addr.ip())) {
+                return Err(HttpError::Blocked(host.into()));
+            }
+        }
+        Ok(())
+    }
 }
 
 fn check_url(url: &Url, allow_private: bool) -> Result<(), HttpError> {
@@ -200,5 +218,15 @@ mod tests {
     #[test]
     fn permissive_client_allows_loopback() {
         assert!(SafeHttp::permissive_for_tests().get("http://127.0.0.1:1/").is_ok());
+    }
+
+    #[tokio::test]
+    async fn rejects_internal_remote_fetch_destinations() {
+        let http = SafeHttp::new().unwrap();
+        assert!(matches!(
+            http.validate_destination("http://169.254.169.254/latest/meta-data/").await,
+            Err(HttpError::Blocked(_))
+        ));
+        assert!(matches!(http.validate_destination("http://localhost/private").await, Err(HttpError::Blocked(_))));
     }
 }

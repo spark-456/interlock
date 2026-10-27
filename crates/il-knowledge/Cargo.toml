@@ -10,3 +10,19 @@ publish.workspace = true
 il-core.workspace = true
 il-sdk.workspace = true
 il-store.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+rusqlite.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+pdf-extract = "0.12"
+zip = { version = "2.4", default-features = false, features = ["deflate"] }
+quick-xml = "0.37"
+csv = "1"
+scraper = "0.22"
+
+[dev-dependencies]
+il-sdk = { workspace = true, features = ["testkit"] }
+tempfile = "3"
+wiremock.workspace = true

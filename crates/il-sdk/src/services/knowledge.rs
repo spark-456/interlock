@@ -33,8 +33,10 @@ pub struct SearchHit {
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum SourceInput {
     File { file_id: String, name: String },
+    MarkedFile { file_id: String, name: String, role: String },
     Url { url: String, crawl_limit: u32 },
     Text { title: String, text: String },
+    InstructionsText { title: String, text: String },
 }
 
 /// Knowledge base operations.
