@@ -3,7 +3,7 @@
 //! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
 //! returns `NotImplemented` until task K02 implements it.
 
-use super::{request, spec};
+use super::{request, source, spec};
 use il_sdk::prelude::*;
 
 /// Use any API node.
@@ -69,37 +69,8 @@ impl NodeExecutor for DataOpenapi {
 
     async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
         let spec_ref = ctx.settings["spec"].as_str().ok_or_else(|| NodeError::Failed("missing spec".into()))?;
-        let source = if spec_ref.starts_with("http://") || spec_ref.starts_with("https://") {
-            let mut response = ctx
-                .http()
-                .get(spec_ref)
-                .map_err(|e| NodeError::Failed(e.to_string()))?
-                .send()
-                .await
-                .map_err(|e| NodeError::Failed(e.to_string()))?
-                .error_for_status()
-                .map_err(|e| NodeError::Failed(e.to_string()))?;
-            if response.content_length().is_some_and(|size| size > 2_000_000) {
-                return Err(NodeError::Failed("spec exceeds 2 MB".into()));
-            }
-            let mut bytes = Vec::new();
-            while let Some(chunk) = response.chunk().await.map_err(|e| NodeError::Failed(e.to_string()))? {
-                if bytes.len() + chunk.len() > 2_000_000 {
-                    return Err(NodeError::Failed("spec exceeds 2 MB".into()));
-                }
-                bytes.extend_from_slice(&chunk);
-            }
-            bytes
-        } else if spec_ref.trim_start().starts_with("curl ") {
-            spec_ref.as_bytes().to_vec()
-        } else {
-            ctx.files().get(spec_ref).await.map_err(|e| NodeError::Failed(e.to_string()))?.1.to_vec()
-        };
-        if source.len() > 2_000_000 {
-            return Err(NodeError::Failed("spec exceeds 2 MB".into()));
-        }
-        let source = std::str::from_utf8(&source).map_err(|e| NodeError::Failed(e.to_string()))?;
-        let operations = spec::parse(source).map_err(NodeError::Failed)?;
+        let source = source::load(spec_ref, ctx.http(), ctx.files().as_ref()).await.map_err(NodeError::Failed)?;
+        let operations = spec::parse(&source).map_err(NodeError::Failed)?;
         let selected =
             ctx.settings["operationId"].as_str().ok_or_else(|| NodeError::Failed("missing operationId".into()))?;
         let operation = operations

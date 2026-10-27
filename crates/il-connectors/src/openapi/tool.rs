@@ -1,13 +1,60 @@
 //! Agent tool for a selected OpenAPI operation.
 
+use std::collections::BTreeSet;
+use std::sync::Arc;
+
 use async_trait::async_trait;
+use il_core::Flow;
 use il_sdk::{
     SafeHttp,
-    services::{AgentTool, Credential, ToolError},
+    services::{AgentTool, Credential, Services, ToolError},
 };
 use serde_json::{Map, Value, json};
 
-use super::{request, spec::Operation};
+use super::{
+    request, source,
+    spec::{self, Operation},
+};
+
+/// Builds the selected OpenAPI tools for a flow using its own credential bindings.
+pub async fn for_flow(flow: &Flow, services: &Services) -> Result<Vec<Arc<dyn AgentTool>>, ToolError> {
+    let mut tools: Vec<Arc<dyn AgentTool>> = Vec::new();
+    let mut names = BTreeSet::new();
+    for node in flow.nodes.iter().filter(|node| node.node_type == "data.openapi" && !node.disabled) {
+        let reference =
+            node.settings["spec"].as_str().ok_or_else(|| ToolError::InvalidArguments("missing spec".into()))?;
+        let selected = node.settings["operationId"]
+            .as_str()
+            .ok_or_else(|| ToolError::InvalidArguments("missing operationId".into()))?;
+        let document =
+            source::load(reference, &services.http, services.files.as_ref()).await.map_err(ToolError::Failed)?;
+        let operation = spec::parse(&document)
+            .map_err(ToolError::InvalidArguments)?
+            .into_iter()
+            .find(|operation| operation.id == selected)
+            .ok_or_else(|| ToolError::InvalidArguments(format!("operation not found: {selected}")))?;
+        let allow_risky = node.settings["allowRisky"] == true;
+        if operation.risky && !allow_risky {
+            continue;
+        }
+        if !names.insert(operation.id.clone()) {
+            continue;
+        }
+        let credential = match node.credentials.get("api") {
+            Some(id) => Some(
+                services
+                    .store
+                    .credential(&flow.workspace_id, id)
+                    .await
+                    .map_err(|e| ToolError::Failed(e.to_string()))?
+                    .ok_or_else(|| ToolError::Failed("bound credential not found".into()))?,
+            ),
+            None => None,
+        };
+        tools.push(Arc::new(ApiTool::new(operation, services.http.clone(), credential, allow_risky)?));
+    }
+    Ok(tools)
+}
 
 /// A selected operation exposed to an Agent.
 pub struct ApiTool {
@@ -60,7 +107,10 @@ impl AgentTool for ApiTool {
 
 #[cfg(test)]
 mod tests {
+    use il_core::Flow;
+    use il_sdk::services::FileStore;
     use il_sdk::services::{AgentTool, Credential};
+    use il_sdk::testkit::FakeServices;
     use serde_json::json;
     use wiremock::{
         Mock, MockServer, ResponseTemplate,
@@ -68,6 +118,37 @@ mod tests {
     };
 
     use super::*;
+
+    #[tokio::test]
+    async fn k02_flow_tools_expose_selected_safe_operations() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/invoices/42"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"paid":true})))
+            .mount(&server)
+            .await;
+        let fakes = FakeServices::default();
+        let spec = json!({"openapi":"3.1.0","servers":[{"url":server.uri()}],"paths":{
+            "/invoices/{invoiceId}":{
+                "get":{"operationId":"getInvoice","parameters":[
+                    {"name":"invoiceId","in":"path","required":true,"schema":{"type":"string"}}]},
+                "delete":{"operationId":"deleteInvoice"}
+            }
+        }});
+        let file = fakes.files.put("api.json", "application/json", spec.to_string().into()).await.unwrap();
+        let flow: Flow = serde_json::from_value(json!({"id":"flow_1","workspaceId":"ws_a","version":1,
+        "name":"Billing","kind":"app","edges":[],"nodes":[
+            {"id":"get","type":"data.openapi","name":"Get invoice",
+                "settings":{"spec":file.id,"operationId":"getInvoice"}},
+            {"id":"delete","type":"data.openapi","name":"Delete invoice",
+                "settings":{"spec":file.id,"operationId":"deleteInvoice"}}
+        ]}))
+        .unwrap();
+        let tools = for_flow(&flow, &fakes.services()).await.unwrap();
+        assert_eq!(tools.len(), 1);
+        assert_eq!(tools[0].name(), "getInvoice");
+        assert_eq!(tools[0].invoke(json!({"invoiceId":"42"})).await.unwrap()["paid"], true);
+    }
 
     #[tokio::test]
     async fn k02_agent_tool_uses_credential_and_enforces_risk() {

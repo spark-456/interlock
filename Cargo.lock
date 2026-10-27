@@ -1234,6 +1234,7 @@ name = "il-connectors"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "il-core",
  "il-sdk",
  "inventory",
  "reqwest",
