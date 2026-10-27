@@ -36,4 +36,4 @@ All models are served through Nebius Token Factory. Model IDs live only in confi
 
 ## Licence
 
-Apache-2.0. See `LICENSE`.
+All rights reserved. The code is public to read, but any other use needs the owner's written permission first. See `LICENSE`.
