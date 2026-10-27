@@ -98,6 +98,8 @@ fn finish_state(config: Config, mut services: Services) -> AppState {
     if config.providers != "fake" {
         wire_models(&mut services, &config);
     }
+    services.notifier =
+        Arc::new(il_connectors::slack::MessagingNotifier::new(services.clone(), services.notifier.clone()));
     tracing::info!(providers = %config.providers, "services wired");
     let mut engine_config: il_engine::EngineConfig = config.section("engine").unwrap_or_default();
     engine_config.caps = config.section("caps").unwrap_or_default();
