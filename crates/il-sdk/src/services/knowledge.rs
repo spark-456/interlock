@@ -42,6 +42,10 @@ pub enum SourceInput {
 /// Knowledge base operations.
 #[async_trait]
 pub trait KnowledgeService: Send + Sync {
+    /// Confirms that a workspace owns a base before externally exposed writes.
+    async fn owns_base(&self, _workspace_id: &str, _kb_id: &str) -> Result<bool, KnowledgeError> {
+        Ok(false)
+    }
     /// Creates a knowledge base and returns its id.
     async fn create_base(&self, workspace_id: &str, name: &str) -> Result<String, KnowledgeError>;
     /// Ingests sources (parse, chunk, embed). Returns the new source ids.

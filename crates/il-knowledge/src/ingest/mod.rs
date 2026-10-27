@@ -181,6 +181,21 @@ fn insert_chunk(
 
 #[async_trait]
 impl KnowledgeService for Knowledge {
+    async fn owns_base(&self, workspace_id: &str, kb_id: &str) -> Result<bool, KnowledgeError> {
+        let (workspace, id) = (workspace_id.to_owned(), kb_id.to_owned());
+        self.store
+            .with_conn(move |conn| {
+                conn.query_row("SELECT 1 FROM kb_bases WHERE id=?1 AND workspace_id=?2", params![id, workspace], |_| {
+                    Ok(true)
+                })
+                .optional()
+                .map_err(db)
+                .map(|found| found.unwrap_or(false))
+            })
+            .await
+            .map_err(knowledge)
+    }
+
     async fn create_base(&self, workspace_id: &str, name: &str) -> Result<String, KnowledgeError> {
         let id = il_sdk::id("kb");
         let (id_copy, workspace, name) = (id.clone(), workspace_id.to_owned(), name.to_owned());
@@ -267,6 +282,8 @@ mod tests {
         let store = Arc::new(SqliteStore::open(&path).unwrap());
         let service = Knowledge::new(store, files.clone(), models.clone(), None);
         let kb = service.create_base("ws_test", "Help").await.unwrap();
+        assert!(service.owns_base("ws_test", &kb).await.unwrap());
+        assert!(!service.owns_base("ws_other", &kb).await.unwrap());
         let ids = service
             .add_sources(
                 &kb,
