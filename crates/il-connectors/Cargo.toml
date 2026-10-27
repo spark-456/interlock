@@ -10,6 +10,12 @@ publish.workspace = true
 il-sdk.workspace = true
 async-trait.workspace = true
 inventory.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+url.workspace = true
+serde_yaml = "0.9"
 
 [dev-dependencies]
 il-sdk = { workspace = true, features = ["testkit"] }
+wiremock.workspace = true
+tokio.workspace = true
