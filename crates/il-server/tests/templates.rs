@@ -42,3 +42,28 @@ fn recorded_runs_belong_to_their_templates() {
     }
     assert_eq!(count, 2, "F-A and F-C have recorded runs (MK-3)");
 }
+
+#[test]
+fn larkspur_samples_are_complete() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+    let spec = std::fs::read_to_string(root.join("apis/larkspur.openapi.json")).unwrap();
+    let ops = il_connectors::openapi::spec::parse(&spec).unwrap();
+    let mut ids: Vec<_> = ops.iter().map(|o| (o.id.as_str(), o.risky)).collect();
+    ids.sort();
+    assert_eq!(
+        ids,
+        [("delete_customer", true), ("list_invoices", false), ("lookup_customer", false), ("open_ticket", false)]
+    );
+    let mock: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root.join("apis/larkspur.mock.json")).unwrap()).unwrap();
+    for op in ops.iter().filter(|o| !o.risky) {
+        assert!(
+            mock["responses"][&op.id]["body"].is_object() || mock["responses"][&op.id]["body"].is_array(),
+            "{}",
+            op.id
+        );
+    }
+    for doc in ["refund-policy-2026.md", "plans-and-limits.md", "help-center-2025.md", "support-voice-memo.mp3"] {
+        assert!(root.join("docs").join(doc).metadata().unwrap().len() > 100, "{doc}");
+    }
+}
