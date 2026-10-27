@@ -43,6 +43,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | claimed | codex-1 | t/N01-guardrails | 2026-10-27 14:38 | Node, three fake-gateway tests, and generated docs pushed at 16d9560; full check and PR need generated `web/` fixture decision |
 | 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | done | codex-1 | t/B04b-server-finish | 2026-10-27 17:34 | [PR #12](https://github.com/spark-456/interlock/pull/12); Ubuntu and Windows CI passed |
 | 34 | B03b | Engine: approval expiry and timeout policy | P0 | B03 | ready | | | | Needed to finish B08 timeout behaviour |
+| 35 | T01 | Build size: lighter dev/test debug info | P1 | — | claimed | claude-a | t/T01-build-size | 2026-10-27 19:13 | |
 
 ## Waiting on the owner
 
@@ -256,6 +257,10 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 ### B04b · Server: GitHub sign-in, rate limits, startup recovery, demo seed
 - **Owns**: `crates/il-server/**`.
 - **Acceptance**: GitHub OAuth sign-in (`/api/auth/github/start`, callback, creates a `Session` in the store like `POST /api/demo/session` does, cookie `il_session`); per-IP rate limiting on `/hooks`, `/v1`, `/mcp`, `/api/demo/session`; startup recovery (`engine.recover` for runs left Running, `triggers.restore` for active flows: add the store queries this needs with B01); demo sessions seeded with templates once R01 lands; integration tests.
+
+### T01 · Build size: lighter dev/test debug info
+- **Owns**: root `Cargo.toml` profiles.
+- **Acceptance**: dev and test builds keep only line-table debug info for workspace crates and none for dependencies, so panics and backtraces still show file and line; `target` shrinks substantially on Windows; `cargo xtask check` and CI pass. CI already runs without incremental builds (`dtolnay/rust-toolchain` sets `CARGO_INCREMENTAL=0`).
 
 ### R04 · README, docs, video script, Devpost
 - **Owns**: `README.md`, `docs/**` (except PRD and WORKBOARD), `assets/**`.
