@@ -164,6 +164,22 @@ impl Engine {
         {
             return Err(EngineError::Approval(approval_id.into()));
         }
+        let run = store
+            .get_run(&approval.run_id)
+            .await
+            .map_err(|e| EngineError::Store(e.to_string()))?
+            .ok_or_else(|| EngineError::RunNotFound(approval.run_id.clone()))?;
+        if run.status.is_terminal() {
+            return Err(EngineError::Approval(approval_id.into()));
+        }
+        let flow = self.load_flow(&run.flow_id, Some(run.flow_version)).await?;
+        let cp = Checkpoint::from_state(&run.state);
+        let partial = cp
+            .partial
+            .get(&approval.node_id)
+            .filter(|p| p.waiting.contains_key(approval_id))
+            .cloned()
+            .ok_or_else(|| EngineError::Approval(approval_id.into()))?;
         approval.status = match decision.decision {
             Decision::Approve => ApprovalStatus::Approved,
             Decision::Reject => ApprovalStatus::Rejected,
@@ -178,20 +194,6 @@ impl Engine {
         }
         let kind = RunEventKind::ApprovalDecided { approval_id: approval_id.into(), decision: decision.decision, by };
         inner.bus.emit(&approval.run_id, Some(&approval.node_id), kind).await;
-
-        let run = store
-            .get_run(&approval.run_id)
-            .await
-            .map_err(|e| EngineError::Store(e.to_string()))?
-            .ok_or_else(|| EngineError::RunNotFound(approval.run_id.clone()))?;
-        let flow = self.load_flow(&run.flow_id, Some(run.flow_version)).await?;
-        let cp = Checkpoint::from_state(&run.state);
-        let partial = cp
-            .partial
-            .get(&approval.node_id)
-            .filter(|p| p.waiting.contains_key(approval_id))
-            .cloned()
-            .ok_or_else(|| EngineError::Approval(approval_id.into()))?;
         let resume = Resume { partial, approval_id: approval_id.into(), decision };
         inner.set_status(&run.id, RunStatus::Running);
         tokio::spawn(drive(inner.clone(), run, flow, cp, Some((approval.node_id.clone(), resume))));

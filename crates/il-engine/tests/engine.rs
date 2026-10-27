@@ -293,6 +293,29 @@ async fn b03b_reject_and_keep_waiting_timeout_policies() {
 }
 
 #[tokio::test]
+async fn b03b_expiry_does_not_resume_a_cancelled_run() {
+    let fakes = il_sdk::testkit::FakeServices::default();
+    let svc = fakes.services();
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("a", "test.approve", json!({"timeoutHours": 1.0, "onTimeout": "approve"})),
+        ],
+        &[("t", "out", "a", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let (engine, _) = engine_with(svc, config());
+    let id = engine.start(start(items(&[1]))).await.unwrap();
+    assert_eq!(engine.wait(&id).await, RunStatus::Waiting);
+    let approval = fakes.store.list_approvals("ws_t", true).await.unwrap().pop().unwrap();
+    engine.cancel(&id).await.unwrap();
+    fakes.clock.advance(std::time::Duration::from_secs(3600));
+    assert_eq!(engine.expire_due_approvals().await.unwrap(), 0);
+    assert_eq!(fakes.store.get_run(&id).await.unwrap().unwrap().status, RunStatus::Cancelled);
+    assert_eq!(fakes.store.get_approval(&approval.id).await.unwrap().unwrap().status, ApprovalStatus::Pending);
+}
+
+#[tokio::test]
 async fn spend_cap_pauses_the_run() {
     let (fakes, svc) = services();
     let (engine, _) = engine_with(svc, config());
