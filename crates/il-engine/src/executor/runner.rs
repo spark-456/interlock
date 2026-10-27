@@ -55,7 +55,7 @@ impl Engine {
     }
 
     /// Starts a run and returns it without waiting.
-    pub async fn start_run(&self, req: StartRun) -> Result<String, EngineError> {
+    async fn start_run(&self, req: StartRun) -> Result<String, EngineError> {
         let flow = self.load_flow(&req.flow_id, req.version).await?;
         let trigger_node = self.trigger_node(&flow, req.trigger_node.as_deref())?;
         let inner = &self.inner;
@@ -97,12 +97,12 @@ impl Engine {
     }
 
     /// Applies a decision and resumes the paused node.
-    pub async fn decide_approval(
+    async fn decide_approval(
         &self,
         approval_id: &str,
         decision: ApprovalDecision,
         by: Option<String>,
-    ) -> Result<String, EngineError> {
+    ) -> Result<(), EngineError> {
         let inner = &self.inner;
         let store = &inner.services.store;
         let mut approval = store
@@ -138,10 +138,9 @@ impl Engine {
             .cloned()
             .ok_or_else(|| EngineError::Approval(approval_id.into()))?;
         let resume = Resume { partial, approval_id: approval_id.into(), decision };
-        let run_id = run.id.clone();
-        inner.set_status(&run_id, RunStatus::Running);
+        inner.set_status(&run.id, RunStatus::Running);
         tokio::spawn(drive(inner.clone(), run, flow, cp, Some((approval.node_id.clone(), resume))));
-        Ok(run_id)
+        Ok(())
     }
 
     /// Continues a run that was `Running` when the server stopped (call at startup).
@@ -197,8 +196,7 @@ impl FlowRunner for Engine {
         decision: ApprovalDecision,
         by: Option<String>,
     ) -> Result<(), RunnerError> {
-        self.decide_approval(approval_id, decision, by).await?;
-        Ok(())
+        Ok(self.decide_approval(approval_id, decision, by).await?)
     }
 
     async fn cancel(&self, run_id: &str) -> Result<(), RunnerError> {

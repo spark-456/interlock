@@ -34,12 +34,6 @@ impl ApiError {
             },
         }
     }
-
-    /// Attaches details.
-    pub fn with_details(mut self, details: Json) -> Self {
-        self.error.details = details;
-        self
-    }
 }
 
 /// Errors raised by pure core logic.

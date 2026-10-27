@@ -10,8 +10,7 @@
     SvelteFlow,
     ViewportPortal,
     type Edge,
-    type Node,
-    type Viewport
+    type Node
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/base.css';
   import { untrack } from 'svelte';
@@ -29,18 +28,14 @@
     cards,
     edges: edgeViews,
     labels = [],
-    initialViewport = { x: 24, y: 132, zoom: 0.8 },
     selected = $bindable<string | null>(null),
-    onlist,
-    showToolbar = true
+    onlist
   }: {
     cards: CardView[];
     edges: EdgeView[];
     labels?: ColumnLabel[];
-    initialViewport?: Viewport;
     selected?: string | null;
     onlist?: () => void;
-    showToolbar?: boolean;
   } = $props();
 
   const nodeTypes = { card: NodeCard };
@@ -95,7 +90,7 @@
     bind:edges
     {nodeTypes}
     {edgeTypes}
-    {initialViewport}
+    initialViewport={{ x: 24, y: 132, zoom: 0.8 }}
     minZoom={MIN_ZOOM}
     maxZoom={MAX_ZOOM}
     nodesConnectable={false}
@@ -114,22 +109,20 @@
         </div>
       {/each}
     </ViewportPortal>
-    {#if showToolbar}
-      <Panel position="bottom-left"><CanvasToolbar bind:minimap {onlist} /></Panel>
-      {#if minimap}
-        <MiniMap
-          width={180}
-          height={120}
-          position="bottom-right"
-          class="il-minimap"
-          nodeColor={miniColor}
-          nodeBorderRadius={2}
-          maskColor="var(--minimap-mask)"
-          maskStrokeColor="var(--primary)"
-          maskStrokeWidth={1.5}
-          ariaLabel="Minimap"
-        />
-      {/if}
+    <Panel position="bottom-left"><CanvasToolbar bind:minimap {onlist} /></Panel>
+    {#if minimap}
+      <MiniMap
+        width={180}
+        height={120}
+        position="bottom-right"
+        class="il-minimap"
+        nodeColor={miniColor}
+        nodeBorderRadius={2}
+        maskColor="var(--minimap-mask)"
+        maskStrokeColor="var(--primary)"
+        maskStrokeWidth={1.5}
+        ariaLabel="Minimap"
+      />
     {/if}
   </SvelteFlow>
 </div>

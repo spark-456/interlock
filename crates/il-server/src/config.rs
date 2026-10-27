@@ -14,13 +14,12 @@ use serde_json::Value;
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
-    pub public_url: Option<String>,
     pub cors_origins: Vec<String>,
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
-        Self { host: "127.0.0.1".into(), port: 8080, public_url: None, cors_origins: vec![] }
+        Self { host: "127.0.0.1".into(), port: 8080, cors_origins: vec![] }
     }
 }
 

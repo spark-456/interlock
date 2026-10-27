@@ -122,10 +122,6 @@ impl NodeCtx {
     pub fn dedupe_key(&self) -> String {
         format!("{}:{}:{}", self.run.run_id, self.run.node_id, self.run.item_index)
     }
-    /// Typed setting helper.
-    pub fn setting<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
-        self.settings.get(key).and_then(|v| serde_json::from_value(v.clone()).ok())
-    }
 }
 
 /// Context passed to `TriggerNode::start`.

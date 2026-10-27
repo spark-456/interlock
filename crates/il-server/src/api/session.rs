@@ -14,7 +14,7 @@ use crate::wiring::AppState;
 /// Session cookie name.
 pub const SESSION_COOKIE: &str = "il_session";
 /// Workspace used when no session exists.
-pub const LOCAL_WORKSPACE: &str = "ws_local";
+const LOCAL_WORKSPACE: &str = "ws_local";
 
 /// What a session token stands for.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

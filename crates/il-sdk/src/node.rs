@@ -104,6 +104,13 @@ pub struct ValidationIssue {
     pub message: String,
 }
 
+impl ValidationIssue {
+    /// An issue at `path` (`""` means the settings root, `/`).
+    pub fn new(path: &str, message: &str) -> Self {
+        Self { path: if path.is_empty() { "/".into() } else { path.into() }, message: message.into() }
+    }
+}
+
 /// Errors from node execution.
 #[derive(Debug, thiserror::Error)]
 pub enum NodeError {

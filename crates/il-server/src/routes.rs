@@ -1,8 +1,6 @@
 //! Core routes plus every registered `RouteFactory`. B04 adds the rest of PRD §8.5 here.
 
-use axum::extract::State;
 use axum::http::{HeaderValue, Method, StatusCode, Uri, header};
-use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use il_core::ApiError;
@@ -11,10 +9,11 @@ use tower_http::compression::CompressionLayer;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+use crate::api::ApiErr;
 use crate::assets;
 use crate::wiring::AppState;
 
-/// The full router.
+/// The full app: core routes, registered route groups, embedded web build.
 pub fn router(state: AppState) -> Router {
     let ctx = state.route_ctx();
     let mut app = Router::new()
@@ -47,17 +46,12 @@ async fn healthz() -> Json<Health> {
     Json(Health { ok: true, version: env!("CARGO_PKG_VERSION").into() })
 }
 
-async fn nodes(State(_state): State<AppState>) -> Json<CatalogResponse> {
+async fn nodes() -> Json<CatalogResponse> {
     Json(CatalogResponse { nodes: il_sdk::registry::catalog() })
 }
 
-async fn api_not_found(uri: Uri) -> Response {
-    error(StatusCode::NOT_FOUND, "not_found", &format!("No API route for {}.", uri.path()))
-}
-
-/// Error response in the PRD §8.5 shape.
-pub fn error(status: StatusCode, code: &str, message: &str) -> Response {
-    (status, Json(ApiError::new(code, message))).into_response()
+async fn api_not_found(uri: Uri) -> ApiErr {
+    ApiErr(StatusCode::NOT_FOUND, ApiError::new("not_found", format!("No API route for {}.", uri.path())))
 }
 
 #[cfg(test)]

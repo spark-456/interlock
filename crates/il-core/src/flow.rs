@@ -140,11 +140,6 @@ impl Flow {
         self.nodes.iter().find(|n| n.id == id)
     }
 
-    /// Edges leaving `node_id`.
-    pub fn outgoing<'a>(&'a self, node_id: &'a str) -> impl Iterator<Item = &'a Edge> + 'a {
-        self.edges.iter().filter(move |e| e.from.node == node_id)
-    }
-
     /// Edges entering `node_id`.
     pub fn incoming<'a>(&'a self, node_id: &'a str) -> impl Iterator<Item = &'a Edge> + 'a {
         self.edges.iter().filter(move |e| e.to.node == node_id)
@@ -178,7 +173,6 @@ mod tests {
         assert_eq!(flow.settings.timezone, "UTC");
         assert_eq!(flow.nodes[0].type_version, 1);
         assert_eq!(flow.roots().map(|n| n.id.as_str()).collect::<Vec<_>>(), ["n_sched"]);
-        assert_eq!(flow.outgoing("n_sched").count(), 1);
         let back = serde_json::to_value(&flow).unwrap();
         assert_eq!(back["nodes"][1]["type"], "ai.write");
     }

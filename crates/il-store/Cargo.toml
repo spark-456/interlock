@@ -9,12 +9,4 @@ publish.workspace = true
 [dependencies]
 il-core.workspace = true
 il-sdk.workspace = true
-async-trait.workspace = true
 rusqlite.workspace = true
-serde_json.workspace = true
-thiserror.workspace = true
-tokio.workspace = true
-
-[dev-dependencies]
-il-sdk = { workspace = true, features = ["testkit"] }
-tokio.workspace = true

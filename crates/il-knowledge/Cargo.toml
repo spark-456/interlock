@@ -10,9 +10,3 @@ publish.workspace = true
 il-core.workspace = true
 il-sdk.workspace = true
 il-store.workspace = true
-async-trait.workspace = true
-serde_json.workspace = true
-
-[dev-dependencies]
-il-sdk = { workspace = true, features = ["testkit"] }
-tokio.workspace = true

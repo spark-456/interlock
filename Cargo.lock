@@ -884,12 +884,8 @@ dependencies = [
 name = "il-architect"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "il-core",
  "il-sdk",
- "serde_json",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -897,11 +893,8 @@ name = "il-connectors"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "il-core",
  "il-sdk",
  "inventory",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -937,12 +930,9 @@ dependencies = [
 name = "il-knowledge"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "il-core",
  "il-sdk",
  "il-store",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -950,11 +940,8 @@ name = "il-media"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "il-core",
  "il-sdk",
  "inventory",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -980,13 +967,8 @@ dependencies = [
 name = "il-publish"
 version = "0.1.0"
 dependencies = [
- "async-trait",
- "axum",
  "il-core",
  "il-sdk",
- "inventory",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -1018,8 +1000,6 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum",
- "bytes",
- "chrono",
  "futures",
  "il-ai",
  "il-architect",
@@ -1048,13 +1028,9 @@ dependencies = [
 name = "il-store"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "il-core",
  "il-sdk",
  "rusqlite",
- "serde_json",
- "thiserror",
- "tokio",
 ]
 
 [[package]]

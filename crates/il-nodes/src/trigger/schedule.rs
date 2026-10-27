@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use il_sdk::prelude::*;
 use il_sdk::services::StartRun;
-use il_sdk::{TriggerCtx, TriggerHandle};
+use il_sdk::{TriggerCtx, TriggerHandle, ValidationIssue};
 
 /// Schedule node.
 #[derive(Debug, Default)]
@@ -57,19 +57,15 @@ pub fn next_fire(expr: &str, timezone: &str, after: DateTime<Utc>) -> Result<Dat
     let fields = expr.split_whitespace().count();
     let full = if fields == 5 { format!("0 {expr}") } else { expr.to_string() };
     let schedule = cron::Schedule::from_str(&full)
-        .map_err(|e| NodeError::InvalidSettings(vec![issue("/cron", &format!("invalid cron: {e}"))]))?;
-    let tz: Tz = timezone
-        .parse()
-        .map_err(|_| NodeError::InvalidSettings(vec![issue("/timezone", &format!("unknown timezone `{timezone}`"))]))?;
+        .map_err(|e| NodeError::InvalidSettings(vec![ValidationIssue::new("/cron", &format!("invalid cron: {e}"))]))?;
+    let tz: Tz = timezone.parse().map_err(|_| {
+        NodeError::InvalidSettings(vec![ValidationIssue::new("/timezone", &format!("unknown timezone `{timezone}`"))])
+    })?;
     schedule
         .after(&after.with_timezone(&tz))
         .next()
         .map(|t| t.with_timezone(&Utc))
-        .ok_or_else(|| NodeError::InvalidSettings(vec![issue("/cron", "the schedule never fires")]))
-}
-
-fn issue(path: &str, message: &str) -> il_sdk::ValidationIssue {
-    il_sdk::ValidationIssue { path: path.into(), message: message.into() }
+        .ok_or_else(|| NodeError::InvalidSettings(vec![ValidationIssue::new("/cron", "the schedule never fires")]))
 }
 
 fn settings(v: &Value) -> (String, String) {
@@ -84,7 +80,7 @@ impl NodeExecutor for TriggerSchedule {
         &MANIFEST
     }
 
-    fn validate(&self, settings_value: &Value) -> Result<(), Vec<il_sdk::ValidationIssue>> {
+    fn validate(&self, settings_value: &Value) -> Result<(), Vec<ValidationIssue>> {
         il_sdk::validate::default_schema_validate(&MANIFEST, settings_value)?;
         let (cron, tz) = settings(settings_value);
         match next_fire(&cron, &tz, Utc::now()) {
