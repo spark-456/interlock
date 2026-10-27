@@ -21,7 +21,7 @@ test('adds a step from the palette and undoes it', async ({ page }) => {
 test('replaces a step, keeping its place', async ({ page }) => {
   await page.goto(URL);
   await page.getByTestId('node-n_posts').click();
-  await page.getByRole('button', { name: 'Replace with…' }).click();
+  await page.getByRole('button', { name: 'Replace step' }).click();
   await page.getByTestId('palette-ai.agent').click();
   await expect(page.getByTestId('node-n_posts')).toContainText('Agent');
   await expect(page.getByTestId('node-n_posts')).toContainText('Write post text');

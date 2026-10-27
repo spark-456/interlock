@@ -31,7 +31,7 @@
   {#each fieldsOf(schema) as f (f.key)}
     <Field
       field={f}
-      value={obj[f.key] ?? null}
+      value={obj[f.key] ?? f.schema.default ?? null}
       onchange={(v) => onchange({ ...obj, [f.key]: v })}
       {sources}
       {flow}

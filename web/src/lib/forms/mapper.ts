@@ -56,6 +56,7 @@ export function chipsOf(value: string, flow: Flow): string[] {
   return [...value.matchAll(REF)].map(([, body]) => {
     const m = body!.match(/^nodes\.([\w-]+)\.json\.?(.*)$/);
     if (m) return `${flow.nodes.find((n) => n.id === m[1])?.name ?? m[1]} › ${m[2] || 'output'}`;
-    return body!.startsWith('item.') ? `Item › ${body!.slice(5)}` : body!;
+    const item = body!.match(/^item(?:\.(.+))?$/);
+    return item ? (item[1] ? `Item › ${item[1]}` : 'Item') : body!;
   });
 }

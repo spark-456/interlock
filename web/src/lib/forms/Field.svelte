@@ -44,6 +44,9 @@
   ];
   const nice = (v: JsonValue) => String(v).replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
   const without = (i: number) => list.filter((_, j) => j !== i);
+  // A just-picked oneOf branch has no values yet, so remember the pick until it does.
+  let picked = $state<number | null>(null);
+  const at = $derived(picked ?? branchOf(s, value));
 </script>
 
 {#if field.kind === 'expression' || field.kind === 'longtext' || field.kind === 'file'}
@@ -137,13 +140,12 @@
   </fieldset>
 {:else if field.kind === 'oneOf'}
   {@const branches = s.oneOf ?? []}
-  {@const at = branchOf(s, value)}
   <fieldset>
     <legend>{label}</legend>
     <Select
       label="Kind"
       options={branches.map((b, i) => ({ value: String(i), label: b.title ?? `Option ${i + 1}` }))}
-      bind:value={() => String(at), (v) => onchange(emptyOf(branches[Number(v)]!))}
+      bind:value={() => String(at), (v) => ((picked = Number(v)), onchange(emptyOf(branches[picked]!)))}
     />
     <SchemaForm schema={branches[at]!} {value} {onchange} {sources} {flow} {errors} {path} />
   </fieldset>

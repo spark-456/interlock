@@ -28,6 +28,7 @@ export function kindOf(s: Schema): Kind {
   const w = s['x-widget'];
   if (w === 'model-role') return 'model-role';
   if (s.enum || w === 'select') return 'select';
+  if (!s.type && s.properties) return 'object';
   switch (s.type) {
     case 'number':
     case 'integer': return 'number';
@@ -68,11 +69,14 @@ export function emptyOf(s: Schema): JsonValue {
   }
 }
 
-/** The oneOf branch a value matches best: the first whose required keys are all present. */
+/** The oneOf branch a value matches best: the one with the most required keys, all present. */
 export function branchOf(s: Schema, value: JsonValue): number {
   const obj = (value ?? {}) as Record<string, JsonValue>;
-  const i = (s.oneOf ?? []).findIndex((b) => (b.required ?? []).every((k) => obj[k] !== undefined && obj[k] !== ''));
-  return Math.max(0, i);
+  const score = (b: Schema) => {
+    const req = b.required ?? [];
+    return req.every((k) => obj[k] !== undefined && obj[k] !== '') ? req.length : -1;
+  };
+  return (s.oneOf ?? []).reduce((best, b, i, all) => (score(b) > score(all[best]!) ? i : best), 0);
 }
 
 /** Missing required values and out-of-range numbers, keyed by dotted path. Expressions are not checked. */

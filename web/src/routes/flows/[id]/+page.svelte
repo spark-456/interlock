@@ -1,11 +1,11 @@
 <script lang="ts">
   // S6 editor (ED-1, ED-2, ED-6, ED-9): the flow on the canvas, a palette to add or replace steps,
   // undo/redo, tidy, save, a test run with live state from the run stream, and Ask Interlock diffs.
-  // The node panel (Settings / Input / Output) is W03's and mounts beside the canvas.
+  // Selecting a step opens the node panel (ED-3) beside the canvas.
   import { onDestroy } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import { page } from '$app/state';
-  import { api, runEvents, type Flow, type NodeManifest } from '$lib/api';
+  import { api, runEvents, type ConnectionSummary, type Flow, type Item, type Node, type NodeManifest } from '$lib/api';
   import AskBar from '$lib/canvas/AskBar.svelte';
   import NodeCanvas from '$lib/canvas/NodeCanvas.svelte';
   import NodeList from '$lib/canvas/NodeList.svelte';
@@ -19,11 +19,11 @@
   import { idleRun, reduceRun, type RunState } from '$lib/canvas/runState';
   import { flowCards, flowEdges, groupViews } from '$lib/canvas/views';
   import Button from '$lib/design/Button.svelte';
-  import IconButton from '$lib/design/IconButton.svelte';
   import Spinner from '$lib/design/Spinner.svelte';
   import StatusPill from '$lib/design/StatusPill.svelte';
   import TopBar from '$lib/design/TopBar.svelte';
   import { toast } from '$lib/design/toasts.svelte';
+  import NodePanel from '$lib/panel/NodePanel.svelte';
 
   const flowId = page.params.id ?? '';
   const speed = Number(page.url.searchParams.get('speed') ?? import.meta.env.VITE_FIXTURE_SPEED ?? 1) || 1;
@@ -32,6 +32,7 @@
   let saved = $state.raw<Flow | null>(null);
   let history = $state.raw<History>({ past: [], future: [] });
   let manifests = $state.raw<NodeManifest[]>([]);
+  let connections = $state.raw<ConnectionSummary[]>([]);
   let loadError = $state<string | null>(null);
   let selected = $state<string | null>(null);
   let palette = $state<'add' | 'replace' | null>(null);
@@ -52,6 +53,7 @@
       if (runId) watch(runId);
     })
     .catch((e: Error) => (loadError = e.message));
+  api.connections().then((c) => (connections = c), () => {});
   onDestroy(() => sub?.close());
 
   const catalog = $derived(Object.fromEntries(manifests.map((m) => [m.typeId, m])));
@@ -148,10 +150,15 @@
     if (next) change(next);
   }
 
-  function watch(runId: string) {
+  /** Follows a run. A full run starts from a blank canvas; a single step only adds its own state
+   * and items for the panel, leaving the canvas's run status as it was. */
+  function watch(runId: string, step = false) {
     sub?.close();
-    run = idleRun();
-    sub = runEvents(runId, (e) => (run = reduceRun(run, e)), { speed });
+    if (!step) run = idleRun();
+    sub = runEvents(runId, (e) => {
+      const next = reduceRun(run, e);
+      run = step ? { ...next, status: run.status } : next;
+    }, { speed });
   }
 
   async function testRun() {
@@ -161,6 +168,16 @@
       toast((e as Error).message, 'error');
     }
   }
+
+  async function runStep(nodeId: string, inputs: Item[]) {
+    try {
+      watch((await api.runStep(flowId, nodeId, inputs.map((i) => i.json))).runId, true);
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  }
+
+  const updateNode = (n: Node) => flow && change({ ...flow, nodes: flow.nodes.map((m) => (m.id === n.id ? n : m)) });
 
   function keys(e: KeyboardEvent) {
     if (!(e.ctrlKey || e.metaKey) || (e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return;
@@ -233,13 +250,6 @@
           ondropnode={(typeId, at) => catalog[typeId] && add(catalog[typeId], at)}
         />
       {/if}
-      {#if selectedNode && !proposal && !listView}
-        <div class="selection" role="toolbar" aria-label="Selected step">
-          <span class="sel-name">{selectedNode.name}</span>
-          <Button icon="swap" size="s" variant="ghost" onclick={() => (palette = 'replace')}>Replace with…</Button>
-          <IconButton icon="trash" label="Delete step" onclick={() => remove([selectedNode.id])} />
-        </div>
-      {/if}
       {#if asking}
         <div class="ask-slot">
           <AskBar
@@ -253,6 +263,23 @@
         </div>
       {/if}
     </div>
+    {#if flow && selectedNode && !proposal}
+      {#key selectedNode.id}
+        <NodePanel
+          {flow}
+          node={selectedNode}
+          manifest={catalog[selectedNode.type]}
+          {run}
+          {connections}
+          {dirty}
+          onchange={updateNode}
+          onclose={() => (selected = null)}
+          onreplace={() => (palette = 'replace')}
+          ondelete={() => remove([selectedNode.id])}
+          onrunstep={(inputs) => runStep(selectedNode.id, inputs)}
+        />
+      {/key}
+    {/if}
   </div>
 </div>
 
@@ -263,11 +290,6 @@
   .stage.list { overflow: auto; }
   .list-wrap { max-width: 520px; margin: 0 auto; padding: 24px 16px 140px; }
   .state { display: flex; align-items: center; gap: 8px; padding: 32px; color: var(--text-3); }
-  .selection {
-    position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 4px;
-    padding: 4px 4px 4px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); box-shadow: var(--shadow-md);
-  }
-  .sel-name { font-size: 13px; font-weight: 600; margin-right: 6px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ask-slot { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 6; }
   @media (max-width: 767px) { .ask-slot { bottom: 80px; } }
 </style>
