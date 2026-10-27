@@ -4,6 +4,7 @@ export type * from './ApiErrorBody';
 export type * from './Approval';
 export type * from './ApprovalDecision';
 export type * from './ApprovalStatus';
+export type * from './ApprovalTimeout';
 export type * from './AskDiff';
 export type * from './AskRequest';
 export type * from './Attachment';
