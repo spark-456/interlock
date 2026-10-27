@@ -1,7 +1,5 @@
 //! `ai.generate_voice` — Generate voice.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task M02 implements it.
 
 use il_sdk::prelude::*;
 
@@ -17,6 +15,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Reads text aloud as a voiceover. Uses the recorded provider in demo mode and tests.",
     )
     .icon("voice")
+    .status(NodeStatus::Ready)
     .cost(CostHint::Medium)
     .settings_schema(json!({
         "type": "object",
@@ -33,14 +32,9 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
             "voice": {
                 "type": "string",
                 "title": "Voice",
-                "default": "warm"
-            },
-            "speed": {
-                "type": "number",
-                "title": "Speed",
-                "default": 1.0,
-                "minimum": 0.5,
-                "maximum": 2.0
+                "default": "Maya",
+                "enum": ["Maya", "Arjun", "Serene", "Bernard", "Billy", "Mark", "Mabel", "Eleanor", "Elias", "Lara", "Lisa", "Marlene", "Miriam", "Paula", "Rina"],
+                "x-widget": "select"
             }
         }
     }))
@@ -48,7 +42,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Voiceover",
         json!({
             "text": "{{ item.text }}",
-            "voice": "warm"
+            "voice": "Maya"
         }),
     )
 });
@@ -59,8 +53,8 @@ impl NodeExecutor for AiGenerateVoice {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        super::execute(ctx, input, il_sdk::services::MediaKind::Voice, "text").await
     }
 }
 

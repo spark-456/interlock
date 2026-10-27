@@ -73,7 +73,7 @@
    "group": "g_make",
    "settings": {
     "prompt": "{{ item.text }}",
-    "durationSec": 20,
+    "durationSec": 5,
     "aspect": "16:9"
    }
   },
@@ -84,7 +84,7 @@
    "group": "g_make",
    "settings": {
     "text": "{{ nodes.n_script.json.text }}",
-    "voice": "warm"
+    "voice": "Maya"
    }
   },
   {

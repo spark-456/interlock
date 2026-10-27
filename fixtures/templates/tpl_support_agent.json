@@ -83,9 +83,6 @@
         "instructions": "You are Larkspur's billing assistant. Look up the customer's invoice before discussing it, quote refund windows from the newest policy, and never promise a refund above $100.",
         "knowledgeBases": [
           "n_kb"
-        ],
-        "tools": [
-          "getInvoice"
         ]
       },
       "credentials": {},

@@ -52,6 +52,8 @@ export function thumbnail(flow: Flow, w: number, h: number) {
   return { nodes, edges };
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 /** "3 min ago", "yesterday", "26 Oct". */
 export function ago(iso: string, now: Date): string {
   const s = Math.max(0, (now.getTime() - new Date(iso).getTime()) / 1000);
@@ -59,5 +61,7 @@ export function ago(iso: string, now: Date): string {
   if (s < 3600) return `${Math.floor(s / 60)} min ago`;
   if (s < 86_400) return `${Math.floor(s / 3600)} h ago`;
   if (s < 172_800) return 'yesterday';
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  // Not toLocaleDateString: its first call can take seconds while the runtime loads locale data.
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }

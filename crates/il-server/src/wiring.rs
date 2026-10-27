@@ -95,12 +95,14 @@ fn finish_state(config: Config, mut services: Services) -> AppState {
     if let Ok(http) = il_sdk::SafeHttp::new() {
         services.http = http;
     }
-    if config.providers != "fake" {
-        wire_models(&mut services, &config);
-        services.flow_tools = Arc::new(PublishedFlowTools { services: services.clone() });
-    }
+    wire_models(&mut services, &config);
+    services.flow_tools = Arc::new(PublishedFlowTools { services: services.clone() });
     services.notifier =
         Arc::new(il_connectors::slack::MessagingNotifier::new(services.clone(), services.notifier.clone()));
+    match il_media::r#gen::from_config(&config.raw, services.files.clone(), config.providers == "fake") {
+        Ok(media) => services.media = media,
+        Err(e) => tracing::error!(error = %e, "media provider not started; using offline fake"),
+    }
     tracing::info!(providers = %config.providers, "services wired");
     let mut engine_config: il_engine::EngineConfig = config.section("engine").unwrap_or_default();
     engine_config.caps = config.section("caps").unwrap_or_default();
@@ -159,7 +161,8 @@ pub async fn recover_startup(state: &AppState) -> anyhow::Result<()> {
 /// when the gateway can't start, e.g. without `NEBIUS_API_KEY`, so the UI still serves.
 fn wire_models(services: &mut Services, config: &Config) {
     let models = config.raw.get("models").cloned().unwrap_or_default();
-    match il_ai::Gateway::from_config(&models, false) {
+    // Fake mode still goes through the gateway (schema checks, repairs) with the offline provider.
+    match il_ai::Gateway::from_config(&models, config.providers == "fake") {
         Ok(gateway) => {
             let gateway = Arc::new(gateway);
             if let Ok(rt) = tokio::runtime::Handle::try_current() {

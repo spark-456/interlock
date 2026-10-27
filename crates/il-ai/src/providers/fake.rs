@@ -1,4 +1,5 @@
-//! `fake` provider (`IL_PROVIDERS=fake`): deterministic, offline. Echoes the last user message.
+//! `fake` provider (`IL_PROVIDERS=fake`): deterministic, offline. Echoes the last user message, or,
+//! when the request asks for JSON, returns a minimal instance of its schema so structured steps run.
 
 use std::sync::Arc;
 
@@ -21,12 +22,12 @@ impl ModelProvider for FakeProvider {
 
     async fn chat(&self, model: &str, req: ChatRequest) -> Result<ChatResponse, ModelError> {
         let last = req.messages.iter().rev().find(|m| m.role == ChatRole::User);
-        Ok(ChatResponse {
-            content: last.map(|m| m.content.clone()).unwrap_or_default(),
-            usage: Usage::default(),
-            model: model.to_string(),
-            ..Default::default()
-        })
+        let echo = last.map(|m| m.content.clone()).unwrap_or_default();
+        let content = match &req.json_schema {
+            Some(schema) => sample(schema, &echo).to_string(),
+            None => echo,
+        };
+        Ok(ChatResponse { content, usage: Usage::default(), model: model.to_string(), ..Default::default() })
     }
 
     async fn chat_stream(&self, model: &str, req: ChatRequest) -> Result<ChatStream, ModelError> {
@@ -40,6 +41,32 @@ impl ModelProvider for FakeProvider {
 
     async fn list_models(&self) -> Result<Vec<String>, ModelError> {
         Ok(vec!["fake".into()])
+    }
+}
+
+/// The smallest value matching `schema`: first enum value or option, every property, one array
+/// item when one is required, and `text` for free strings.
+fn sample(schema: &Value, text: &str) -> Value {
+    if let Some(first) = schema["enum"].as_array().and_then(|e| e.first()) {
+        return first.clone();
+    }
+    if let Some(first) = schema["oneOf"].as_array().or(schema["anyOf"].as_array()).and_then(|o| o.first()) {
+        return sample(first, text);
+    }
+    match schema["type"].as_str() {
+        Some("object") => Value::Object(
+            schema["properties"]
+                .as_object()
+                .map(|props| props.iter().map(|(k, v)| (k.clone(), sample(v, text))).collect())
+                .unwrap_or_default(),
+        ),
+        Some("array") if schema["minItems"].as_u64().unwrap_or(0) > 0 => {
+            Value::Array(vec![sample(&schema["items"], text)])
+        }
+        Some("array") => Value::Array(Vec::new()),
+        Some("boolean") => Value::Bool(true),
+        Some("number" | "integer") => schema["minimum"].clone().as_f64().map_or(Value::from(0), Value::from),
+        _ => Value::String(text.into()),
     }
 }
 
@@ -61,5 +88,25 @@ mod tests {
         let provider = (factory.make)(&Value::Null).unwrap();
         let req = ChatRequest { messages: vec![ChatMessage::user("hello")], ..Default::default() };
         assert_eq!(provider.chat("m", req).await.unwrap().content, "hello");
+    }
+
+    #[tokio::test]
+    async fn answers_json_requests_with_a_schema_instance() {
+        let schema = serde_json::json!({"type": "object", "properties": {
+            "label": {"type": "string", "enum": ["billing", "support"]},
+            "answer": {"type": "string"},
+            "confident": {"type": "boolean"},
+            "tags": {"type": "array", "items": {"type": "string"}},
+            "steps": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 2}}}});
+        let req = ChatRequest {
+            messages: vec![ChatMessage::user("refund?")],
+            json_schema: Some(schema),
+            ..Default::default()
+        };
+        let out: Value = serde_json::from_str(&FakeProvider.chat("m", req).await.unwrap().content).unwrap();
+        assert_eq!(
+            out,
+            serde_json::json!({"label": "billing", "answer": "refund?", "confident": true, "tags": [], "steps": [2.0]})
+        );
     }
 }

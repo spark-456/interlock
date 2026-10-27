@@ -81,7 +81,7 @@
       </ol>
       <form onsubmit={(e) => (e.preventDefault(), ask(draft))}>
         <input bind:value={draft} placeholder="Ask {flow?.name ?? 'the app'}…" aria-label="Message" autocomplete="off" />
-        <Button variant="primary" icon="send" type="submit" disabled={busy || !draft.trim()}>Send</Button>
+        <Button variant="primary" icon="send" type="submit" disabled={busy || !draft.trim() || !flow}>Send</Button>
       </form>
       <p class="note">Playground messages are test runs: nothing is sent or posted for real, and they count toward your caps.</p>
     </section>

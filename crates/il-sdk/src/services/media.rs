@@ -24,6 +24,9 @@ pub struct MediaRequest {
     /// Kind-specific parameters (duration, aspect, voice, size…).
     #[serde(default)]
     pub params: Value,
+    /// Force fixture media for test runs and demo workspaces.
+    #[serde(default)]
+    pub recorded: bool,
 }
 
 /// Generated media.

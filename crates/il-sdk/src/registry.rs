@@ -8,7 +8,9 @@ use il_core::NodeManifest;
 use serde_json::Value;
 
 use crate::node::NodeExecutor;
-use crate::services::{FlowToolProvider, MediaError, MediaGen, MediaKind, ModelError, ModelProvider, Services};
+use crate::services::{
+    FileStore, FlowToolProvider, MediaError, MediaGen, MediaKind, ModelError, ModelProvider, Services,
+};
 
 /// Registers a node type: `inventory::submit! { NodeFactory::new(|| Box::new(MyNode)) }`.
 pub struct NodeFactory {
@@ -31,12 +33,15 @@ pub struct ProviderFactory {
 }
 inventory::collect!(ProviderFactory);
 
+/// Builds a media generator with its config and shared file store.
+pub type MediaGenBuilder = fn(&Value, Arc<dyn FileStore>) -> Result<Arc<dyn MediaGen>, MediaError>;
+
 /// Registers a media generator by config name (`recorded`, …).
 pub struct MediaGenFactory {
     pub name: &'static str,
     pub kinds: &'static [MediaKind],
     /// Builds the generator from its config section.
-    pub make: fn(&Value) -> Result<Arc<dyn MediaGen>, MediaError>,
+    pub make: MediaGenBuilder,
 }
 inventory::collect!(MediaGenFactory);
 
