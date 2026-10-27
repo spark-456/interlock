@@ -1,0 +1,40 @@
+import { expect, test } from '@playwright/test';
+
+// Run view, approvals inbox and connections, in fixture mode.
+
+test('a run shows its steps, clips and the approval decision', async ({ page }) => {
+  await page.goto('/flows/flw_promos/runs/run_fa');
+  const details = page.getByRole('complementary', { name: 'Run details' });
+  await expect(details.getByText('Approved by Priya (Slack)')).toBeVisible({ timeout: 30_000 });
+  await expect(details.getByRole('region', { name: 'Clips' }).getByRole('figure')).toHaveCount(3);
+  const steps = details.getByRole('region', { name: 'Steps' }).getByRole('listitem');
+  await expect(steps).toHaveCount(18);
+  await expect(steps.filter({ hasText: 'Cut for each platform' })).toContainText('9 items');
+});
+
+test('approves from the inbox with an edited payload', async ({ page }) => {
+  await page.goto('/approvals');
+  await expect(page.getByText('1 waiting for you.')).toBeVisible();
+  const card = page.getByRole('article', { name: 'Post 3 promo videos' });
+  const payload = card.getByLabel('What will be sent (you can edit it)');
+  await payload.fill('{ "posts": [');
+  await expect(card.getByRole('button', { name: 'Approve' })).toBeDisabled();
+  await payload.fill('{ "posts": [] }');
+  const sent = page.waitForRequest((r) => r.url().includes('/approvals/apr_fa/decide'));
+  await card.getByRole('button', { name: 'Approve' }).click();
+  await sent;
+  await expect(page.getByText('Nothing is waiting for you.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Recent decisions' })).toContainText('Approved by you');
+});
+
+test('lists apps with their state and opens the connect drawer', async ({ page }) => {
+  await page.goto('/connections');
+  const apps = page.getByRole('list', { name: 'Apps' });
+  await expect(apps.getByRole('button').first()).toHaveAccessibleName('Google, Connected');
+  await apps.getByRole('button', { name: 'Discord, Expired' }).click();
+  const drawer = page.getByRole('dialog', { name: 'Discord' });
+  await expect(drawer).toContainText('rather than a sign-in');
+  await drawer.getByRole('button', { name: 'Close' }).click();
+  await apps.getByRole('button', { name: 'Slack, Connected' }).click();
+  await expect(page.getByRole('dialog', { name: 'Slack' }).getByRole('link', { name: 'Reconnect' })).toHaveAttribute('href', '/api/oauth/slack/start');
+});

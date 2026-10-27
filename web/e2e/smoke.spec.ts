@@ -16,7 +16,8 @@ for (const path of screens) {
 
 test('run stream replays to the end', async ({ page }) => {
   await page.goto('/flows/flw_promos/runs/run_fa');
-  await expect(page.getByTestId('stream-status')).toContainText('done', { timeout: 30_000 });
+  const details = page.getByRole('complementary', { name: 'Run details' });
+  await expect(details.getByText('$0.011')).toBeVisible({ timeout: 30_000 });
 });
 
 test('F-A build stream replays to ready', async ({ page }) => {
