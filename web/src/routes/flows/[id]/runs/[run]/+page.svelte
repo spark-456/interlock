@@ -11,6 +11,7 @@
   import { idleRun, reduceRun } from '$lib/canvas/runState';
   import { flowCards, flowEdges, groupViews } from '$lib/canvas/views';
   import { clock, usd } from '$lib/design/format';
+  import Banner from '$lib/design/Banner.svelte';
   import StatusPill, { type PillTone } from '$lib/design/StatusPill.svelte';
   import TopBar from '$lib/design/TopBar.svelte';
   import ApprovalCard from '../../../../approvals/ApprovalCard.svelte';
@@ -86,7 +87,9 @@
         <div><dt>Duration</dt><dd class="mono">{view.ms !== undefined ? clock(view.ms) : '—'}</dd></div>
         <div><dt>Cost</dt><dd class="mono">{view.costUsd !== undefined ? usd(view.costUsd) : '—'}</dd></div>
       </dl>
-      {#if view.error}<p role="alert" class="error">{view.error}</p>{/if}
+      {#if view.status === 'capped'}
+        <Banner kind="cap">{view.error}. The run stopped instead of spending more.</Banner>
+      {:else if view.error}<p role="alert" class="error">{view.error}</p>{/if}
 
       {#if approval && approval.status === 'pending' && !decision}
         <ApprovalCard {approval} ondecided={() => (approval = approval && { ...approval, status: 'approved' })} />
