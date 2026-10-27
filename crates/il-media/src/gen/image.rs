@@ -1,7 +1,5 @@
 //! `ai.generate_image` — Generate image.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task M02 implements it.
 
 use il_sdk::prelude::*;
 
@@ -17,6 +15,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Generates an image from a prompt. Uses the recorded provider in demo mode and tests.",
     )
     .icon("image")
+    .status(NodeStatus::Ready)
     .cost(CostHint::Medium)
     .settings_schema(json!({
         "type": "object",
@@ -39,10 +38,6 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
                 ],
                 "default": "1024x1024",
                 "x-widget": "select"
-            },
-            "style": {
-                "type": "string",
-                "title": "Style"
             }
         }
     }))
@@ -61,8 +56,8 @@ impl NodeExecutor for AiGenerateImage {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        super::execute(ctx, input, il_sdk::services::MediaKind::Image, "prompt").await
     }
 }
 

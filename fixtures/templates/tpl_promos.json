@@ -91,7 +91,7 @@
       "group": "g_make",
       "settings": {
         "aspect": "16:9",
-        "durationSec": 20,
+        "durationSec": 5,
         "prompt": "{{ item.text }}"
       },
       "credentials": {},
@@ -110,7 +110,7 @@
       "group": "g_make",
       "settings": {
         "text": "{{ nodes.n_script.json.text }}",
-        "voice": "warm"
+        "voice": "Maya"
       },
       "credentials": {},
       "disabled": false,

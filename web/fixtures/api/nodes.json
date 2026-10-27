@@ -509,10 +509,6 @@
             "title": "Size",
             "type": "string",
             "x-widget": "select"
-          },
-          "style": {
-            "title": "Style",
-            "type": "string"
           }
         },
         "required": [
@@ -521,7 +517,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Generate image",
       "trigger": false,
       "typeId": "ai.generate_image",
@@ -538,7 +534,7 @@
         {
           "settings": {
             "aspect": "16:9",
-            "durationSec": 20,
+            "durationSec": 5,
             "prompt": "{{ item.text }}"
           },
           "title": "Promo clip"
@@ -564,17 +560,16 @@
             "default": "16:9",
             "enum": [
               "16:9",
-              "9:16",
-              "1:1"
+              "9:16"
             ],
             "title": "Aspect",
             "type": "string",
             "x-widget": "select"
           },
           "durationSec": {
-            "default": 20,
-            "maximum": 60,
-            "minimum": 4,
+            "default": 5,
+            "maximum": 10,
+            "minimum": 2,
             "title": "Duration (s)",
             "type": "integer"
           },
@@ -591,7 +586,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Generate video",
       "trigger": false,
       "typeId": "ai.generate_video",
@@ -608,7 +603,7 @@
         {
           "settings": {
             "text": "{{ item.text }}",
-            "voice": "warm"
+            "voice": "Maya"
           },
           "title": "Voiceover"
         }
@@ -629,13 +624,6 @@
       ],
       "settingsSchema": {
         "properties": {
-          "speed": {
-            "default": 1.0,
-            "maximum": 2.0,
-            "minimum": 0.5,
-            "title": "Speed",
-            "type": "number"
-          },
           "text": {
             "default": "{{ item.text }}",
             "title": "Text",
@@ -643,9 +631,27 @@
             "x-widget": "expression"
           },
           "voice": {
-            "default": "warm",
+            "default": "Maya",
+            "enum": [
+              "Maya",
+              "Arjun",
+              "Serene",
+              "Bernard",
+              "Billy",
+              "Mark",
+              "Mabel",
+              "Eleanor",
+              "Elias",
+              "Lara",
+              "Lisa",
+              "Marlene",
+              "Miriam",
+              "Paula",
+              "Rina"
+            ],
             "title": "Voice",
-            "type": "string"
+            "type": "string",
+            "x-widget": "select"
           }
         },
         "required": [
@@ -654,7 +660,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Generate voice",
       "trigger": false,
       "typeId": "ai.generate_voice",
