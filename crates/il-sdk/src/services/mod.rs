@@ -38,4 +38,6 @@ pub struct Services {
     pub media: Arc<dyn MediaGen>,
     pub clock: Arc<dyn Clock>,
     pub http: SafeHttp,
+    /// Tools available to Agent nodes, supplied by connector and node adapters.
+    pub tools: Vec<Arc<dyn AgentTool>>,
 }

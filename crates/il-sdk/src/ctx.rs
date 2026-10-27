@@ -11,7 +11,9 @@ use tokio_util::sync::CancellationToken;
 
 use crate::http::SafeHttp;
 use crate::node::NodeError;
-use crate::services::{Credential, FileStore, FlowRunner, KnowledgeService, MediaGen, ModelGateway, Services};
+use crate::services::{
+    AgentTool, Credential, FileStore, FlowRunner, KnowledgeService, MediaGen, ModelGateway, Services,
+};
 
 /// Identity of the current node execution.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -101,6 +103,10 @@ impl NodeCtx {
     /// SSRF-safe HTTP client.
     pub fn http(&self) -> &SafeHttp {
         &self.services.http
+    }
+    /// Connector and node tools available to an Agent node.
+    pub fn tools(&self) -> &[Arc<dyn AgentTool>] {
+        &self.services.tools
     }
     /// Reports progress (0–100).
     pub fn emit_progress(&self, pct: f32, message: &str) {

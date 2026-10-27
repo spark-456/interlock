@@ -9,7 +9,14 @@ pub fn chat_body(model: &str, req: &ChatRequest, stream: bool) -> Value {
         .messages
         .iter()
         .map(|m| {
-            let mut msg = json!({"role": role(m.role), "content": m.content});
+            let content = match &m.image_url {
+                Some(url) => json!([
+                    {"type":"text","text":m.content},
+                    {"type":"image_url","image_url":{"url":url}}
+                ]),
+                None => json!(m.content),
+            };
+            let mut msg = json!({"role": role(m.role), "content": content});
             if !m.tool_calls.is_empty() {
                 msg["tool_calls"] = m
                     .tool_calls
@@ -106,5 +113,20 @@ pub fn error(status: u16, body: &str) -> ModelError {
         }
         s if s >= 500 => ModelError::Unavailable(format!("HTTP {s}: {text}")),
         s => ModelError::Other(format!("HTTP {s}: {text}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use il_sdk::services::models::ChatMessage;
+
+    #[test]
+    fn b07_image_message_uses_multimodal_content() {
+        let mut message = ChatMessage::user("Describe this");
+        message.image_url = Some("data:image/png;base64,AQID".into());
+        let body = chat_body("vision", &ChatRequest { messages: vec![message], ..Default::default() }, false);
+        assert_eq!(body["messages"][0]["content"][0]["text"], "Describe this");
+        assert_eq!(body["messages"][0]["content"][1]["image_url"]["url"], "data:image/png;base64,AQID");
     }
 }

@@ -32,6 +32,9 @@ pub enum ChatRole {
 pub struct ChatMessage {
     pub role: ChatRole,
     pub content: String,
+    /// Optional image data URL for a user message.
+    #[serde(default)]
+    pub image_url: Option<String>,
     #[serde(default)]
     pub tool_calls: Vec<ToolCall>,
     #[serde(default)]
@@ -41,19 +44,37 @@ pub struct ChatMessage {
 impl ChatMessage {
     /// A system message.
     pub fn system(content: impl Into<String>) -> Self {
-        Self { role: ChatRole::System, content: content.into(), tool_calls: vec![], tool_call_id: None }
+        Self {
+            role: ChatRole::System,
+            content: content.into(),
+            image_url: None,
+            tool_calls: vec![],
+            tool_call_id: None,
+        }
     }
     /// A user message.
     pub fn user(content: impl Into<String>) -> Self {
-        Self { role: ChatRole::User, content: content.into(), tool_calls: vec![], tool_call_id: None }
+        Self { role: ChatRole::User, content: content.into(), image_url: None, tool_calls: vec![], tool_call_id: None }
     }
     /// An assistant message.
     pub fn assistant(content: impl Into<String>) -> Self {
-        Self { role: ChatRole::Assistant, content: content.into(), tool_calls: vec![], tool_call_id: None }
+        Self {
+            role: ChatRole::Assistant,
+            content: content.into(),
+            image_url: None,
+            tool_calls: vec![],
+            tool_call_id: None,
+        }
     }
     /// A tool result message.
     pub fn tool(call_id: impl Into<String>, content: impl Into<String>) -> Self {
-        Self { role: ChatRole::Tool, content: content.into(), tool_calls: vec![], tool_call_id: Some(call_id.into()) }
+        Self {
+            role: ChatRole::Tool,
+            content: content.into(),
+            image_url: None,
+            tool_calls: vec![],
+            tool_call_id: Some(call_id.into()),
+        }
     }
 }
 
