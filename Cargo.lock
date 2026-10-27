@@ -1332,8 +1332,19 @@ dependencies = [
 name = "il-publish"
 version = "0.1.0"
 dependencies = [
+ "axum",
+ "chrono",
+ "futures",
  "il-core",
  "il-sdk",
+ "inventory",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+ "tokio",
+ "tower",
+ "ulid",
 ]
 
 [[package]]
