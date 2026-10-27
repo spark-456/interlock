@@ -112,3 +112,14 @@ async fn every_template_test_runs_end_to_end_in_fake_mode() {
         assert!(ran.iter().all(|n| n["status"] != "failed"), "{id}: {ran:?}");
     }
 }
+
+#[test]
+fn r05_support_template_declares_safe_invoice_tools_without_data_edges() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+    let flow: Flow =
+        serde_json::from_slice(&std::fs::read(root.join("templates/tpl_support_agent.json")).unwrap()).unwrap();
+    let billing = flow.node("n_billing").unwrap();
+    assert_eq!(billing.settings["apiTools"]["operations"], serde_json::json!(["lookup_customer", "list_invoices"]));
+    assert_eq!(billing.settings["apiTools"]["spec"], "@fixture/larkspur.openapi.json");
+    assert!(flow.nodes.iter().all(|node| node.node_type != "data.openapi"));
+}

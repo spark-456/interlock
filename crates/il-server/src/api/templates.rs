@@ -96,6 +96,22 @@ async fn instance(state: &AppState, mut flow: Flow, workspace_id: &str) -> ApiRe
     flow.workspace_id = workspace_id.into();
     flow.version = 0;
     attach_sample_files(state, &mut flow).await?;
+    for node in &mut flow.nodes {
+        if node.settings["apiTools"]["spec"] == "@fixture/larkspur.openapi.json" {
+            let path = FsPath::new(&state.config.server.templates_dir)
+                .parent()
+                .unwrap_or(FsPath::new("."))
+                .join("apis/larkspur.openapi.json");
+            let bytes = tokio::fs::read(path).await.map_err(ApiErr::internal)?;
+            let file = state
+                .services
+                .files
+                .put("larkspur.openapi.json", "application/json", bytes.into())
+                .await
+                .map_err(ApiErr::internal)?;
+            node.settings["apiTools"]["spec"] = Value::String(file.id);
+        }
+    }
     Ok(flow)
 }
 
