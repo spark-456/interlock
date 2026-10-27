@@ -1289,7 +1289,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Label email (Gmail)",
       "trigger": false,
       "typeId": "app.gmail.label",
@@ -1354,7 +1354,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "New email (Gmail)",
       "trigger": true,
       "typeId": "app.gmail.new_email",
@@ -1426,7 +1426,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Reply (Gmail)",
       "trigger": false,
       "typeId": "app.gmail.reply",
@@ -1498,7 +1498,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Send email (Gmail)",
       "trigger": false,
       "typeId": "app.gmail.send",
@@ -1716,7 +1716,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Append row (Google Sheets)",
       "trigger": false,
       "typeId": "app.sheets.append_row",
@@ -2303,7 +2303,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Upload video (YouTube)",
       "trigger": false,
       "typeId": "app.youtube.upload",
