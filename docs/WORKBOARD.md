@@ -18,7 +18,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
 | 8 | B06 | Nodes: logic & data | P0 | T00 | ready | | | | |
 | 9 | B07 | Nodes: AI | P0 | T00 | ready | | | | |
-| 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | ready | | | | |
+| 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | claimed | claude-a | t/B04-server | 2026-10-27 07:35 | |
 | 11 | W03 | Node panel, schema forms, previews | P0 | T00 | ready | | | | |
 | 12 | B05 | Triggers & scheduler | P0 | T00 | done | claude-a | t/B05-triggers | 2026-10-27 07:30 | Commit 0b96b2b. App triggers use `il_sdk::poll` |
 | 13 | W04 | Create & Building screens | P0 | T00 | ready | | | 2026-10-27 06:10 | Building (`/new/[id]/building`) is done (design PR). Still to do: Create (`/new`, design S2) and wiring Building to live `POST /api/builds` |
