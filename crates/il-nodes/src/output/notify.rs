@@ -1,9 +1,9 @@
 //! `output.notify` — Send notification.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task B08 implements it.
+//! Sends a notification through the configured channel adapter.
 
 use il_sdk::prelude::*;
+use il_sdk::services::{Notification, NotifyError};
 
 /// Send notification node.
 #[derive(Debug, Default)]
@@ -17,6 +17,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Sends a short notification in the app or to a channel set in settings.",
     )
     .icon("bell")
+    .status(NodeStatus::Ready)
     .external()
     .settings_schema(json!({
         "type": "object",
@@ -68,8 +69,28 @@ impl NodeExecutor for OutputNotify {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let channel = ctx.settings["channel"].as_str().unwrap_or("inapp");
+        let notification = Notification {
+            workspace_id: ctx.run.workspace_id.clone(),
+            channel: channel.into(),
+            target: ctx.settings["target"].as_str().map(str::to_owned),
+            title: ctx.settings["title"].as_str().unwrap_or_default().into(),
+            body: ctx.settings["message"].as_str().unwrap_or_default().into(),
+            approval_id: None,
+            payload: Value::Null,
+            credential_id: ctx.credential_ids.get(channel).cloned(),
+        };
+        let reference = ctx.services.notifier.send(&notification).await.map_err(|e| match e {
+            NotifyError::UnknownChannel(_) => NodeError::Failed(e.to_string()),
+            NotifyError::Send(_) => NodeError::Retryable(e.to_string()),
+        })?;
+        let mut item = input.main().first().cloned().unwrap_or_default();
+        if !item.json.is_object() {
+            item.json = json!({});
+        }
+        item.json["notification"] = json!({"channel":channel,"reference":reference});
+        Ok(NodeOutput::out(vec![item]))
     }
 }
 
@@ -77,8 +98,21 @@ inventory::submit! { NodeFactory::new(|| Box::new(OutputNotify)) }
 
 #[cfg(test)]
 mod tests {
+    use il_sdk::testkit::NodeHarness;
+    use serde_json::json;
     #[test]
     fn manifest_is_valid() {
         il_sdk::testkit::assert_manifest_valid(&super::OutputNotify);
+    }
+
+    #[tokio::test]
+    async fn b08_notify_uses_configured_destination() {
+        let harness = NodeHarness::new(super::OutputNotify)
+            .settings(json!({"channel":"slack","target":"#ops","title":"Done","message":"Finished"}));
+        let out = harness.run().await.unwrap();
+        assert_eq!(out.ports["out"][0].json["notification"]["channel"], "slack");
+        let sent = harness.fakes.notifier.sent.lock().unwrap();
+        assert_eq!(sent[0].target.as_deref(), Some("#ops"));
+        assert_eq!(sent[0].body, "Finished");
     }
 }

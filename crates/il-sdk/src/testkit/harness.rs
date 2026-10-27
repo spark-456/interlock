@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use il_core::expr::{Scope, render_value};
-use il_core::{ExecMode, Item};
+use il_core::{ApprovalDecision, ExecMode, Item};
 use serde_json::Value;
 use tokio_util::sync::CancellationToken;
 
@@ -19,6 +19,7 @@ pub struct NodeHarness<N: NodeExecutor> {
     input: Vec<Item>,
     ports: Option<BTreeMap<String, Vec<Item>>>,
     credentials: BTreeMap<String, String>,
+    resume: Option<ApprovalDecision>,
     /// The fakes; tweak them (script the gateway, seed credentials) before `run`.
     pub fakes: FakeServices,
     pub progress: Arc<NoopProgress>,
@@ -34,6 +35,7 @@ impl<N: NodeExecutor> NodeHarness<N> {
             input: vec![],
             ports: None,
             credentials: BTreeMap::new(),
+            resume: None,
             fakes: FakeServices::default(),
             progress: Arc::new(NoopProgress::default()),
             approvals: Arc::new(FakeApprovals::default()),
@@ -62,6 +64,12 @@ impl<N: NodeExecutor> NodeHarness<N> {
     /// Binds a credential key to a credential id (seed it in `fakes.store`).
     pub fn credential(mut self, key: &str, id: &str) -> Self {
         self.credentials.insert(key.into(), id.into());
+        self
+    }
+
+    /// Resumes a human node with a scripted decision.
+    pub fn resume(mut self, decision: ApprovalDecision) -> Self {
+        self.resume = Some(decision);
         self
     }
 
@@ -99,7 +107,7 @@ impl<N: NodeExecutor> NodeHarness<N> {
                 cancel: CancellationToken::new(),
                 progress: self.progress.clone(),
                 approvals: self.approvals.clone(),
-                resume: None,
+                resume: self.resume.clone(),
             };
             let node_input =
                 self.ports.clone().map(|ports| NodeInput { ports }).unwrap_or_else(|| NodeInput::items(items));
