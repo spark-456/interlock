@@ -24,7 +24,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 13 | W04 | Create & Building screens | P0 | T00 | done | claude-a | t/W04-create | 2026-10-27 23:30 | [PR #13](https://github.com/spark-456/interlock/pull/13) |
 | 14 | K01 | Knowledge: ingest, Tavily, hybrid search | P0 | T00 | claimed | codex-1 | t/K01-knowledge | 2026-10-27 15:07 | Pushed `b4482667c7b1e3a1151c9e41a282c107a8829328`; Rust checks pass. Full check needs generated `web/fixtures/api/nodes.json`; awaiting owner decision on no-web rule before PR. |
 | 15 | B08 | Nodes: human & output | P0 | T00 | claimed | codex-1 | t/B08-human-output | 2026-10-27 14:27 | Core executors and 46 node tests pushed at 2b99391; approval timeout needs B03b, full check and PR need generated `web/` fixture decision |
-| 16 | P01 | Publish: OpenAI API, MCP, widget, guide | P0 | T00 | claimed | codex-1 | t/P01-publish | 2026-10-27 15:36 | Pushed `0c76ba70dad4cd068334d4096fc55eb29f94ac35`; API keys, OpenAI chat/models, guide pass full check. Left: rmcp per-flow/platform routes, official SDK test, widget; widget conflicts with no-`web/` instruction. |
+| 16 | P01 | Publish: OpenAI API, MCP, widget, guide | P0 | T00 | claimed | codex-1 | t/P01-publish | 2026-10-27 18:04 | Pushed `91befd4305cd37b50688b09bc15e132208f070c5`; OpenAI API, keys, guide, rmcp platform/per-flow routes pass `cargo xtask check`. Left: per-flow AgentTool exposure, K01 `owns_base` override, API key HTTP management, official JS SDK test and widget (claude-a handoff below), then PR. |
 | 17 | R01 | Templates, fixtures, recorded runs, demo seed | P0 | T00 | ready | | | | |
 | 18 | A02 | Architect: test-and-fix, Ask diff, app kit | P0 | A01 | ready | | | | |
 | 19 | W05 | Runs, approvals, flows list, templates, connections | P0 | T00 | ready | | | | |
@@ -67,7 +67,7 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 | Issue | Kind | Tasks | Detail | Status |
 |---|---|---|---|---|
 | Generated node catalog fixture | handoff to claude-a | B06, B07, B08, N01, K01, K02, C01, C02, M01 and later node tasks | Owner chose claude-a to update `web/fixtures/api/nodes.json`; codex-1 leaves `web/` untouched. Claude: check out each pushed backend task branch, run `cargo xtask catalog`, commit only the generated web fixture on that branch, and note the SHA in its task row. Codex-1 will then run full check and open its PR. | open |
-| Publish widget | handoff to claude-a | P01 | P01 requires a tiny vanilla TS widget under `web/widget/` with streamed answers and sources. codex-1 owns the backend P01 branch but cannot edit `web/`; add the widget on `t/P01-publish` and note the SHA in its task row. | open |
+| Publish widget and SDK test | handoff to claude-a | P01 | P01 requires a tiny vanilla TS widget under `web/widget/` with streamed answers and sources, plus a local-server test using the official OpenAI JS SDK. codex-1 owns the backend P01 branch but cannot edit `web/`; add these on `t/P01-publish` and note the SHA in its task row. | open |
 | GitHub Actions blocked on private repos | blocker | all | Account billing stops hosted runners. The repo is public so CI runs; making it private again stops CI | workaround |
 | Model IDs not verified | issue | B02 | Config model IDs are guesses until checked against Token Factory | open |
 | Architect must emit `build.node` and `build.cost` | issue | A01, A02 | The Building screen needs them for node stats and the running cost | open |
