@@ -70,11 +70,15 @@ pub trait Store: Send + Sync {
     async fn flow_version(&self, id: &str, version: u32) -> StoreResult<Option<Flow>>;
     async fn set_flow_active(&self, id: &str, active: bool) -> StoreResult<()>;
     async fn is_flow_active(&self, id: &str) -> StoreResult<bool>;
+    /// Active flows to restore triggers after restart.
+    async fn active_flows(&self) -> StoreResult<Vec<Flow>>;
 
     // Runs.
     async fn put_run(&self, run: &Run) -> StoreResult<()>;
     async fn get_run(&self, id: &str) -> StoreResult<Option<Run>>;
     async fn list_runs(&self, flow_id: &str, limit: usize) -> StoreResult<Vec<Run>>;
+    /// Nonterminal runs to recover after restart.
+    async fn recoverable_runs(&self) -> StoreResult<Vec<Run>>;
     async fn put_node_run(&self, node_run: &NodeRun) -> StoreResult<()>;
     async fn node_runs(&self, run_id: &str) -> StoreResult<Vec<NodeRun>>;
 
