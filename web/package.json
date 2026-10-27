@@ -1,6 +1,7 @@
 {
   "name": "interlock-web",
   "private": true,
+  "license": "UNLICENSED",
   "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@10.14.0",
