@@ -1,0 +1,302 @@
+{
+ "name": "Weekly product promos",
+ "kind": "automation",
+ "notes": [
+  "Trigger: every Monday at 9:00.",
+  "Instagram, TikTok and LinkedIn run as dry-runs until those platforms approve posting."
+ ],
+ "groups": [
+  {
+   "id": "g_find",
+   "label": "Find new products"
+  },
+  {
+   "id": "g_make",
+   "label": "Make the videos"
+  },
+  {
+   "id": "g_cut",
+   "label": "Cut and caption"
+  },
+  {
+   "id": "g_post",
+   "label": "Approve and post"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "n_schedule",
+   "type": "trigger.schedule",
+   "name": "Every Monday 9:00",
+   "group": "g_find",
+   "settings": {
+    "cron": "0 9 * * MON",
+    "timezone": "Asia/Kolkata"
+   }
+  },
+  {
+   "id": "n_products",
+   "type": "app.shopify.get_products",
+   "name": "Three newest products",
+   "group": "g_find",
+   "settings": {
+    "store": "sandbox",
+    "sort": "newest",
+    "limit": 3
+   }
+  },
+  {
+   "id": "n_loop",
+   "type": "logic.loop",
+   "name": "Each product",
+   "group": "g_find",
+   "settings": {
+    "field": "{{ item.products }}"
+   }
+  },
+  {
+   "id": "n_script",
+   "type": "ai.write",
+   "name": "Write video script",
+   "group": "g_make",
+   "settings": {
+    "instructions": "Write a 20-second upbeat promo script for this product. End with the price.",
+    "input": "{{ item.title }}: {{ item.description }} (${{ item.price }})",
+    "tone": "upbeat",
+    "length": "short"
+   }
+  },
+  {
+   "id": "n_video",
+   "type": "ai.generate_video",
+   "name": "Generate promo video",
+   "group": "g_make",
+   "settings": {
+    "prompt": "{{ item.text }}",
+    "durationSec": 20,
+    "aspect": "16:9"
+   }
+  },
+  {
+   "id": "n_voice",
+   "type": "ai.generate_voice",
+   "name": "Generate voiceover",
+   "group": "g_make",
+   "settings": {
+    "text": "{{ nodes.n_script.json.text }}",
+    "voice": "warm"
+   }
+  },
+  {
+   "id": "n_merge",
+   "type": "media.merge_av",
+   "name": "Add voiceover",
+   "group": "g_make",
+   "settings": {
+    "video": "{{ item.files.video }}",
+    "audio": "{{ item.files.audio }}"
+   }
+  },
+  {
+   "id": "n_resize",
+   "type": "media.resize",
+   "name": "Cut for each platform",
+   "group": "g_cut",
+   "settings": {
+    "video": "{{ item.files.video }}",
+    "aspects": [
+     "9:16",
+     "1:1",
+     "16:9"
+    ]
+   }
+  },
+  {
+   "id": "n_captions",
+   "type": "media.captions",
+   "name": "Add captions",
+   "group": "g_cut",
+   "settings": {
+    "video": "{{ item.files.video }}",
+    "text": "{{ nodes.n_script.json.text }}"
+   }
+  },
+  {
+   "id": "n_posts",
+   "type": "ai.write",
+   "name": "Write post text",
+   "group": "g_post",
+   "settings": {
+    "instructions": "Write a short post for Reels, TikTok, Shorts and LinkedIn. Friendly, no hashtags spam, max two hashtags.",
+    "input": "{{ item.title }}",
+    "tone": "friendly",
+    "length": "short",
+    "outputField": "post"
+   }
+  },
+  {
+   "id": "n_approve",
+   "type": "human.approval",
+   "name": "Approve in Slack",
+   "group": "g_post",
+   "settings": {
+    "title": "Approve this week's promo posts",
+    "payload": "{{ item }}",
+    "channels": [
+     "inapp",
+     "slack"
+    ],
+    "slackChannel": "#marketing"
+   }
+  },
+  {
+   "id": "n_youtube",
+   "type": "app.youtube.upload",
+   "name": "YouTube Shorts (private)",
+   "group": "g_post",
+   "settings": {
+    "video": "{{ item.files.clip_9x16 }}",
+    "title": "{{ item.title }}",
+    "privacy": "private"
+   }
+  },
+  {
+   "id": "n_bluesky",
+   "type": "app.bluesky.post",
+   "name": "Bluesky",
+   "group": "g_post",
+   "settings": {
+    "text": "{{ item.post }}",
+    "media": "{{ item.files.clip_1x1 }}"
+   }
+  },
+  {
+   "id": "n_discord",
+   "type": "app.discord.send",
+   "name": "Discord",
+   "group": "g_post",
+   "settings": {
+    "content": "{{ item.post }}",
+    "attachments": "{{ item.files.clip_16x9 }}"
+   }
+  },
+  {
+   "id": "n_instagram",
+   "type": "app.instagram.post_reel",
+   "name": "Instagram Reels (dry-run)",
+   "group": "g_post",
+   "settings": {
+    "video": "{{ item.files.clip_9x16 }}",
+    "caption": "{{ item.post }}"
+   }
+  },
+  {
+   "id": "n_tiktok",
+   "type": "app.tiktok.post",
+   "name": "TikTok (dry-run)",
+   "group": "g_post",
+   "settings": {
+    "video": "{{ item.files.clip_9x16 }}",
+    "caption": "{{ item.post }}"
+   }
+  },
+  {
+   "id": "n_linkedin",
+   "type": "app.linkedin.post",
+   "name": "LinkedIn (dry-run)",
+   "group": "g_post",
+   "settings": {
+    "text": "{{ item.post }}",
+    "media": "{{ item.files.clip_16x9 }}"
+   }
+  },
+  {
+   "id": "n_log",
+   "type": "app.sheets.append_row",
+   "name": "Log in Google Sheets",
+   "group": "g_post",
+   "settings": {
+    "spreadsheetId": "1LarkspurPromoLog",
+    "sheet": "Log",
+    "values": {
+     "Product": "{{ item.title }}",
+     "Status": "posted"
+    }
+   }
+  }
+ ],
+ "edges": [
+  {
+   "from": "n_schedule",
+   "to": "n_products"
+  },
+  {
+   "from": "n_products",
+   "to": "n_loop"
+  },
+  {
+   "from": "n_loop",
+   "to": "n_script"
+  },
+  {
+   "from": "n_script",
+   "to": "n_video"
+  },
+  {
+   "from": "n_script",
+   "to": "n_voice"
+  },
+  {
+   "from": "n_video",
+   "to": "n_merge"
+  },
+  {
+   "from": "n_voice",
+   "to": "n_merge"
+  },
+  {
+   "from": "n_merge",
+   "to": "n_resize"
+  },
+  {
+   "from": "n_resize",
+   "to": "n_captions"
+  },
+  {
+   "from": "n_captions",
+   "to": "n_posts"
+  },
+  {
+   "from": "n_posts",
+   "to": "n_approve"
+  },
+  {
+   "from": "n_approve",
+   "to": "n_youtube"
+  },
+  {
+   "from": "n_approve",
+   "to": "n_bluesky"
+  },
+  {
+   "from": "n_approve",
+   "to": "n_discord"
+  },
+  {
+   "from": "n_approve",
+   "to": "n_instagram"
+  },
+  {
+   "from": "n_approve",
+   "to": "n_tiktok"
+  },
+  {
+   "from": "n_approve",
+   "to": "n_linkedin"
+  },
+  {
+   "from": "n_approve",
+   "to": "n_log"
+  }
+ ]
+}

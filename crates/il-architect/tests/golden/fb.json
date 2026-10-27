@@ -1,0 +1,206 @@
+{
+ "name": "Support inbox replies",
+ "kind": "automation",
+ "notes": [
+  "Simple questions get an automatic reply; billing and complaints wait for your approval in Slack."
+ ],
+ "groups": [
+  {
+   "id": "g_read",
+   "label": "Read the email"
+  },
+  {
+   "id": "g_answer",
+   "label": "Write the answer"
+  },
+  {
+   "id": "g_send",
+   "label": "Send or ask"
+  },
+  {
+   "id": "g_log",
+   "label": "Log it"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "n_inbox",
+   "type": "app.gmail.new_email",
+   "name": "Support inbox",
+   "group": "g_read",
+   "settings": {
+    "label": "INBOX",
+    "query": "to:support@larkspur.example"
+   }
+  },
+  {
+   "id": "n_classify",
+   "type": "ai.classify",
+   "name": "What kind of email",
+   "group": "g_read",
+   "settings": {
+    "input": "{{ item.subject }}\n{{ item.body }}",
+    "labels": [
+     {
+      "name": "question"
+     },
+     {
+      "name": "billing"
+     },
+     {
+      "name": "complaint"
+     },
+     {
+      "name": "spam"
+     }
+    ]
+   }
+  },
+  {
+   "id": "n_spam",
+   "type": "app.gmail.label",
+   "name": "Mark spam",
+   "group": "g_read",
+   "settings": {
+    "messageId": "{{ nodes.n_inbox.json.messageId }}",
+    "addLabels": [
+     "SPAM"
+    ]
+   }
+  },
+  {
+   "id": "n_search",
+   "type": "knowledge.search",
+   "name": "Find the policy",
+   "group": "g_answer",
+   "settings": {
+    "knowledgeBase": "kb_help_center",
+    "query": "{{ nodes.n_inbox.json.subject }} {{ nodes.n_inbox.json.body }}",
+    "topK": 5
+   }
+  },
+  {
+   "id": "n_draft",
+   "type": "ai.write",
+   "name": "Draft the reply",
+   "group": "g_answer",
+   "settings": {
+    "instructions": "Write a friendly, concise reply to this customer email using only the help-center passages. Cite the article title for every policy you mention. Sign off as the Larkspur support team.",
+    "input": "Email: {{ nodes.n_inbox.json.body }}\n\nPassages: {{ item }}",
+    "tone": "friendly"
+   }
+  },
+  {
+   "id": "n_safe",
+   "type": "logic.if",
+   "name": "Simple question?",
+   "group": "g_send",
+   "settings": {
+    "condition": "{{ nodes.n_classify.json.label == 'question' and nodes.n_classify.json.confidence > 0.8 }}"
+   }
+  },
+  {
+   "id": "n_reply",
+   "type": "app.gmail.reply",
+   "name": "Reply",
+   "group": "g_send",
+   "settings": {
+    "threadId": "{{ nodes.n_inbox.json.threadId }}",
+    "body": "{{ item.text }}"
+   }
+  },
+  {
+   "id": "n_ask",
+   "type": "app.slack.approval",
+   "name": "Ask in Slack",
+   "group": "g_send",
+   "settings": {
+    "channel": "#support",
+    "title": "Send this reply?",
+    "payload": "{{ item }}"
+   }
+  },
+  {
+   "id": "n_reply_approved",
+   "type": "app.gmail.reply",
+   "name": "Send approved reply",
+   "group": "g_send",
+   "settings": {
+    "threadId": "{{ nodes.n_inbox.json.threadId }}",
+    "body": "{{ item.text }}"
+   }
+  },
+  {
+   "id": "n_log",
+   "type": "app.sheets.append_row",
+   "name": "Log in Google Sheets",
+   "group": "g_log",
+   "settings": {
+    "spreadsheetId": "1SupportLog",
+    "sheet": "Replies",
+    "values": {
+     "From": "{{ nodes.n_inbox.json.from }}",
+     "Type": "{{ nodes.n_classify.json.label }}",
+     "Reply": "{{ item.body }}"
+    }
+   }
+  }
+ ],
+ "edges": [
+  {
+   "from": "n_inbox",
+   "to": "n_classify"
+  },
+  {
+   "from": "n_classify",
+   "fromPort": "question",
+   "to": "n_search"
+  },
+  {
+   "from": "n_classify",
+   "fromPort": "billing",
+   "to": "n_search"
+  },
+  {
+   "from": "n_classify",
+   "fromPort": "complaint",
+   "to": "n_search"
+  },
+  {
+   "from": "n_classify",
+   "fromPort": "spam",
+   "to": "n_spam"
+  },
+  {
+   "from": "n_search",
+   "to": "n_draft"
+  },
+  {
+   "from": "n_draft",
+   "to": "n_safe"
+  },
+  {
+   "from": "n_safe",
+   "fromPort": "true",
+   "to": "n_reply"
+  },
+  {
+   "from": "n_safe",
+   "fromPort": "false",
+   "to": "n_ask"
+  },
+  {
+   "from": "n_ask",
+   "fromPort": "approved",
+   "to": "n_reply_approved"
+  },
+  {
+   "from": "n_reply",
+   "to": "n_log"
+  },
+  {
+   "from": "n_reply_approved",
+   "to": "n_log"
+  }
+ ]
+}
