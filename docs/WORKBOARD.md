@@ -36,7 +36,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 25 | M02 | Media generation (video, voice, image) | P0 | T00 | done | codex-1 | t/M02-media-gen | 2026-10-27 23:06 | [PR #38](https://github.com/spark-456/interlock/pull/38); full `cargo xtask check` and Ubuntu/Windows CI passed; squash-merged as `13958172006cb5096c238b1e2a82eee99958997b`. |
 | 26 | C03 | Shopify sandbox + social dry-run nodes | P0 | T00 | done | codex-1 | t/C03-sandbox-social | 2026-10-27 22:46 | [PR #36](https://github.com/spark-456/interlock/pull/36); full `cargo xtask check` and Ubuntu/Windows CI passed; squash-merged as `afaac62c788c6dd511d0df93df753282b5542a8c`. |
 | 27 | W07 | Landing, demo mode, settings, error states | P0 | T00 | done | claude-a | t/W07-states | 2026-10-27 21:46 | [PR #26](https://github.com/spark-456/interlock/pull/26), [PR #28](https://github.com/spark-456/interlock/pull/28) |
-| 28 | R02 | Deploy to Nebius | P0 | B04 | claimed | codex-1 | t/R02-deploy-nebius | 2026-10-27 23:02 | Preparing Docker image, runbook, and offline smoke script; deployment needs Nebius access. |
+| 28 | R02 | Deploy to Nebius | P0 | B04 | claimed | codex-1 | t/R02-deploy-nebius | 2026-10-27 23:15 | [Draft PR #39](https://github.com/spark-456/interlock/pull/39), branch `9a1ea589c2fc4236873a3e4937a1d396f10f967f`: image, HTTPS Compose, runbook, smoke script done; full local `cargo xtask check` and fake-provider smoke passed. Left: Docker image build and public Nebius deploy with persistent disk, DNS, keys, external smoke; waiting on owner account/budget. |
 | 29 | R03 | Integration pass & E2E | P0 | B03, B04, A01, W02, W03 | claimed | claude-a | t/R03-integration | 2026-10-27 23:08 | Part 1 merged ([PR #37](https://github.com/spark-456/interlock/pull/37)): fake-mode integration fixes, journey e2e; bugs filed as R05, R06. Left: run F-A/F-B/F-C on a staging deploy (needs R02 and the owner's keys) |
 | 30 | R04 | README, docs, video script, Devpost | P0 | — | ready | | | | Draft any time; finalise Fri |
 | 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | ready | | | | Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow, ApiCard; gallery page with every SpecV3 state; vitest for interactive components |
@@ -64,7 +64,7 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 | Telegram bot token | C02 | Create a bot with BotFather | open |
 | Bluesky app password | C02 | Settings → App passwords | open |
 | `IL_MASTER_KEY` | B01 | 32 random bytes, base64. Encrypts stored credentials | open |
-| Nebius deployment account | R02 | Somewhere to run the container with HTTPS and a volume | open |
+| Nebius deployment account | R02 | Provide project access and VM/persistent-disk budget, public DNS name, and runtime keys via environment; then verify HTTPS demo access | open |
 | Final licence and README | R04 | Switch to Apache-2.0 and write the README at submission | open |
 
 ## Blockers and known issues
