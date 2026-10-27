@@ -40,7 +40,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 29 | R03 | Integration pass & E2E | P0 | B03, B04, A01, W02, W03 | ready | | | | Integrator role; start Thu |
 | 30 | R04 | README, docs, video script, Devpost | P0 | — | ready | | | | Draft any time; finalise Fri |
 | 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | ready | | | | Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow, ApiCard; gallery page with every SpecV3 state; vitest for interactive components |
-| 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | claimed | codex-1 | t/N01-guardrails | 2026-10-27 14:38 | New node in `il-nodes/src/ai/guardrails.rs`: rules list, pass/blocked outputs, hand-off rule. Used by F-C; the design's "Safety rules" node |
+| 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | claimed | codex-1 | t/N01-guardrails | 2026-10-27 14:38 | Node, three fake-gateway tests, and generated docs pushed at 16d9560; full check and PR need generated `web/` fixture decision |
 | 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | ready | | | | Follow-up of B04 part 1 (see its commit message) |
 | 34 | B03b | Engine: approval expiry and timeout policy | P0 | B03 | ready | | | | Needed to finish B08 timeout behaviour |
 
