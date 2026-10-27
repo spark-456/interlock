@@ -38,7 +38,10 @@ pub fn router(state: AppState) -> Router {
 fn cors(origins: &[String]) -> CorsLayer {
     let allowed: Vec<HeaderValue> = origins.iter().filter_map(|o| o.parse().ok()).collect();
     CorsLayer::new()
-        .allow_origin(AllowOrigin::list(allowed))
+        .allow_origin(AllowOrigin::predicate(move |origin, request| {
+            let path = request.uri.path();
+            allowed.contains(origin) || (path.starts_with("/w/") && path.ends_with("/chat"))
+        }))
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
         .allow_credentials(true)
@@ -113,5 +116,23 @@ mod tests {
         let (status, body) = get_json("/api/nope").await;
         assert_eq!(status, StatusCode::NOT_FOUND);
         assert_eq!(body["error"]["code"], "not_found");
+    }
+
+    #[tokio::test]
+    async fn p01_widget_chat_allows_cross_origin_preflight_only_on_widget_chat() {
+        let preflight = |path| {
+            Request::builder()
+                .method(Method::OPTIONS)
+                .uri(path)
+                .header(header::ORIGIN, "https://customer.example")
+                .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "content-type")
+                .body(Body::empty())
+                .unwrap()
+        };
+        let widget = app().clone().oneshot(preflight("/w/support-agent/chat")).await.unwrap();
+        assert_eq!(widget.headers()[header::ACCESS_CONTROL_ALLOW_ORIGIN], "https://customer.example");
+        let api = app().oneshot(preflight("/v1/chat/completions")).await.unwrap();
+        assert!(!api.headers().contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 }

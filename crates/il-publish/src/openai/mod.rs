@@ -14,7 +14,7 @@ use futures::stream;
 use il_core::{Flow, FlowKind, Item};
 use il_sdk::{
     registry::{RouteCtx, RouteFactory},
-    services::StartRun,
+    services::{StartRun, runner::InvokeOutcome},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -29,15 +29,15 @@ pub fn routes(ctx: &RouteCtx) -> Router {
 inventory::submit! { RouteFactory { name: "publish.openai", make: routes } }
 
 #[derive(Deserialize)]
-struct ChatRequest {
-    model: String,
-    messages: Vec<Message>,
+pub(crate) struct ChatRequest {
+    pub(crate) model: String,
+    pub(crate) messages: Vec<Message>,
     #[serde(default)]
-    stream: bool,
+    pub(crate) stream: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct Message {
+pub(crate) struct Message {
     role: String,
     content: Value,
 }
@@ -106,6 +106,10 @@ async fn chat(State(ctx): State<RouteCtx>, headers: HeaderMap, Json(request): Js
     if matches.len() != 1 {
         return error(StatusCode::NOT_FOUND, "published model not found or ambiguous");
     }
+    respond(&ctx, matches[0], request, "api").await
+}
+
+pub(crate) async fn respond(ctx: &RouteCtx, flow: &Flow, request: ChatRequest, trigger: &str) -> Response {
     let message = request
         .messages
         .iter()
@@ -121,9 +125,9 @@ async fn chat(State(ctx): State<RouteCtx>, headers: HeaderMap, Json(request): Js
     let outcome = ctx
         .runner
         .invoke(StartRun {
-            flow_id: matches[0].id.clone(),
+            flow_id: flow.id.clone(),
             version: None,
-            trigger: "api".into(),
+            trigger: trigger.into(),
             items: vec![input],
             trigger_node: None,
         })
@@ -132,20 +136,31 @@ async fn chat(State(ctx): State<RouteCtx>, headers: HeaderMap, Json(request): Js
         Ok(outcome) => outcome,
         Err(_) => return error(StatusCode::BAD_GATEWAY, "flow execution failed"),
     };
+    completion(&request.model, request.stream, outcome)
+}
+
+fn completion(model: &str, stream: bool, outcome: InvokeOutcome) -> Response {
     let answer = outcome
         .response
         .first()
         .and_then(|item| item.json.get("answer").or_else(|| item.json.get("message")))
         .map(|value| value.as_str().map(str::to_owned).unwrap_or_else(|| value.to_string()))
         .unwrap_or_default();
+    let sources = outcome
+        .response
+        .first()
+        .and_then(|item| item.json.get("sources"))
+        .filter(|value| value.is_array())
+        .cloned()
+        .unwrap_or_else(|| json!([]));
     let id = format!("chatcmpl-{}", outcome.run.id);
     let created = chrono::Utc::now().timestamp();
-    if request.stream {
-        let first = json!({"id":id,"object":"chat.completion.chunk","created":created,"model":request.model,
+    if stream {
+        let first = json!({"id":id,"object":"chat.completion.chunk","created":created,"model":model,
             "choices":[{"index":0,"delta":{"role":"assistant","content":answer},"finish_reason":null}]})
         .to_string();
-        let last = json!({"id":id,"object":"chat.completion.chunk","created":created,"model":request.model,
-            "choices":[{"index":0,"delta":{},"finish_reason":"stop"}]})
+        let last = json!({"id":id,"object":"chat.completion.chunk","created":created,"model":model,
+            "choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"sources":sources})
         .to_string();
         Sse::new(stream::iter(vec![
             Ok::<_, std::convert::Infallible>(Event::default().data(first)),
@@ -154,8 +169,8 @@ async fn chat(State(ctx): State<RouteCtx>, headers: HeaderMap, Json(request): Js
         ]))
         .into_response()
     } else {
-        Json(json!({"id":id,"object":"chat.completion","created":created,"model":request.model,
-            "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}]}))
+        Json(json!({"id":id,"object":"chat.completion","created":created,"model":model,
+            "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}],"sources":sources}))
         .into_response()
     }
 }
@@ -173,7 +188,7 @@ mod tests {
     };
     use il_sdk::{
         registry::RouteCtx,
-        services::Store,
+        services::{FlowRunner, Store},
         testkit::{FakeArchitect, FakeRunner, FakeServices},
     };
     use std::sync::Arc;
@@ -246,5 +261,26 @@ mod tests {
         assert!(String::from_utf8_lossy(&body).contains("[DONE]"));
         let denied = app.oneshot(Request::get("/v1/models").body(Body::empty()).unwrap()).await.unwrap();
         assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn p01_stream_finishes_with_sources() {
+        let outcome = FakeRunner::default()
+            .invoke(StartRun {
+                flow_id: "flow_1".into(),
+                version: None,
+                trigger: "widget".into(),
+                trigger_node: None,
+                items: vec![Item::json(json!({"answer":"Refunds in 30 days","sources":[
+                {"title":"Policy","url":"https://example.com/policy"}]}))],
+            })
+            .await
+            .unwrap();
+        let response = completion("support-agent", true, outcome);
+        let body = to_bytes(response.into_body(), 100_000).await.unwrap();
+        let text = String::from_utf8_lossy(&body);
+        assert!(text.contains("Refunds in 30 days"));
+        assert!(text.contains("\"sources\":[{\"title\":\"Policy\",\"url\":\"https://example.com/policy\"}]"));
+        assert!(text.contains("[DONE]"));
     }
 }

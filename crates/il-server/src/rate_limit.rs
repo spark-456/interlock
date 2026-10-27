@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use axum::Json;
 use axum::extract::connect_info::ConnectInfo;
 use axum::extract::{Request, State};
-use axum::http::StatusCode;
+use axum::http::{Method, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use il_core::ApiError;
@@ -49,14 +49,15 @@ impl RateLimiter {
     }
 }
 
-/// Applies limits to hooks, published APIs, MCP, sign-in and demo sessions.
+/// Applies limits to hooks, published APIs, MCP, widget chat, sign-in and demo sessions.
 pub async fn middleware(State(state): State<AppState>, request: Request, next: Next) -> Response {
     let path = request.uri().path();
     let demo = path == "/api/demo/session";
+    let widget_chat = request.method() == Method::POST && path.starts_with("/w/") && path.ends_with("/chat");
     let public = ["/hooks", "/v1", "/mcp", "/api/auth/github/start", "/api/auth/github/callback"]
         .iter()
         .any(|prefix| path == *prefix || path.starts_with(&format!("{prefix}/")));
-    if !demo && !public {
+    if !demo && !public && !widget_chat {
         return next.run(request).await;
     }
     let ip = request
