@@ -6,8 +6,8 @@ use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use il_core::FileRef;
 use il_core::dto::{ConnectionSummary, Me, TemplateSummary};
+use il_core::{FileRef, Flow};
 
 use super::session::{SESSION_COOKIE, Session, session_key};
 use super::{ApiErr, ApiResult, Ws};
@@ -36,11 +36,38 @@ async fn me(ws: Ws) -> Json<Me> {
 async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
     let token = format!("{}{}", il_sdk::id("ses"), il_sdk::id("")).replace('_', "");
     let session = Session { workspace_id: il_sdk::id("ws_demo"), user: None, demo: true };
+    seed_demo(&state, &session.workspace_id).await?;
     let value = serde_json::to_value(&session).map_err(ApiErr::internal)?;
     state.services.store.kv_put(&session_key(&token), &value).await.map_err(ApiErr::internal)?;
-    let cookie = format!("{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800");
+    let secure = if state.config.server.public_url.as_deref().is_some_and(|url| url.starts_with("https://")) {
+        "; Secure"
+    } else {
+        ""
+    };
+    let cookie = format!("{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800{secure}");
     let me = Me { user: None, workspace_id: session.workspace_id, demo: true };
     Ok(([(header::SET_COOKIE, cookie)], Json(me)).into_response())
+}
+
+/// Copies every checked-in template into a new demo workspace when R01 fixtures are present.
+async fn seed_demo(state: &AppState, workspace_id: &str) -> ApiResult<()> {
+    let mut entries = match tokio::fs::read_dir(&state.config.server.templates_dir).await {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(ApiErr::internal(error)),
+    };
+    while let Some(entry) = entries.next_entry().await.map_err(ApiErr::internal)? {
+        if entry.path().extension().is_none_or(|ext| ext != "json") {
+            continue;
+        }
+        let bytes = tokio::fs::read(entry.path()).await.map_err(ApiErr::internal)?;
+        let mut flow: Flow = serde_json::from_slice(&bytes).map_err(ApiErr::internal)?;
+        flow.id = il_sdk::id("flw");
+        flow.workspace_id = workspace_id.into();
+        flow.version = 0;
+        state.services.store.put_flow(&flow).await.map_err(ApiErr::internal)?;
+    }
+    Ok(())
 }
 
 /// Multipart upload: every file part is stored; returns their `FileRef`s.

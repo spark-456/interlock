@@ -2,6 +2,7 @@
 
 mod builds;
 mod flows;
+mod github;
 mod misc;
 mod runs;
 mod session;
@@ -19,7 +20,12 @@ use crate::wiring::AppState;
 
 /// All `/api` routes.
 pub fn router() -> Router<AppState> {
-    Router::new().merge(flows::routes()).merge(runs::routes()).merge(builds::routes()).merge(misc::routes())
+    Router::new()
+        .merge(flows::routes())
+        .merge(runs::routes())
+        .merge(builds::routes())
+        .merge(misc::routes())
+        .merge(github::routes())
 }
 
 /// An API error response: status + `{ error: { code, message, details } }`.

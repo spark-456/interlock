@@ -1,5 +1,4 @@
-//! Wires concrete implementations into `Services`. Until B01 is wired, fake services from
-//! `il_sdk::testkit` stand in.
+//! Wires persistent storage and registered implementations into `Services`.
 
 use std::sync::Arc;
 
@@ -7,6 +6,8 @@ use il_sdk::Services;
 use il_sdk::registry::RouteCtx;
 use il_sdk::services::{ArchitectService, FlowRunner, SystemClock};
 use il_sdk::testkit::FakeServices;
+use il_store::db::SqliteStore;
+use il_store::files::DiskFileStore;
 
 use crate::Config;
 
@@ -21,6 +22,8 @@ pub struct AppState {
     pub engine: il_engine::Engine,
     /// Starts/stops flow triggers on activate/deactivate; chat/API/MCP entry point.
     pub triggers: Arc<il_engine::triggers::TriggerSupervisor>,
+    pub rate_limiter: Arc<crate::rate_limit::RateLimiter>,
+    pub(crate) github_secret: Option<String>,
 }
 
 impl AppState {
@@ -52,7 +55,25 @@ pub fn link_all() {
 pub fn build_state(config: Config) -> AppState {
     link_all();
     let fakes = FakeServices::default();
-    let mut services = fakes.services();
+    finish_state(config, fakes.services())
+}
+
+/// Builds the normal server with SQLite and disk files; fake providers remain available offline.
+pub async fn build_state_persistent(config: Config) -> anyhow::Result<AppState> {
+    link_all();
+    let storage =
+        config.raw.get("storage").and_then(|s| s.get("path")).and_then(serde_json::Value::as_str).unwrap_or("data");
+    let root = std::path::PathBuf::from(storage);
+    let db_path = root.join("interlock.db");
+    let store = tokio::task::spawn_blocking(move || SqliteStore::open(db_path)).await??;
+    let files = DiskFileStore::new(store.clone(), root.join("files")).await?;
+    let mut services = FakeServices::default().services();
+    services.store = Arc::new(store);
+    services.files = Arc::new(files);
+    Ok(finish_state(config, services))
+}
+
+fn finish_state(config: Config, mut services: Services) -> AppState {
     services.clock = Arc::new(SystemClock);
     if let Ok(http) = il_sdk::SafeHttp::new() {
         services.http = http;
@@ -60,7 +81,7 @@ pub fn build_state(config: Config) -> AppState {
     if config.providers != "fake" {
         wire_models(&mut services, &config);
     }
-    tracing::info!(providers = %config.providers, "services wired (in-memory store until B01 lands)");
+    tracing::info!(providers = %config.providers, "services wired");
     let mut engine_config: il_engine::EngineConfig = config.section("engine").unwrap_or_default();
     engine_config.caps = config.section("caps").unwrap_or_default();
     let engine = il_engine::Engine::new(services.clone(), il_engine::NodeLookup::default(), engine_config);
@@ -72,7 +93,33 @@ pub fn build_state(config: Config) -> AppState {
     ));
     let architect =
         Arc::new(il_architect::Architect::new(services.clone(), il_architect::catalog::Catalog::registered()));
-    AppState { config: Arc::new(config), services, runner, architect, engine, triggers }
+    AppState {
+        config: Arc::new(config),
+        services,
+        runner,
+        architect,
+        engine,
+        triggers,
+        rate_limiter: Arc::default(),
+        github_secret: std::env::var("GITHUB_CLIENT_SECRET").ok().filter(|s| !s.is_empty()),
+    }
+}
+
+/// Restarts nonterminal runs and active triggers from the configured store.
+pub async fn recover_startup(state: &AppState) -> anyhow::Result<()> {
+    let runs = state.services.store.recoverable_runs().await?;
+    for run in runs {
+        if matches!(run.status, il_core::RunStatus::Running | il_core::RunStatus::Queued)
+            && let Err(error) = state.engine.recover(&run.id).await
+        {
+            tracing::error!(run_id = %run.id, error = %error, "run recovery failed");
+        }
+    }
+    let flows = state.services.store.active_flows().await?;
+    let ids: Vec<_> = flows.into_iter().map(|flow| flow.id).collect();
+    let restored = state.triggers.restore(&ids).await;
+    tracing::info!(restored, "active flow triggers restored");
+    Ok(())
 }
 
 /// The real model gateway, with its model check run in the background. Keeps the fake (and says so)

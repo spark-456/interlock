@@ -3,6 +3,7 @@
 pub mod api;
 pub mod assets;
 pub mod config;
+pub mod rate_limit;
 pub mod routes;
 pub mod wiring;
 

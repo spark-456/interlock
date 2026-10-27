@@ -3,7 +3,7 @@
 
 use anyhow::Context;
 use il_core::dto::CatalogResponse;
-use il_server::{Config, app, build_state};
+use il_server::{Config, app};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -31,11 +31,14 @@ async fn serve() -> anyhow::Result<()> {
     }
     let config = Config::load()?;
     let addr = format!("{}:{}", config.server.host, config.server.port);
-    let state = build_state(config);
+    let state = il_server::wiring::build_state_persistent(config).await?;
+    il_server::wiring::recover_startup(&state).await?;
     tracing::info!(nodes = il_sdk::registry::catalog().len(), "node catalog loaded");
     let listener = tokio::net::TcpListener::bind(&addr).await.with_context(|| format!("binding {addr}"))?;
     tracing::info!("Interlock listening on http://{addr}");
-    axum::serve(listener, app(state)).with_graceful_shutdown(shutdown()).await?;
+    axum::serve(listener, app(state).into_make_service_with_connect_info::<std::net::SocketAddr>())
+        .with_graceful_shutdown(shutdown())
+        .await?;
     Ok(())
 }
 
