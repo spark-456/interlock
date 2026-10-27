@@ -91,8 +91,11 @@ fn finish_state(config: Config, mut services: Services) -> AppState {
         runner.clone(),
         il_engine::NodeLookup::default(),
     ));
-    let architect =
-        Arc::new(il_architect::Architect::new(services.clone(), il_architect::catalog::Catalog::registered()));
+    let architect = Arc::new(il_architect::Architect::new(
+        services.clone(),
+        runner.clone(),
+        il_architect::catalog::Catalog::registered(),
+    ));
     AppState {
         config: Arc::new(config),
         services,

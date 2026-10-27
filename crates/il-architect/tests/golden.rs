@@ -2,6 +2,7 @@
 //! valid, laid-out flows, and a build streams them as events and saves them.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 use std::time::Duration;
 
 use il_architect::Architect;
@@ -13,7 +14,7 @@ use il_core::{BuildEvent, BuildEventKind, NodeManifest};
 use il_sdk::services::ArchitectService;
 use il_sdk::services::models::ChatRole;
 use il_sdk::services::store::Store;
-use il_sdk::testkit::{FakeGateway, FakeServices};
+use il_sdk::testkit::{FakeGateway, FakeRunner, FakeServices};
 use serde_json::{Value, json};
 
 const FA: &str = "Every Monday, take our three newest Shopify products, make a short promo video for each with a \
@@ -51,7 +52,7 @@ async fn hero_goals_compile_into_valid_flows() {
         let gw = FakeGateway::default();
         gw.push_json(draft(name));
         let compiled = compile(&gw, &catalog, goal, goal, true).await.unwrap();
-        let Outcome::Flow { flow, notes } = compiled.outcome else { panic!("{name}: asked questions") };
+        let Outcome::Flow { flow, notes, .. } = compiled.outcome else { panic!("{name}: asked questions") };
         assert!(compiled.repairs.is_empty(), "{name}: needed repairs");
         assert_eq!(validate(&flow, &catalog), vec![], "{name}");
         assert_eq!((flow.nodes.len(), flow.edges.len()), (nodes, edges), "{name}");
@@ -126,7 +127,7 @@ fn ended(k: &BuildEventKind) -> bool {
 async fn a_build_streams_the_flow_and_saves_it() {
     let fakes = FakeServices::default();
     fakes.models.push_json(draft("fa"));
-    let architect = Architect::new(fakes.services(), catalog());
+    let architect = Architect::new(fakes.services(), Arc::new(FakeRunner::default()), catalog());
     let id = architect.start_build("ws_1", request(FA)).await.unwrap();
     let evs = events(fakes.store.as_ref(), &id, ended).await;
 
@@ -160,7 +161,11 @@ async fn a_build_streams_the_flow_and_saves_it() {
             _ => None,
         })
         .collect();
-    assert_eq!(stages, ["understand:Active", "understand:Done", "assemble:Active", "assemble:Done"]);
+    assert_eq!(
+        stages,
+        ["understand:Active", "understand:Done", "assemble:Active", "assemble:Done", "test:Active", "test:Done"]
+    );
+    assert!(evs.iter().any(|e| matches!(e.kind, BuildEventKind::TestResult { passed: 1, failed: 0 })));
     let apps: Vec<_> = evs
         .iter()
         .filter_map(|e| match &e.kind {
@@ -182,7 +187,7 @@ async fn asks_questions_then_builds_with_the_answers() {
         "questions": [{"id": "q_channel", "text": "Which Slack channel should approvals go to?", "options": ["#support", "#ops"]}]
     }));
     fakes.models.push_json(draft("fb"));
-    let architect = Architect::new(fakes.services(), catalog());
+    let architect = Architect::new(fakes.services(), Arc::new(FakeRunner::default()), catalog());
     let id = architect.start_build("ws_1", request(FB)).await.unwrap();
 
     events(fakes.store.as_ref(), &id, |k| matches!(k, BuildEventKind::Question { .. })).await;
@@ -203,7 +208,7 @@ async fn a_build_that_cannot_be_repaired_fails_with_the_reason() {
             .models
             .push_json(json!({"name": "x", "nodes": [{"id": "n_a", "type": "nope", "name": "A"}], "edges": []}));
     }
-    let architect = Architect::new(fakes.services(), catalog());
+    let architect = Architect::new(fakes.services(), Arc::new(FakeRunner::default()), catalog());
     let id = architect.start_build("ws_1", request("Do something")).await.unwrap();
     let evs = events(fakes.store.as_ref(), &id, ended).await;
     let BuildEventKind::Failed { error } = &evs.last().unwrap().kind else { panic!("{evs:#?}") };

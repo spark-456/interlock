@@ -9,7 +9,8 @@ Reply with one JSON object and nothing else:
   "notes": ["One short sentence per decision worth telling the person"],
   "groups": [{ "id": "g_find", "label": "Find new products" }],
   "nodes": [{ "id": "n_products", "type": "app.shopify.get_products", "name": "Three newest products", "group": "g_find", "settings": { } }],
-  "edges": [{ "from": "n_schedule", "to": "n_products" }, { "from": "n_approve", "fromPort": "approved", "to": "n_youtube" }]
+  "edges": [{ "from": "n_schedule", "to": "n_products" }, { "from": "n_approve", "fromPort": "approved", "to": "n_youtube" }],
+  "sample": { "title": "One realistic item the trigger would emit, used for the test run" }
 }
 
 Rules:
@@ -23,3 +24,5 @@ Rules:
 - Steps that post, send or write outside Interlock need a connection; list them anyway, the person connects accounts afterwards.
 - Ask clarifying questions only when a required value cannot be guessed sensibly (at most 3, each with 2 to 4 short options). When you ask, return the questions with empty `groups`, `nodes` and `edges`. If answers are given, never ask again.
 - Keep names short and human: "Write video script", not "AI Write Node 1".
+- Fill `sample` with one realistic item the trigger would emit (for an AI app: `{ "message": "a typical user question" }`). The flow is test-run with it.
+- For an AI app, when the catalog has `ai.guardrails`, put it before the answer with rules taken from the goal (topics to refuse, cases to hand to a person).
