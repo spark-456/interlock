@@ -41,7 +41,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 30 | R04 | README, docs, video script, Devpost | P0 | — | ready | | | | Draft any time; finalise Fri |
 | 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | ready | | | | Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow, ApiCard; gallery page with every SpecV3 state; vitest for interactive components |
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | claimed | codex-1 | t/N01-guardrails | 2026-10-27 14:38 | Node, three fake-gateway tests, and generated docs pushed at 16d9560; full check and PR need generated `web/` fixture decision |
-| 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | claimed | codex-1 | t/B04b-server-finish | 2026-10-27 17:06 | Follow-up of B04 part 1 (see its commit message) |
+| 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | review | codex-1 | t/B04b-server-finish | 2026-10-27 17:26 | [PR #12](https://github.com/spark-456/interlock/pull/12); `cargo xtask check` passed |
 | 34 | B03b | Engine: approval expiry and timeout policy | P0 | B03 | ready | | | | Needed to finish B08 timeout behaviour |
 
 ## Waiting on the owner
