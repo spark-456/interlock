@@ -46,7 +46,9 @@
   <dl>
     <div>
       <dt>Last run</dt>
-      <dd>{last ? `${last.status === 'failed' ? 'Failed' : 'Ran'} ${ago(last.startedAt, now)}` : 'Never'}</dd>
+      <dd>
+        {#if last}<a href="/flows/{flow.id}/runs/{last.id}">{last.status === 'failed' ? 'Failed' : 'Ran'} {ago(last.startedAt, now)}</a>{:else}Never{/if}
+      </dd>
     </div>
     <div>
       <dt>Runs, 14 days</dt>
@@ -92,6 +94,7 @@
   dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); margin: 0; }
   dt { color: var(--text-3); font: var(--t-small); }
   dd { margin: var(--s-1) 0 0; display: flex; align-items: center; gap: var(--s-1); min-height: 20px; font: var(--t-small); color: var(--text); }
+  dd a { color: inherit; }
   .mono { font-family: var(--font-mono); }
   .spark { width: 64px; height: 18px; }
   .spark polyline { fill: none; stroke: var(--primary); stroke-width: 1.5; stroke-linejoin: round; }
