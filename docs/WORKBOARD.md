@@ -42,6 +42,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | ready | | | | Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow, ApiCard; gallery page with every SpecV3 state; vitest for interactive components |
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | ready | | | | New node in `il-nodes/src/ai/guardrails.rs`: rules list, pass/blocked outputs, hand-off rule. Used by F-C; the design's "Safety rules" node |
 | 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | ready | | | | Follow-up of B04 part 1 (see its commit message) |
+| 34 | B03b | Engine: approval expiry and timeout policy | P0 | B03 | ready | | | | Needed to finish B08 timeout behaviour |
 
 ## Waiting on the owner
 
@@ -137,6 +138,11 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 - **Owns**: `crates/il-nodes/src/human/**`, `crates/il-nodes/src/output/**`.
 - **Soft deps**: B03.
 - **Acceptance**: Approval (in-app; channel adapters via `Notifier` trait — Slack adapter lives in C02), with Approved/Rejected outputs, editable payload, timeout behaviour; Ask a question; Respond (for chat/API/MCP flows, streaming-capable); Send notification; harness tests.
+
+### B03b · Engine: approval expiry and timeout policy
+- **Owns**: `crates/il-engine/src/approvals/**`, `crates/il-engine/src/executor/**`; small additive approval contract and store changes as needed.
+- **Hard deps**: B03.
+- **Acceptance**: persist the approval deadline and `onTimeout` policy; after the deadline, approve, reject or keep waiting as configured; resume the correct run and item after a restart; reject late manual decisions; tests use a fake clock and store with no network.
 
 ### K01 · Knowledge
 - **Owns**: `crates/il-knowledge/**`, `crates/il-nodes/src/knowledge/**`, `migrations/*_kb_*.sql`.
