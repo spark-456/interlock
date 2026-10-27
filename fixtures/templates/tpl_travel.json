@@ -1,0 +1,185 @@
+{
+  "id": "flw_travel",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Travel policy assistant",
+  "kind": "app",
+  "nodes": [
+    {
+      "id": "n_chat",
+      "type": "trigger.chat",
+      "typeVersion": 1,
+      "name": "Ask about travel",
+      "position": {
+        "x": 0.0,
+        "y": 300.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "suggestedQuestions": [
+          "Can I fly business class to Singapore?",
+          "What is the hotel limit in Berlin in euros?"
+        ],
+        "welcomeMessage": "Planning a trip? Ask me what the policy allows."
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_kb",
+      "type": "knowledge.base",
+      "typeVersion": 1,
+      "name": "Travel policy",
+      "position": {
+        "x": 0.0,
+        "y": 100.0
+      },
+      "group": "g_know",
+      "settings": {
+        "name": "Travel policy",
+        "sources": [
+          {
+            "kind": "text",
+            "value": "Economy for flights under 6 hours, premium economy above. Hotels up to $220 a night in tier-1 cities."
+          }
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_agent",
+      "type": "ai.agent",
+      "typeVersion": 1,
+      "name": "Travel assistant",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "input": "{{ item.message }}",
+        "instructions": "Answer travel questions from the policy. Say clearly when something needs a manager's approval.",
+        "knowledgeBases": [
+          "Travel policy"
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_guard",
+      "type": "ai.guardrails",
+      "typeVersion": 1,
+      "name": "Policy limits",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "input": "{{ item.answer }}",
+        "rules": [
+          {
+            "action": "handoff",
+            "description": "Approving a fare class or hotel rate above the policy limits",
+            "name": "Over the limit"
+          },
+          {
+            "action": "block",
+            "description": "Sharing another employee's bookings or personal details",
+            "name": "Personal data"
+          }
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_respond",
+      "type": "output.respond",
+      "typeVersion": 1,
+      "name": "Reply",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "body": "{{ item.answer }}",
+        "includeSources": true
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_chat_agent",
+      "from": {
+        "node": "n_chat",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_agent",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_kb_agent",
+      "from": {
+        "node": "n_kb",
+        "port": "kb"
+      },
+      "to": {
+        "node": "n_agent",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_agent_guard",
+      "from": {
+        "node": "n_agent",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_guard",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_respond",
+      "from": {
+        "node": "n_guard",
+        "port": "pass"
+      },
+      "to": {
+        "node": "n_respond",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_know",
+      "label": "Policy and tools"
+    },
+    {
+      "id": "g_answer",
+      "label": "Answer"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "A travel policy assistant that answers from our policy and hands anything above the limits to a person."
+  }
+}

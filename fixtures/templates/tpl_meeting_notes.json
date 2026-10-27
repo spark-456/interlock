@@ -1,0 +1,136 @@
+{
+  "id": "flw_meeting_notes",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Meeting notes to Slack",
+  "kind": "automation",
+  "nodes": [
+    {
+      "id": "n_hook",
+      "type": "trigger.webhook",
+      "typeVersion": 1,
+      "name": "Recording uploaded",
+      "position": {
+        "x": 0.0,
+        "y": 200.0
+      },
+      "group": "g_in",
+      "settings": {
+        "method": "POST"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_transcribe",
+      "type": "ai.transcribe",
+      "typeVersion": 1,
+      "name": "Transcribe",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_notes",
+      "settings": {
+        "audio": "{{ item.files.audio }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_summary",
+      "type": "ai.summarise",
+      "typeVersion": 1,
+      "name": "Decisions and actions",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_notes",
+      "settings": {
+        "format": "bullets",
+        "input": "{{ item.text }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_slack",
+      "type": "app.slack.send",
+      "typeVersion": 1,
+      "name": "Post to #team",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_share",
+      "settings": {
+        "channel": "#team",
+        "text": "Meeting notes:\n{{ item.summary }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_hook_transcribe",
+      "from": {
+        "node": "n_hook",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_transcribe",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_transcribe_summary",
+      "from": {
+        "node": "n_transcribe",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_summary",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_summary_slack",
+      "from": {
+        "node": "n_summary",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_slack",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_in",
+      "label": "Recording"
+    },
+    {
+      "id": "g_notes",
+      "label": "Notes"
+    },
+    {
+      "id": "g_share",
+      "label": "Share"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "When a meeting recording is uploaded, transcribe it, write a summary with decisions and action items, and post it to Slack."
+  }
+}

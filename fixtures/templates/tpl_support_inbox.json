@@ -1,0 +1,371 @@
+{
+  "id": "flw_support_inbox",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Support inbox replies",
+  "kind": "automation",
+  "nodes": [
+    {
+      "id": "n_inbox",
+      "type": "app.gmail.new_email",
+      "typeVersion": 1,
+      "name": "Support inbox",
+      "position": {
+        "x": 0.0,
+        "y": 200.0
+      },
+      "group": "g_read",
+      "settings": {
+        "label": "INBOX",
+        "query": "to:support@larkspur.example"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_classify",
+      "type": "ai.classify",
+      "typeVersion": 1,
+      "name": "What kind of email",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_read",
+      "settings": {
+        "input": "{{ item.subject }}\n{{ item.body }}",
+        "labels": [
+          {
+            "name": "question"
+          },
+          {
+            "name": "billing"
+          },
+          {
+            "name": "complaint"
+          },
+          {
+            "name": "spam"
+          }
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_spam",
+      "type": "app.gmail.label",
+      "typeVersion": 1,
+      "name": "Mark spam",
+      "position": {
+        "x": 608.0,
+        "y": 100.0
+      },
+      "group": "g_read",
+      "settings": {
+        "addLabels": [
+          "SPAM"
+        ],
+        "messageId": "{{ nodes.n_inbox.json.messageId }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_search",
+      "type": "knowledge.search",
+      "typeVersion": 1,
+      "name": "Find the policy",
+      "position": {
+        "x": 608.0,
+        "y": 300.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "knowledgeBase": "kb_help_center",
+        "query": "{{ nodes.n_inbox.json.subject }} {{ nodes.n_inbox.json.body }}",
+        "topK": 5
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_draft",
+      "type": "ai.write",
+      "typeVersion": 1,
+      "name": "Draft the reply",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "input": "Email: {{ nodes.n_inbox.json.body }}\n\nPassages: {{ item }}",
+        "instructions": "Write a friendly, concise reply to this customer email using only the help-center passages. Cite the article title for every policy you mention. Sign off as the Larkspur support team.",
+        "tone": "friendly"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_safe",
+      "type": "logic.if",
+      "typeVersion": 1,
+      "name": "Simple question?",
+      "position": {
+        "x": 1216.0,
+        "y": 200.0
+      },
+      "group": "g_send",
+      "settings": {
+        "condition": "{{ nodes.n_classify.json.label == 'question' and nodes.n_classify.json.confidence > 0.8 }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_reply",
+      "type": "app.gmail.reply",
+      "typeVersion": 1,
+      "name": "Reply",
+      "position": {
+        "x": 1520.0,
+        "y": 100.0
+      },
+      "group": "g_send",
+      "settings": {
+        "body": "{{ item.text }}",
+        "threadId": "{{ nodes.n_inbox.json.threadId }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_ask",
+      "type": "app.slack.approval",
+      "typeVersion": 1,
+      "name": "Ask in Slack",
+      "position": {
+        "x": 1520.0,
+        "y": 300.0
+      },
+      "group": "g_send",
+      "settings": {
+        "channel": "#support",
+        "payload": "{{ item }}",
+        "title": "Send this reply?"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_reply_approved",
+      "type": "app.gmail.reply",
+      "typeVersion": 1,
+      "name": "Send approved reply",
+      "position": {
+        "x": 1824.0,
+        "y": 200.0
+      },
+      "group": "g_send",
+      "settings": {
+        "body": "{{ item.text }}",
+        "threadId": "{{ nodes.n_inbox.json.threadId }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_log",
+      "type": "app.sheets.append_row",
+      "typeVersion": 1,
+      "name": "Log in Google Sheets",
+      "position": {
+        "x": 2128.0,
+        "y": 200.0
+      },
+      "group": "g_log",
+      "settings": {
+        "sheet": "Replies",
+        "spreadsheetId": "1SupportLog",
+        "values": {
+          "From": "{{ nodes.n_inbox.json.from }}",
+          "Reply": "{{ item.body }}",
+          "Type": "{{ nodes.n_classify.json.label }}"
+        }
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_inbox_classify",
+      "from": {
+        "node": "n_inbox",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_classify",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_classify_search",
+      "from": {
+        "node": "n_classify",
+        "port": "question"
+      },
+      "to": {
+        "node": "n_search",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_classify_search_2",
+      "from": {
+        "node": "n_classify",
+        "port": "billing"
+      },
+      "to": {
+        "node": "n_search",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_classify_search_3",
+      "from": {
+        "node": "n_classify",
+        "port": "complaint"
+      },
+      "to": {
+        "node": "n_search",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_classify_spam",
+      "from": {
+        "node": "n_classify",
+        "port": "spam"
+      },
+      "to": {
+        "node": "n_spam",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_search_draft",
+      "from": {
+        "node": "n_search",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_draft",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_draft_safe",
+      "from": {
+        "node": "n_draft",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_safe",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_safe_reply",
+      "from": {
+        "node": "n_safe",
+        "port": "true"
+      },
+      "to": {
+        "node": "n_reply",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_safe_ask",
+      "from": {
+        "node": "n_safe",
+        "port": "false"
+      },
+      "to": {
+        "node": "n_ask",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_ask_reply_approved",
+      "from": {
+        "node": "n_ask",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_reply_approved",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_reply_log",
+      "from": {
+        "node": "n_reply",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_log",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_reply_approved_log",
+      "from": {
+        "node": "n_reply_approved",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_log",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_read",
+      "label": "Read the email"
+    },
+    {
+      "id": "g_answer",
+      "label": "Write the answer"
+    },
+    {
+      "id": "g_send",
+      "label": "Send or ask"
+    },
+    {
+      "id": "g_log",
+      "label": "Log it"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "Reply to emails sent to support@ using our help center and policies. Send simple answers automatically; ask me in Slack before sending anything about refunds or complaints. Log everything in a sheet."
+  }
+}

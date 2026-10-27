@@ -1,0 +1,281 @@
+{
+  "id": "flw_support_agent",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Larkspur support agent",
+  "kind": "app",
+  "nodes": [
+    {
+      "id": "n_chat",
+      "type": "trigger.chat",
+      "typeVersion": 1,
+      "name": "Support chat",
+      "position": {
+        "x": 0.0,
+        "y": 100.0
+      },
+      "group": "g_chat",
+      "settings": {
+        "suggestedQuestions": [
+          "Where is my order?",
+          "How do refunds work?"
+        ],
+        "welcomeMessage": "Hi, I'm the Larkspur assistant. How can I help?"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_kb",
+      "type": "knowledge.base",
+      "typeVersion": 1,
+      "name": "Help center and policies",
+      "position": {
+        "x": 0.0,
+        "y": 300.0
+      },
+      "group": "g_chat",
+      "settings": {
+        "name": "Larkspur help center",
+        "sources": [
+          {
+            "kind": "url",
+            "value": "https://help.larkspur.example"
+          }
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_route",
+      "type": "ai.decide",
+      "typeVersion": 1,
+      "name": "About billing?",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_route",
+      "settings": {
+        "input": "{{ item.message }}",
+        "mode": "yesno",
+        "question": "Is this message about an invoice, payment or refund?"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_billing",
+      "type": "ai.agent",
+      "typeVersion": 1,
+      "name": "Billing agent",
+      "position": {
+        "x": 608.0,
+        "y": 100.0
+      },
+      "group": "g_agents",
+      "settings": {
+        "input": "{{ nodes.n_chat.json.message }}",
+        "instructions": "You are Larkspur's billing assistant. Look up the customer's invoice before discussing it, quote refund windows from the newest policy, and never promise a refund above $100.",
+        "knowledgeBases": [
+          "n_kb"
+        ],
+        "tools": [
+          "getInvoice"
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_support",
+      "type": "ai.agent",
+      "typeVersion": 1,
+      "name": "Support agent",
+      "position": {
+        "x": 608.0,
+        "y": 300.0
+      },
+      "group": "g_agents",
+      "settings": {
+        "input": "{{ nodes.n_chat.json.message }}",
+        "instructions": "You are Larkspur's support assistant. Answer only from the help center and cite the article for every policy you quote. If you can't help, say a person will follow up.",
+        "knowledgeBases": [
+          "n_kb"
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_guard",
+      "type": "ai.decide",
+      "typeVersion": 1,
+      "name": "Safe to send?",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_safety",
+      "settings": {
+        "input": "{{ item.answer }}",
+        "mode": "yesno",
+        "question": "Does this answer stay within Larkspur's policies and avoid sharing any other customer's data?"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_respond",
+      "type": "output.respond",
+      "typeVersion": 1,
+      "name": "Answer with sources",
+      "position": {
+        "x": 1216.0,
+        "y": 100.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "body": "{{ item.answer }}",
+        "includeSources": true
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_handoff",
+      "type": "output.respond",
+      "typeVersion": 1,
+      "name": "Hand off to a person",
+      "position": {
+        "x": 1216.0,
+        "y": 300.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "body": "I'll pass this to our team; support@larkspur.example will follow up shortly.",
+        "includeSources": false
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_chat_route",
+      "from": {
+        "node": "n_chat",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_route",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_route_billing",
+      "from": {
+        "node": "n_route",
+        "port": "yes"
+      },
+      "to": {
+        "node": "n_billing",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_route_support",
+      "from": {
+        "node": "n_route",
+        "port": "no"
+      },
+      "to": {
+        "node": "n_support",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_billing_guard",
+      "from": {
+        "node": "n_billing",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_guard",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_support_guard",
+      "from": {
+        "node": "n_support",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_guard",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_respond",
+      "from": {
+        "node": "n_guard",
+        "port": "yes"
+      },
+      "to": {
+        "node": "n_respond",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_handoff",
+      "from": {
+        "node": "n_guard",
+        "port": "no"
+      },
+      "to": {
+        "node": "n_handoff",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_chat",
+      "label": "Chat"
+    },
+    {
+      "id": "g_route",
+      "label": "Understand"
+    },
+    {
+      "id": "g_agents",
+      "label": "Agents"
+    },
+    {
+      "id": "g_safety",
+      "label": "Safety"
+    },
+    {
+      "id": "g_answer",
+      "label": "Answer"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "A support chat agent that answers from these documents and can look up invoices through our API."
+  }
+}

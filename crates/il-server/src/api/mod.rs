@@ -7,6 +7,7 @@ mod misc;
 mod runs;
 mod session;
 mod sse;
+mod templates;
 
 use axum::Json;
 use axum::Router;
@@ -26,6 +27,7 @@ pub fn router() -> Router<AppState> {
         .merge(builds::routes())
         .merge(misc::routes())
         .merge(github::routes())
+        .merge(templates::routes())
 }
 
 /// An API error response: status + `{ error: { code, message, details } }`.

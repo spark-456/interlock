@@ -1,0 +1,146 @@
+{
+  "id": "flw_mentions",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Mentions triage",
+  "kind": "automation",
+  "nodes": [
+    {
+      "id": "n_schedule",
+      "type": "trigger.schedule",
+      "typeVersion": 1,
+      "name": "Every hour",
+      "position": {
+        "x": 0.0,
+        "y": 200.0
+      },
+      "group": "g_in",
+      "settings": {
+        "cron": "0 * * * *"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_fetch",
+      "type": "data.http",
+      "typeVersion": 1,
+      "name": "New mentions",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_in",
+      "settings": {
+        "method": "GET",
+        "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=larkspur"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_classify",
+      "type": "ai.classify",
+      "typeVersion": 1,
+      "name": "Praise, question or complaint",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_sort",
+      "settings": {
+        "input": "{{ item.text }}",
+        "labels": [
+          {
+            "name": "praise"
+          },
+          {
+            "name": "question"
+          },
+          {
+            "name": "complaint"
+          }
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_discord",
+      "type": "app.discord.send",
+      "typeVersion": 1,
+      "name": "Tell support",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_act",
+      "settings": {
+        "content": "New complaint on Bluesky: {{ item.text }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_schedule_fetch",
+      "from": {
+        "node": "n_schedule",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_fetch",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_fetch_classify",
+      "from": {
+        "node": "n_fetch",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_classify",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_classify_discord",
+      "from": {
+        "node": "n_classify",
+        "port": "complaint"
+      },
+      "to": {
+        "node": "n_discord",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_in",
+      "label": "Mentions"
+    },
+    {
+      "id": "g_sort",
+      "label": "Sort"
+    },
+    {
+      "id": "g_act",
+      "label": "Act"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "Every hour, check new Bluesky mentions, sort them into praise, questions and complaints, and send complaints to our Discord support channel."
+  }
+}
