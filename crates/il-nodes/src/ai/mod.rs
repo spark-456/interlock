@@ -8,6 +8,7 @@ mod common;
 pub mod decide;
 pub mod describe_image;
 pub mod extract;
+pub mod guardrails;
 pub mod summarise;
 pub mod transcribe;
 pub mod translate;
