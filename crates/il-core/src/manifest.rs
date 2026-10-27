@@ -238,36 +238,11 @@ impl NodeManifest {
         self.examples.push(NodeExample { title: title.into(), settings });
         self
     }
-
-    /// Output port names for a node with these settings (static + dynamic).
-    pub fn output_ports(&self, settings: &Json) -> Vec<String> {
-        let mut ports: Vec<String> = self.outputs.iter().map(|p| p.name.clone()).collect();
-        if let Some(key) = &self.dynamic_outputs
-            && let Some(list) = settings.get(key).and_then(Json::as_array)
-        {
-            for entry in list {
-                let name = entry.get("name").and_then(Json::as_str).or_else(|| entry.as_str());
-                if let Some(name) = name {
-                    ports.push(name.to_string());
-                }
-            }
-        }
-        ports
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn dynamic_outputs_follow_settings() {
-        let m = NodeManifest::new("logic.switch", Category::Logic, "Switch", "Routes items.")
-            .outputs(&["default"])
-            .dynamic_outputs("cases");
-        let ports = m.output_ports(&serde_json::json!({"cases": [{"name": "billing"}, "spam"]}));
-        assert_eq!(ports, ["default", "billing", "spam"]);
-    }
 
     #[test]
     fn trigger_has_no_inputs() {

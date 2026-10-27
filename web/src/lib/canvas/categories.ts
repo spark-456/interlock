@@ -5,7 +5,7 @@ export type Tone =
   | 'source' | 'kb' | 'router' | 'agent' | 'tool' | 'guard' | 'tests' | 'output'
   | 'trigger' | 'media' | 'logic' | 'app';
 
-export const TONES: readonly Tone[] = [
+const TONES: readonly Tone[] = [
   'source', 'kb', 'router', 'agent', 'tool', 'guard', 'tests', 'output', 'trigger', 'media', 'logic', 'app'
 ];
 

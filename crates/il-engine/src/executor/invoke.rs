@@ -66,8 +66,8 @@ pub(crate) async fn run_node(
             (p, vec![(idx, Some(r.decision))])
         }
         None => {
-            let p =
-                Partial { input: input.clone(), batch: !per_item, started_ms: base_ms(&inner), ..Default::default() };
+            let started_ms = inner.services.clock.now().timestamp_millis();
+            let p = Partial { input: input.clone(), batch: !per_item, started_ms, ..Default::default() };
             let n = if per_item { main.len() } else { 1 };
             (p, (0..n).map(|i| (i, None)).collect())
         }
@@ -113,10 +113,6 @@ pub(crate) async fn run_node(
     }
     let ms = started.elapsed().as_millis() as u64;
     CallResult::Done { ports: partial.merged(), cost_usd: partial.cost_usd, ms, input: main }
-}
-
-fn base_ms(inner: &Inner) -> i64 {
-    inner.services.clock.now().timestamp_millis()
 }
 
 #[allow(clippy::too_many_arguments)]

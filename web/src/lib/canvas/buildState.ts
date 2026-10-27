@@ -14,7 +14,6 @@ export const STAGES = [
   { key: 'test', label: 'Test', short: 'Test' },
   { key: 'live', label: 'Go live', short: 'Live' }
 ] as const;
-export type StageKey = (typeof STAGES)[number]['key'];
 
 export interface NodeState {
   status: BuildNodeStatus;

@@ -1,8 +1,7 @@
 // NodeCanvas geometry (design/interlock/DESIGN.md, NodeCanvas).
 
 export const NODE_WIDTH = 264;
-export const COLUMN_GAP = 40;
-export const LABEL_OFFSET = 44;
+const LABEL_OFFSET = 44;
 export const MIN_ZOOM = 0.35;
 export const MAX_ZOOM = 1.5;
 

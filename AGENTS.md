@@ -107,6 +107,9 @@ Only `docs/WORKBOARD.md` edits may be pushed directly to `main`. Everything else
 - All server calls go through `src/lib/api/`; all live updates through the SSE helper.
 - Accessibility: labelled controls, visible focus, keyboard reachable.
 
+**Keep it lean**
+- Write only the code the task card needs: no dead code, unused exports or dependencies, speculative options or abstractions, or wrappers that add nothing. Delete what a change makes unused. Comments explain why, not what.
+
 **Commits and PRs**
 - Conventional commits: `feat(il-nodes): add ai.classify`, `fix(web/canvas): …`, `chore(board): claim B06`.
 - PR description: task ID, what changed, how it was tested, contract changes, follow-ups (new task rows added).

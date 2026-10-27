@@ -11,7 +11,7 @@ use serde::Serialize;
 use tokio::sync::mpsc;
 
 /// Heartbeat interval for idle streams.
-pub const HEARTBEAT: Duration = Duration::from_secs(15);
+const HEARTBEAT: Duration = Duration::from_secs(15);
 
 /// Resolves the resume cursor.
 pub fn cursor(after: Option<u64>, headers: &HeaderMap) -> u64 {

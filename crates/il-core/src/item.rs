@@ -22,12 +22,6 @@ impl Item {
     pub fn json(json: Json) -> Self {
         Self { json, files: BTreeMap::new() }
     }
-
-    /// Adds a file under `key`.
-    pub fn with_file(mut self, key: impl Into<String>, file: FileRef) -> Self {
-        self.files.insert(key.into(), file);
-        self
-    }
 }
 
 /// A pointer to a file held by the `FileStore`.

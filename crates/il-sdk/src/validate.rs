@@ -23,20 +23,20 @@ fn check(schema: &Value, value: &Value, path: &str, issues: &mut Vec<ValidationI
         && il_core::expr::is_expression(s)
     {
         if let Err(e) = il_core::expr::validate(s) {
-            issues.push(issue(path, &e.to_string()));
+            issues.push(ValidationIssue::new(path, &e.to_string()));
         }
         return;
     }
     if let Some(ty) = schema.get("type").and_then(Value::as_str)
         && !type_matches(ty, value)
     {
-        issues.push(issue(path, &format!("expected {ty}")));
+        issues.push(ValidationIssue::new(path, &format!("expected {ty}")));
         return;
     }
     if let Some(options) = schema.get("enum").and_then(Value::as_array)
         && !options.contains(value)
     {
-        issues.push(issue(path, "not one of the allowed values"));
+        issues.push(ValidationIssue::new(path, "not one of the allowed values"));
     }
     if let Value::Object(map) = value {
         if let Some(required) = schema.get("required").and_then(Value::as_array) {
@@ -47,7 +47,7 @@ fn check(schema: &Value, value: &Value, path: &str, issues: &mut Vec<ValidationI
                     _ => false,
                 };
                 if missing {
-                    issues.push(issue(&format!("{path}/{key}"), "is required"));
+                    issues.push(ValidationIssue::new(&format!("{path}/{key}"), "is required"));
                 }
             }
         }
@@ -79,10 +79,6 @@ fn type_matches(ty: &str, v: &Value) -> bool {
         "null" => v.is_null(),
         _ => true,
     }
-}
-
-fn issue(path: &str, message: &str) -> ValidationIssue {
-    ValidationIssue { path: if path.is_empty() { "/".into() } else { path.into() }, message: message.into() }
 }
 
 #[cfg(test)]

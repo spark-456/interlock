@@ -43,8 +43,7 @@ impl Scope {
         self.vars.insert(name.into(), value);
         self
     }
-    /// The scope as one JSON object.
-    pub fn as_json(&self) -> Json {
+    fn as_json(&self) -> Json {
         Json::Object(self.vars.clone())
     }
 }

@@ -13,7 +13,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use il_core::ApiError;
 
-pub use session::{SESSION_COOKIE, Session, Ws};
+pub use session::Ws;
 
 use crate::wiring::AppState;
 
