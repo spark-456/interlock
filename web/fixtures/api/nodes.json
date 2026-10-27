@@ -665,6 +665,111 @@
       "category": "ai",
       "costHint": "low",
       "credentials": [],
+      "description": "Checks an answer against configured rules and routes it to pass or blocked, with an optional human hand-off.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "input": "{{ item.answer }}",
+            "rules": [
+              {
+                "action": "handoff",
+                "description": "Refunds over $100 require a person to review the answer.",
+                "name": "large_refund"
+              }
+            ]
+          },
+          "title": "Refund policy"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "shield",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "pass"
+        },
+        {
+          "label": null,
+          "name": "blocked"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "input": {
+            "default": "{{ item.answer }}",
+            "title": "Answer to check",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "model": {
+            "default": "fast",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          },
+          "rules": {
+            "items": {
+              "properties": {
+                "action": {
+                  "enum": [
+                    "block",
+                    "handoff"
+                  ],
+                  "title": "If matched",
+                  "type": "string",
+                  "x-widget": "select"
+                },
+                "description": {
+                  "title": "Rule",
+                  "type": "string",
+                  "x-widget": "longtext"
+                },
+                "name": {
+                  "title": "Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "description",
+                "action"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "title": "Rules",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rules"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "Safety rules",
+      "trigger": false,
+      "typeId": "ai.guardrails",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
       "description": "Summarises text into a paragraph or bullet points.",
       "dynamicOutputs": null,
       "examples": [
