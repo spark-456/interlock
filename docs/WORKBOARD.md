@@ -18,7 +18,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
 | 8 | B06 | Nodes: logic & data | P0 | T00 | ready | | | | |
 | 9 | B07 | Nodes: AI | P0 | T00 | ready | | | | |
-| 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | claimed | claude-a | t/B04-server | 2026-10-27 07:35 | |
+| 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | done | claude-a | t/B04-server | 2026-10-27 08:05 | Part 1, commit 9fcc8b3: all /api routes, SSE, demo sessions, files, CORS. Rest is in B04b |
 | 11 | W03 | Node panel, schema forms, previews | P0 | T00 | ready | | | | |
 | 12 | B05 | Triggers & scheduler | P0 | T00 | done | claude-a | t/B05-triggers | 2026-10-27 07:30 | Commit 0b96b2b. App triggers use `il_sdk::poll` |
 | 13 | W04 | Create & Building screens | P0 | T00 | ready | | | 2026-10-27 06:10 | Building (`/new/[id]/building`) is done (design PR). Still to do: Create (`/new`, design S2) and wiring Building to live `POST /api/builds` |
@@ -41,6 +41,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 30 | R04 | README, docs, video script, Devpost | P0 | — | ready | | | | Draft any time; finalise Fri |
 | 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | ready | | | | Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow, ApiCard; gallery page with every SpecV3 state; vitest for interactive components |
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | ready | | | | New node in `il-nodes/src/ai/guardrails.rs`: rules list, pass/blocked outputs, hand-off rule. Used by F-C; the design's "Safety rules" node |
+| 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | ready | | | | Follow-up of B04 part 1 (see its commit message) |
 
 ### Contract log (breaking changes only)
 
@@ -215,6 +216,10 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 ### N01 · Node: ai.guardrails
 - **Owns**: `crates/il-nodes/src/ai/guardrails.rs` (+ its line in `ai/mod.rs`).
 - **Acceptance**: manifest (rules array, hand-off rules such as "refunds over $100", outputs `pass`/`blocked`), harness tests with the fake gateway, and `cargo xtask catalog` regenerated. The architect uses it for F-C (AR-9). The design's "Safety rules" node maps to it (see `design/interlock/MAPPING.md`).
+
+### B04b · Server: GitHub sign-in, rate limits, startup recovery, demo seed
+- **Owns**: `crates/il-server/**`.
+- **Acceptance**: GitHub OAuth sign-in (`/api/auth/github/start`, callback, creates a `Session` in the store like `POST /api/demo/session` does, cookie `il_session`); per-IP rate limiting on `/hooks`, `/v1`, `/mcp`, `/api/demo/session`; startup recovery (`engine.recover` for runs left Running, `triggers.restore` for active flows: add the store queries this needs with B01); demo sessions seeded with templates once R01 lands; integration tests.
 
 ### R04 · README, docs, video script, Devpost
 - **Owns**: `README.md`, `docs/**` (except PRD and WORKBOARD), `assets/**`.
