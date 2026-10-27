@@ -71,7 +71,7 @@ async fn published(ctx: &RouteCtx, workspace_id: &str) -> Result<Vec<Flow>, (Sta
     Ok(output)
 }
 
-fn slug(flow: &Flow) -> String {
+pub(crate) fn slug(flow: &Flow) -> String {
     let value = flow
         .name
         .to_ascii_lowercase()

@@ -17,9 +17,10 @@ serde.workspace = true
 serde_json.workspace = true
 sha2 = "0.10"
 thiserror.workspace = true
+tower.workspace = true
 ulid.workspace = true
+rmcp = { version = "3.8.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
 
 [dev-dependencies]
 il-sdk = { workspace = true, features = ["testkit"] }
 tokio.workspace = true
-tower.workspace = true
