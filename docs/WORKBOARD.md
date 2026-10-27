@@ -9,7 +9,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 
 | # | ID | Task | Prio | Hard deps | Status | Owner | Branch | Updated (UTC) | PR / Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | T00 | Contracts & skeleton | P0 | — | ready | | | | Serial: one agent only; recommended Claude Code on the Windows PC |
+| 1 | T00 | Contracts & skeleton | P0 | — | claimed | claude-a | t/T00-skeleton | 2026-10-27 04:10 | Serial: one agent only; recommended Claude Code on the Windows PC |
 | 2 | B03 | Engine: executor, events, approvals, caps | P0 | T00 | ready | | | | |
 | 3 | B02 | Model gateway (Token Factory + fake) | P0 | T00 | ready | | | | |
 | 4 | W01 | Design system & app shell | P0 | T00 | ready | | | | Needs Claude Design export in `design/` |
