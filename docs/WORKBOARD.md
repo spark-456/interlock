@@ -23,7 +23,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 12 | B05 | Triggers & scheduler | P0 | T00 | done | claude-a | t/B05-triggers | 2026-10-27 07:30 | Commit 0b96b2b. App triggers use `il_sdk::poll` |
 | 13 | W04 | Create & Building screens | P0 | T00 | ready | | | 2026-10-27 06:10 | Building (`/new/[id]/building`) is done (design PR). Still to do: Create (`/new`, design S2) and wiring Building to live `POST /api/builds` |
 | 14 | K01 | Knowledge: ingest, Tavily, hybrid search | P0 | T00 | ready | | | | |
-| 15 | B08 | Nodes: human & output | P0 | T00 | claimed | codex-1 | t/B08-human-output | 2026-10-27 14:27 | |
+| 15 | B08 | Nodes: human & output | P0 | T00 | claimed | codex-1 | t/B08-human-output | 2026-10-27 14:27 | Core executors and 46 node tests pushed at 2b99391; approval timeout needs B03b, full check and PR need generated `web/` fixture decision |
 | 16 | P01 | Publish: OpenAI API, MCP, widget, guide | P0 | T00 | ready | | | | |
 | 17 | R01 | Templates, fixtures, recorded runs, demo seed | P0 | T00 | ready | | | | |
 | 18 | A02 | Architect: test-and-fix, Ask diff, app kit | P0 | A01 | ready | | | | |
