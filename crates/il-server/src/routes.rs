@@ -1,6 +1,7 @@
 //! Core routes plus every registered `RouteFactory`. B04 adds the rest of PRD §8.5 here.
 
 use axum::http::{HeaderValue, Method, StatusCode, Uri, header};
+use axum::middleware::from_fn_with_state;
 use axum::routing::get;
 use axum::{Json, Router};
 use il_core::ApiError;
@@ -27,6 +28,7 @@ pub fn router(state: AppState) -> Router {
         app = app.merge((factory.make)(&ctx));
     }
     app.fallback(assets::serve)
+        .layer(from_fn_with_state(state.clone(), crate::rate_limit::middleware))
         .layer(cors(&state.config.server.cors_origins))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())

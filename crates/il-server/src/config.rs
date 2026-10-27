@@ -15,11 +15,23 @@ pub struct ServerConfig {
     pub host: String,
     pub port: u16,
     pub cors_origins: Vec<String>,
+    pub public_url: Option<String>,
+    pub public_requests_per_minute: u32,
+    pub demo_sessions_per_hour: u32,
+    pub templates_dir: String,
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
-        Self { host: "127.0.0.1".into(), port: 8080, cors_origins: vec![] }
+        Self {
+            host: "127.0.0.1".into(),
+            port: 8080,
+            cors_origins: vec![],
+            public_url: None,
+            public_requests_per_minute: 120,
+            demo_sessions_per_hour: 10,
+            templates_dir: "fixtures/templates".into(),
+        }
     }
 }
 
