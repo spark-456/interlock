@@ -97,6 +97,7 @@ impl NodeExecutor for AppSlackApproval {
                 channels: vec!["slack".into()],
                 target: Some(channel.into()),
                 timeout_hours: None,
+                on_timeout: il_core::ApprovalTimeout::KeepWaiting,
                 credential_id: Some(credential_id),
             })
             .await?;

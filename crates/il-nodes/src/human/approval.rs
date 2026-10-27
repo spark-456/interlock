@@ -122,6 +122,7 @@ impl NodeExecutor for HumanApproval {
                 Some("reject") => ApprovalTimeout::Reject,
                 _ => ApprovalTimeout::KeepWaiting,
             },
+            credential_id: ctx.credential_ids.get("slack").cloned(),
         };
         Ok(NodeOutput::waiting(ctx.request_approval(spec).await?))
     }
