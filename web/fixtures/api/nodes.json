@@ -3599,10 +3599,72 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Add captions",
       "trigger": false,
       "typeId": "media.captions",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "media",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Converts a video or audio file to MP4, WebM, MP3 or WAV.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "file": "{{ item.files.video }}",
+            "format": "mp4"
+          },
+          "title": "Convert to MP4"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "repeat",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "file": {
+            "title": "Media file",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "format": {
+            "enum": [
+              "mp4",
+              "webm",
+              "mp3",
+              "wav"
+            ],
+            "title": "Format",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "required": [
+          "file",
+          "format"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "Convert media",
+      "trigger": false,
+      "typeId": "media.convert",
       "version": 1
     },
     {
@@ -3675,7 +3737,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Cut clips",
       "trigger": false,
       "typeId": "media.cut_clips",
@@ -3750,7 +3812,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Merge audio and video",
       "trigger": false,
       "typeId": "media.merge_av",
@@ -3832,7 +3894,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Resize for platform",
       "trigger": false,
       "typeId": "media.resize",
@@ -3896,7 +3958,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Thumbnail",
       "trigger": false,
       "typeId": "media.thumbnail",
