@@ -236,6 +236,7 @@ mod tests {
             services: fakes.services(),
             runner: runner.clone(),
             architect: Arc::new(FakeArchitect),
+            flow_tools: Arc::new(il_sdk::services::NoFlowTools),
             config: json!({}),
         };
         (routes(&rctx), runner, token)

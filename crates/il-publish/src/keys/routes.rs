@@ -114,6 +114,7 @@ mod tests {
             services: fakes.services(),
             runner: Arc::new(FakeRunner::default()),
             architect: Arc::new(FakeArchitect),
+            flow_tools: Arc::new(il_sdk::services::NoFlowTools),
             config: Value::Null,
         };
         let router = routes(&ctx);

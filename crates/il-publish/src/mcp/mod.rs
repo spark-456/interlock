@@ -51,7 +51,15 @@ impl ServerHandler for McpServer {
     ) -> Result<ListToolsResult, ErrorData> {
         let tools = match &self.scope {
             Scope::Platform => platform::tools(),
-            Scope::Flow(flow) => flow::tools(flow),
+            Scope::Flow(flow) => {
+                let available = self
+                    .ctx
+                    .flow_tools
+                    .for_flow(&self.workspace_id, flow)
+                    .await
+                    .map_err(|error| ErrorData::internal_error(error.to_string(), None))?;
+                flow::tools(flow, &available)
+            }
         };
         Ok(ListToolsResult::with_all_items(tools))
     }
@@ -64,9 +72,12 @@ impl ServerHandler for McpServer {
         let arguments = request.arguments.unwrap_or_default();
         let result = match &self.scope {
             Scope::Platform => platform::call(&self.ctx, &self.workspace_id, request.name.as_ref(), &arguments).await,
-            Scope::Flow(flow) => {
-                flow::call(&self.ctx, &self.workspace_id, flow, request.name.as_ref(), &arguments).await
-            }
+            Scope::Flow(flow) => match self.ctx.flow_tools.for_flow(&self.workspace_id, flow).await {
+                Ok(available) => {
+                    flow::call(&self.ctx, &self.workspace_id, flow, request.name.as_ref(), &arguments, &available).await
+                }
+                Err(error) => Err(error.to_string()),
+            },
         };
         let response = match result {
             Ok(Value::String(value)) => CallToolResult::success(vec![ContentBlock::text(value)]),
@@ -146,14 +157,42 @@ fn tool(name: &str, description: &str, schema: Value) -> Tool {
 mod tests {
     use std::sync::Arc;
 
+    use async_trait::async_trait;
     use axum::http::Request;
     use il_core::Flow;
     use il_sdk::registry::RouteCtx;
-    use il_sdk::services::Store;
+    use il_sdk::services::{AgentTool, FlowToolProvider, Store, ToolError};
     use il_sdk::testkit::{FakeArchitect, FakeRunner, FakeServices};
     use serde_json::json;
 
     use super::*;
+
+    struct TestTool(&'static str);
+
+    #[async_trait]
+    impl AgentTool for TestTool {
+        fn name(&self) -> &str {
+            self.0
+        }
+        fn description(&self) -> &str {
+            "Look up an invoice"
+        }
+        fn schema(&self) -> Value {
+            json!({"type":"object","properties":{"id":{"type":"string"}}})
+        }
+        async fn invoke(&self, args: Value) -> Result<Value, ToolError> {
+            Ok(json!({"id":args["id"],"paid":true}))
+        }
+    }
+
+    struct TestToolProvider;
+
+    #[async_trait]
+    impl FlowToolProvider for TestToolProvider {
+        async fn for_flow(&self, _workspace_id: &str, _flow: &Flow) -> Result<Vec<Arc<dyn AgentTool>>, ToolError> {
+            Ok(vec![Arc::new(TestTool("get_invoice")), Arc::new(TestTool("hidden_tool"))])
+        }
+    }
 
     #[tokio::test]
     async fn p01_platform_mcp_requires_a_valid_api_key() {
@@ -162,6 +201,7 @@ mod tests {
             services: fakes.services(),
             runner: Arc::new(FakeRunner::default()),
             architect: Arc::new(FakeArchitect),
+            flow_tools: Arc::new(TestToolProvider),
             config: json!({}),
         };
         let router = routes(&ctx);
@@ -182,7 +222,8 @@ mod tests {
             .unwrap();
         assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
         let flow: Flow = serde_json::from_value(json!({"id":"flow_1","workspaceId":"ws_a","version":1,
-            "name":"Demo","kind":"app","nodes":[],"edges":[]}))
+            "name":"Demo","kind":"app","nodes":[{"id":"n_agent","name":"Agent","type":"ai.agent",
+                "settings":{"tools":["get_invoice"]}}],"edges":[]}))
         .unwrap();
         fakes.store.put_flow(&flow).await.unwrap();
         fakes.store.set_flow_active(&flow.id, true).await.unwrap();
@@ -243,6 +284,28 @@ mod tests {
             .unwrap();
         let flow_body = axum::body::to_bytes(flow_tools.into_body(), 16384).await.unwrap();
         assert!(String::from_utf8_lossy(&flow_body).contains("ask_demo"));
+        assert!(String::from_utf8_lossy(&flow_body).contains("get_invoice"));
+        assert!(!String::from_utf8_lossy(&flow_body).contains("hidden_tool"));
+        let invoice = router
+            .clone()
+            .oneshot(
+                Request::post("/mcp/flows/flow_1")
+                    .header("host", "localhost")
+                    .header("content-type", "application/json")
+                    .header("accept", "application/json, text/event-stream")
+                    .header("mcp-protocol-version", "2025-11-25")
+                    .header("authorization", format!("Bearer {key}"))
+                    .body(Body::from(
+                        json!({"jsonrpc":"2.0","id":5,"method":"tools/call",
+                    "params":{"name":"get_invoice","arguments":{"id":"inv_1"}}})
+                        .to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let invoice_body = axum::body::to_bytes(invoice.into_body(), 16384).await.unwrap();
+        assert!(String::from_utf8_lossy(&invoice_body).contains("inv_1"));
         let asked = router
             .clone()
             .oneshot(

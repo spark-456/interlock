@@ -22,5 +22,6 @@ ulid.workspace = true
 rmcp = { version = "3.8.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
 
 [dev-dependencies]
+async-trait.workspace = true
 il-sdk = { workspace = true, features = ["testkit"] }
 tokio.workspace = true

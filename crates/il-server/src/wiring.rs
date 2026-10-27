@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use il_sdk::Services;
 use il_sdk::registry::RouteCtx;
-use il_sdk::services::{ArchitectService, FlowRunner, SystemClock};
+use il_sdk::services::{ArchitectService, FlowRunner, NoFlowTools, SystemClock};
 use il_sdk::testkit::FakeServices;
 use il_store::db::SqliteStore;
 use il_store::files::DiskFileStore;
@@ -33,6 +33,7 @@ impl AppState {
             services: self.services.clone(),
             runner: self.runner.clone(),
             architect: self.architect.clone(),
+            flow_tools: Arc::new(NoFlowTools),
             config: self.config.raw.clone(),
         }
     }
