@@ -12,8 +12,8 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 1 | T00 | Contracts & skeleton | P0 | — | done | claude-a | t/T00-skeleton | 2026-10-27 05:15 | Merged locally (no remote yet), commit 90af90f. Read its commit message for notes to later tasks |
 | 2 | B03 | Engine: executor, events, approvals, caps | P0 | T00 | ready | | | | |
 | 3 | B02 | Model gateway (Token Factory + fake) | P0 | T00 | ready | | | | |
-| 4 | W01 | Design system & app shell | P0 | T00 | ready | | | | Needs Claude Design export in `design/` |
-| 5 | W02 | Canvas editor + Ask diff view | P0 | T00 | ready | | | | |
+| 4 | W01 | Design system & app shell | P0 | T00 | claimed | claude-a | t/W01-design-foundation | 2026-10-27 05:20 | Design v3 foundation PR (also covers W04 Building + canvas NodeCard/edges/toolbar/minimap) |
+| 5 | W02 | Canvas editor + Ask diff view | P0 | T00 | ready | | | | Canvas foundation (NodeCard, edges, toolbar, minimap) lands in the design PR; build the editor on it |
 | 6 | B01 | Store: SQLite, migrations, files, secrets | P0 | T00 | ready | | | | |
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
 | 8 | B06 | Nodes: logic & data | P0 | T00 | ready | | | | |
@@ -21,7 +21,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | ready | | | | |
 | 11 | W03 | Node panel, schema forms, previews | P0 | T00 | ready | | | | |
 | 12 | B05 | Triggers & scheduler | P0 | T00 | ready | | | | |
-| 13 | W04 | Create & Building screens | P0 | T00 | ready | | | | |
+| 13 | W04 | Create & Building screens | P0 | T00 | claimed | claude-a | t/W01-design-foundation | 2026-10-27 05:20 | Building screen ships in the design PR; Create (`/new`) still open after it merges |
 | 14 | K01 | Knowledge: ingest, Tavily, hybrid search | P0 | T00 | ready | | | | |
 | 15 | B08 | Nodes: human & output | P0 | T00 | ready | | | | |
 | 16 | P01 | Publish: OpenAI API, MCP, widget, guide | P0 | T00 | ready | | | | |
