@@ -32,7 +32,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 21 | K02 | Use any API (OpenAPI → tools) | P0 | T00 | claimed | codex-1 | t/K02-openapi | 2026-10-27 15:21 | Pushed `450df7fd17c276b1049d081fe2a768b8b4903b21`; Rust checks pass. Full check needs generated `web/fixtures/api/nodes.json`; awaiting owner decision on no-web rule before PR. |
 | 22 | C01 | OAuth broker + Gmail, Sheets, YouTube | P0 | T00 | claimed | codex-1 | t/C01-google | 2026-10-27 15:52 | Pushed `d0ccaebaf06f2a6d83d1ee0f0b925cd7de82f1f1`; OAuth broker and Google nodes pass Rust checks. Left: authenticated OAuth HTTP route wiring (B05 auth), generated `web/fixtures/api/nodes.json` for full check, PR. |
 | 23 | C02 | Slack, Discord, Telegram, Bluesky | P0 | T00 | claimed | codex-1 | t/C02-messaging | 2026-10-27 16:12 | 77bdf615918bb4f10c9f61bb808c6e1d7aae47f9 pushed; 25 connector tests and Rust check stages pass; generated `web/fixtures/api/nodes.json` drift blocks full check under no-web instruction; PR pending. |
-| 24 | M01 | Media ops (ffmpeg) | P0 | T00 | ready | | | | |
+| 24 | M01 | Media ops (ffmpeg) | P0 | T00 | claimed | codex-1 | t/M01-media-ops | 2026-10-27 16:12 | |
 | 25 | M02 | Media generation (video, voice, image) | P0 | T00 | ready | | | | |
 | 26 | C03 | Shopify sandbox + social dry-run nodes | P0 | T00 | ready | | | | |
 | 27 | W07 | Landing, demo mode, settings, error states | P0 | T00 | ready | | | | |
