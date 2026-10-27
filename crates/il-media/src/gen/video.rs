@@ -1,7 +1,5 @@
 //! `ai.generate_video` — Generate video.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task M02 implements it.
 
 use il_sdk::prelude::*;
 
@@ -17,6 +15,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Generates a short video from a script or prompt. Uses the recorded provider in demo mode and tests.",
     )
     .icon("film")
+    .status(NodeStatus::Ready)
     .cost(CostHint::High)
     .settings_schema(json!({
         "type": "object",
@@ -33,17 +32,16 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
             "durationSec": {
                 "type": "integer",
                 "title": "Duration (s)",
-                "default": 20,
-                "minimum": 4,
-                "maximum": 60
+                "default": 5,
+                "minimum": 2,
+                "maximum": 10
             },
             "aspect": {
                 "type": "string",
                 "title": "Aspect",
                 "enum": [
                     "16:9",
-                    "9:16",
-                    "1:1"
+                    "9:16"
                 ],
                 "default": "16:9",
                 "x-widget": "select"
@@ -54,7 +52,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Promo clip",
         json!({
             "prompt": "{{ item.text }}",
-            "durationSec": 20,
+            "durationSec": 5,
             "aspect": "16:9"
         }),
     )
@@ -66,8 +64,8 @@ impl NodeExecutor for AiGenerateVideo {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        super::execute(ctx, input, il_sdk::services::MediaKind::Video, "prompt").await
     }
 }
 

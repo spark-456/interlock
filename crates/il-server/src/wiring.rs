@@ -100,6 +100,10 @@ fn finish_state(config: Config, mut services: Services) -> AppState {
     }
     services.notifier =
         Arc::new(il_connectors::slack::MessagingNotifier::new(services.clone(), services.notifier.clone()));
+    match il_media::r#gen::from_config(&config.raw, services.files.clone(), config.providers == "fake") {
+        Ok(media) => services.media = media,
+        Err(e) => tracing::error!(error = %e, "media provider not started; using offline fake"),
+    }
     tracing::info!(providers = %config.providers, "services wired");
     let mut engine_config: il_engine::EngineConfig = config.section("engine").unwrap_or_default();
     engine_config.caps = config.section("caps").unwrap_or_default();

@@ -39,6 +39,11 @@ embed = [0.01, 0.0]
 video = "recorded"
 voice = "recorded"
 image = "recorded"
+# To use Runway, set a media kind to "runway", set RUNWAYML_API_SECRET in the
+# environment, and choose models here. Video duration is 2–10 seconds.
+video_model = "gen4.5"
+voice_model = "eleven_multilingual_v2"
+image_model = "gen4_image"
 
 [providers.transcription]
 provider = "tokenfactory"

@@ -1323,7 +1323,10 @@ dependencies = [
  "bytes",
  "il-sdk",
  "inventory",
+ "reqwest",
+ "serde_json",
  "tokio",
+ "wiremock",
 ]
 
 [[package]]
