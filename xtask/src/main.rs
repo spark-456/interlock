@@ -5,9 +5,11 @@
 //! - `check-deps` enforce the crate dependency direction (PRD §7.2)
 //! - `gen-types`  ts-rs → web/src/lib/api/types, JSON Schemas → contracts/
 //! - `catalog`    docs/NODES.md + web/fixtures/api/nodes.json from registered manifests
+//! - `progress`   the progress tracker's data files, into target/progress/
 
 mod deps;
 mod generate;
+mod progress;
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
@@ -24,8 +26,9 @@ fn main() -> anyhow::Result<()> {
         Some("check-deps") => deps::check(),
         Some("gen-types") => generate::types(&root.join("web/src/lib/api/types"), &root.join("contracts")),
         Some("catalog") => generate::catalog(&root.join("docs/NODES.md"), &root.join("web/fixtures/api/nodes.json")),
+        Some("progress") => progress::write(&root, &root.join("target/progress")),
         _ => {
-            eprintln!("usage: cargo xtask <dev | check [--no-web] | check-deps | gen-types | catalog>");
+            eprintln!("usage: cargo xtask <dev | check [--no-web] | check-deps | gen-types | catalog | progress>");
             Ok(())
         }
     }
