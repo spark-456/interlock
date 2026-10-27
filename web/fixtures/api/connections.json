@@ -1,0 +1,30 @@
+[
+  {
+    "id": "conn_google",
+    "app": "google",
+    "label": "Google",
+    "status": "connected",
+    "account": "dana@larkspur.example"
+  },
+  {
+    "id": "conn_slack",
+    "app": "slack",
+    "label": "Slack",
+    "status": "connected",
+    "account": "Larkspur workspace"
+  },
+  {
+    "id": null,
+    "app": "bluesky",
+    "label": "Bluesky",
+    "status": "notConnected",
+    "account": null
+  },
+  {
+    "id": "conn_discord",
+    "app": "discord",
+    "label": "Discord",
+    "status": "expired",
+    "account": "#promos webhook"
+  }
+]
