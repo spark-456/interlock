@@ -1,0 +1,44 @@
+{
+  "description": "Canned responses for the Larkspur Admin API by operationId (risky operations like delete_customer have none).",
+  "responses": {
+    "lookup_customer": {
+      "status": 200,
+      "body": {
+        "id": "cus_maya",
+        "email": "maya@northfield.example",
+        "name": "Maya North",
+        "plan": "Team"
+      }
+    },
+    "list_invoices": {
+      "status": 200,
+      "body": [
+        {
+          "id": "INV-2291",
+          "date": "2026-10-03",
+          "amount": 48.0,
+          "status": "paid"
+        },
+        {
+          "id": "INV-2140",
+          "date": "2026-09-03",
+          "amount": 48.0,
+          "status": "paid"
+        },
+        {
+          "id": "INV-1987",
+          "date": "2026-08-03",
+          "amount": 48.0,
+          "status": "paid"
+        }
+      ]
+    },
+    "open_ticket": {
+      "status": 201,
+      "body": {
+        "id": "TCK-5012",
+        "status": "open"
+      }
+    }
+  }
+}
