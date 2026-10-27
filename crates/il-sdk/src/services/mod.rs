@@ -40,4 +40,6 @@ pub struct Services {
     pub http: SafeHttp,
     /// Tools available to Agent nodes, supplied by connector and node adapters.
     pub tools: Vec<Arc<dyn AgentTool>>,
+    /// Each flow's own tools (its OpenAPI operations), resolved when a run starts.
+    pub flow_tools: Arc<dyn FlowToolProvider>,
 }

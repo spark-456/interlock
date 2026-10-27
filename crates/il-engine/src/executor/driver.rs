@@ -5,6 +5,7 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use il_core::{Flow, Item, Node, NodeRun, Run, RunEventKind, RunStatus};
+use il_sdk::Services;
 use il_sdk::ctx::RunInfo;
 use il_sdk::services::store::{SpendEntry, SpendScope};
 use serde_json::{Map, Value, json};
@@ -39,6 +40,7 @@ pub(crate) async fn drive(
         ..Default::default()
     };
 
+    let services = run_services(&inner, &flow, &run.workspace_id).await;
     let mut tasks: JoinSet<(String, CallResult)> = JoinSet::new();
     let mut running: BTreeSet<String> = BTreeSet::new();
     if let Some((node_id, r)) = resume
@@ -46,8 +48,10 @@ pub(crate) async fn drive(
     {
         running.insert(node_id.clone());
         let (inner2, base2, scope, cancel2) = (inner.clone(), base.clone(), nodes_scope(&cp), cancel.clone());
-        let input = r.partial.input.clone();
-        tasks.spawn(async move { (node_id, run_node(inner2, base2, node, input, scope, cancel2, Some(r)).await) });
+        let (input, services2) = (r.partial.input.clone(), services.clone());
+        tasks.spawn(async move {
+            (node_id, run_node(inner2, services2, base2, node, input, scope, cancel2, Some(r)).await)
+        });
     }
 
     loop {
@@ -112,8 +116,10 @@ pub(crate) async fn drive(
                 progressed = true;
                 let (inner2, base2, scope, cancel2, node2) =
                     (inner.clone(), base.clone(), nodes_scope(&cp), cancel.clone(), node.clone());
-                let id = node.id.clone();
-                tasks.spawn(async move { (id, run_node(inner2, base2, node2, input, scope, cancel2, None).await) });
+                let (id, services2) = (node.id.clone(), services.clone());
+                tasks.spawn(async move {
+                    (id, run_node(inner2, services2, base2, node2, input, scope, cancel2, None).await)
+                });
             }
         }
 
@@ -159,6 +165,18 @@ pub(crate) async fn drive(
 
 fn partial_announced(cp: &Checkpoint, node_id: &str, approval_id: &str) -> bool {
     cp.partial.get(node_id).is_some_and(|p| p.waiting.contains_key(approval_id))
+}
+
+/// The services a run's steps see: the engine's, plus the flow's own tools for its agents.
+async fn run_services(inner: &Inner, flow: &Flow, workspace_id: &str) -> Services {
+    let mut services = inner.services.clone();
+    if flow.nodes.iter().any(|n| n.node_type == "ai.agent") {
+        match services.flow_tools.for_flow(workspace_id, flow).await {
+            Ok(tools) => services.tools.extend(tools),
+            Err(e) => tracing::warn!(flow_id = %flow.id, error = %e, "could not load the flow's tools"),
+        }
+    }
+    services
 }
 
 #[allow(clippy::too_many_arguments)]

@@ -60,6 +60,7 @@ impl FakeServices {
             clock: self.clock.clone(),
             http: SafeHttp::permissive_for_tests(),
             tools: self.tools.clone(),
+            flow_tools: Arc::new(crate::services::NoFlowTools),
         }
     }
 }
