@@ -70,7 +70,8 @@ pub fn build_state(config: Config) -> AppState {
         runner.clone(),
         il_engine::NodeLookup::default(),
     ));
-    let architect = Arc::new(il_architect::Architect::new(services.clone(), il_architect::catalog::Catalog::registered()));
+    let architect =
+        Arc::new(il_architect::Architect::new(services.clone(), il_architect::catalog::Catalog::registered()));
     AppState { config: Arc::new(config), services, runner, architect, engine, triggers }
 }
 

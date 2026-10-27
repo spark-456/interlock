@@ -58,7 +58,8 @@ async fn hero_goals_compile_into_valid_flows() {
         assert!(!notes.is_empty());
         assert_eq!(flow.meta.goal.as_deref(), Some(goal));
 
-        let spots: BTreeSet<(i64, i64)> = flow.nodes.iter().map(|n| (n.position.x as i64, n.position.y as i64)).collect();
+        let spots: BTreeSet<(i64, i64)> =
+            flow.nodes.iter().map(|n| (n.position.x as i64, n.position.y as i64)).collect();
         assert_eq!(spots.len(), flow.nodes.len(), "{name}: overlapping steps");
         for e in &flow.edges {
             let (from, to) = (flow.node(&e.from.node).unwrap(), flow.node(&e.to.node).unwrap());
@@ -198,13 +199,18 @@ async fn asks_questions_then_builds_with_the_answers() {
 async fn a_build_that_cannot_be_repaired_fails_with_the_reason() {
     let fakes = FakeServices::default();
     for _ in 0..=MAX_REPAIRS {
-        fakes.models.push_json(json!({"name": "x", "nodes": [{"id": "n_a", "type": "nope", "name": "A"}], "edges": []}));
+        fakes
+            .models
+            .push_json(json!({"name": "x", "nodes": [{"id": "n_a", "type": "nope", "name": "A"}], "edges": []}));
     }
     let architect = Architect::new(fakes.services(), catalog());
     let id = architect.start_build("ws_1", request("Do something")).await.unwrap();
     let evs = events(fakes.store.as_ref(), &id, ended).await;
     let BuildEventKind::Failed { error } = &evs.last().unwrap().kind else { panic!("{evs:#?}") };
     assert!(error.contains("unknown node type `nope`"), "{error}");
-    assert!(evs.iter().any(|e| matches!(&e.kind, BuildEventKind::Stage { status, .. } if format!("{status:?}") == "Failed")));
+    assert!(
+        evs.iter()
+            .any(|e| matches!(&e.kind, BuildEventKind::Stage { status, .. } if format!("{status:?}") == "Failed"))
+    );
     assert!(fakes.store.list_flows("ws_1").await.unwrap().is_empty());
 }

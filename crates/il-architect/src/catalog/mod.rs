@@ -81,7 +81,11 @@ fn settings(schema: &Value) -> String {
 /// Enum options, the widget hint, or the JSON type (with list item and object shapes).
 fn shape(s: &Value) -> String {
     if let Some(options) = s.get("enum").and_then(Value::as_array) {
-        return options.iter().map(|o| o.as_str().map_or_else(|| o.to_string(), String::from)).collect::<Vec<_>>().join("|");
+        return options
+            .iter()
+            .map(|o| o.as_str().map_or_else(|| o.to_string(), String::from))
+            .collect::<Vec<_>>()
+            .join("|");
     }
     if let Some(w) = s.get("x-widget").and_then(Value::as_str).filter(|w| *w != "select") {
         return w.into();

@@ -66,7 +66,10 @@ pub fn validate(flow: &Flow, catalog: &Catalog) -> Vec<Issue> {
             && let Some(outs) = output_ports(from, catalog)
             && !outs.contains(&e.from.port)
         {
-            issues.push(Issue::new(&at, format!("`{}` has no output `{}`; outputs: {}", from.id, e.from.port, outs.join(", "))));
+            issues.push(Issue::new(
+                &at,
+                format!("`{}` has no output `{}`; outputs: {}", from.id, e.from.port, outs.join(", ")),
+            ));
         }
         if let Some(m) = to.and_then(|n| catalog.get(&n.node_type))
             && !m.inputs.iter().any(|p| p.name == e.to.port)
@@ -76,14 +79,20 @@ pub fn validate(flow: &Flow, catalog: &Catalog) -> Vec<Issue> {
     }
     let before = ancestors(flow);
     if let Some(n) = flow.nodes.iter().find(|n| before[n.id.as_str()].contains(n.id.as_str())) {
-        issues.push(Issue::new(format!("nodes.{}", n.id), "the flow loops back to this step; flows must not have cycles"));
+        issues.push(Issue::new(
+            format!("nodes.{}", n.id),
+            "the flow loops back to this step; flows must not have cycles",
+        ));
     }
     for n in &flow.nodes {
         for r in references(&n.settings) {
             if flow.node(&r).is_none() {
                 issues.push(Issue::new(format!("nodes.{}.settings", n.id), format!("references unknown step `{r}`")));
             } else if !before[n.id.as_str()].contains(r.as_str()) {
-                issues.push(Issue::new(format!("nodes.{}.settings", n.id), format!("references `{r}`, which does not run before it")));
+                issues.push(Issue::new(
+                    format!("nodes.{}.settings", n.id),
+                    format!("references `{r}`, which does not run before it"),
+                ));
             }
         }
     }
@@ -158,12 +167,15 @@ mod tests {
                 "type": "object", "required": ["instructions"],
                 "properties": {"instructions": {"type": "string"}, "input": {"type": "string"}}
             })),
-            NodeManifest::new("logic.switch", Category::Logic, "Switch", "Routes.").outputs(&["default"]).dynamic_outputs("cases"),
+            NodeManifest::new("logic.switch", Category::Logic, "Switch", "Routes.")
+                .outputs(&["default"])
+                .dynamic_outputs("cases"),
         ])
     }
 
     fn flow(v: Value) -> Flow {
-        let mut base = json!({"id": "f", "workspaceId": "w", "version": 1, "name": "F", "kind": "automation", "groups": []});
+        let mut base =
+            json!({"id": "f", "workspaceId": "w", "version": 1, "name": "F", "kind": "automation", "groups": []});
         base.as_object_mut().unwrap().extend(v.as_object().unwrap().clone());
         serde_json::from_value(base).unwrap()
     }

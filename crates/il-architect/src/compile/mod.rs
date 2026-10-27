@@ -125,7 +125,10 @@ pub fn assemble(draft: &Draft, catalog: &Catalog, goal: &str) -> Flow {
         }
         edges.push(Edge {
             id,
-            from: PortRef { node: e.from.clone(), port: e.from_port.clone().unwrap_or_else(|| first_port(&e.from, true)) },
+            from: PortRef {
+                node: e.from.clone(),
+                port: e.from_port.clone().unwrap_or_else(|| first_port(&e.from, true)),
+            },
             to: PortRef { node: e.to.clone(), port: e.to_port.clone().unwrap_or_else(|| first_port(&e.to, false)) },
         });
     }
@@ -184,10 +187,8 @@ pub async fn compile(
     brief: &str,
     may_ask: bool,
 ) -> Result<Compiled, CompileError> {
-    let mut messages = vec![
-        ChatMessage::system(format!("{SYSTEM}\nCatalog:\n{}", catalog.prompt())),
-        ChatMessage::user(brief),
-    ];
+    let mut messages =
+        vec![ChatMessage::system(format!("{SYSTEM}\nCatalog:\n{}", catalog.prompt())), ChatMessage::user(brief)];
     let mut cost_usd = 0.0;
     let mut repairs = Vec::new();
     loop {
@@ -208,7 +209,11 @@ pub async fn compile(
                 let flow = assemble(&draft, catalog, goal);
                 let issues = validate(&flow, catalog);
                 if issues.is_empty() {
-                    return Ok(Compiled { outcome: Outcome::Flow { flow: Box::new(flow), notes: draft.notes }, cost_usd, repairs });
+                    return Ok(Compiled {
+                        outcome: Outcome::Flow { flow: Box::new(flow), notes: draft.notes },
+                        cost_usd,
+                        repairs,
+                    });
                 }
                 issues
             }
