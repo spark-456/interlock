@@ -209,6 +209,7 @@
       <Button icon="play" size="s" loading={run.status === 'running'} disabled={!flow || dirty} title={dirty ? 'Save first' : undefined} onclick={testRun}>
         Test run
       </Button>
+      <Button size="s" icon="globe" href="/flows/{flowId}/publish">{flow?.kind === 'app' ? 'Connect' : 'Activate'}</Button>
       <Button variant="primary" size="s" loading={saving} disabled={!dirty || !!proposal} onclick={save}>Save</Button>
     {/snippet}
   </TopBar>

@@ -6,35 +6,17 @@
   "kind": "automation",
   "nodes": [
     {
-      "id": "n_schedule",
-      "type": "trigger.schedule",
+      "id": "n_mention",
+      "type": "trigger.webhook",
       "typeVersion": 1,
-      "name": "Every hour",
+      "name": "Mention received",
       "position": {
         "x": 0.0,
         "y": 200.0
       },
       "group": "g_in",
       "settings": {
-        "cron": "0 * * * *"
-      },
-      "credentials": {},
-      "disabled": false,
-      "notes": null
-    },
-    {
-      "id": "n_fetch",
-      "type": "data.http",
-      "typeVersion": 1,
-      "name": "New mentions",
-      "position": {
-        "x": 304.0,
-        "y": 200.0
-      },
-      "group": "g_in",
-      "settings": {
-        "method": "GET",
-        "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=larkspur"
+        "method": "POST"
       },
       "credentials": {},
       "disabled": false,
@@ -88,20 +70,9 @@
   ],
   "edges": [
     {
-      "id": "e_schedule_fetch",
+      "id": "e_mention_classify",
       "from": {
-        "node": "n_schedule",
-        "port": "out"
-      },
-      "to": {
-        "node": "n_fetch",
-        "port": "in"
-      }
-    },
-    {
-      "id": "e_fetch_classify",
-      "from": {
-        "node": "n_fetch",
+        "node": "n_mention",
         "port": "out"
       },
       "to": {
@@ -141,6 +112,6 @@
   },
   "meta": {
     "createdBy": "template",
-    "goal": "Every hour, check new Bluesky mentions, sort them into praise, questions and complaints, and send complaints to our Discord support channel."
+    "goal": "When a Bluesky mention arrives, sort it into praise, a question or a complaint, and send complaints to our Discord support channel."
   }
 }
