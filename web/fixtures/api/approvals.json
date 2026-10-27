@@ -1,0 +1,38 @@
+[
+  {
+    "id": "apr_fa",
+    "workspaceId": "ws_demo",
+    "flowId": "flw_promos",
+    "runId": "run_fa",
+    "nodeId": "n_approve",
+    "title": "Post 3 promo videos",
+    "message": "Videos and captions are ready for the Larkspur Linen Tote, Fieldnote Ceramic Mug and Meadow Soy Candle.",
+    "payload": {
+      "posts": [
+        { "product": "Larkspur Linen Tote", "text": "Carry the weekend. Our linen tote is back in sand and slate." },
+        { "product": "Fieldnote Ceramic Mug", "text": "Slow mornings, hand-thrown. Meet the Fieldnote mug." },
+        { "product": "Meadow Soy Candle", "text": "Hand-poured soy, a slow-burning meadow scent for long evenings." }
+      ]
+    },
+    "status": "pending",
+    "channels": ["slack", "inApp"],
+    "createdAt": "2026-10-26T09:00:16Z",
+    "decidedAt": null,
+    "decidedBy": null
+  },
+  {
+    "id": "apr_prev",
+    "workspaceId": "ws_demo",
+    "flowId": "flw_promos",
+    "runId": "run_fa",
+    "nodeId": "n_approve",
+    "title": "Post 2 promo videos",
+    "message": "Last week's videos for the Dune Candle and Meadow Apron.",
+    "payload": null,
+    "status": "approved",
+    "channels": ["slack"],
+    "createdAt": "2026-10-19T09:00:16Z",
+    "decidedAt": "2026-10-19T09:04:00Z",
+    "decidedBy": "Priya (Slack)"
+  }
+]

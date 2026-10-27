@@ -2,6 +2,8 @@
 
 import { get, post, put, upload } from './client';
 import type {
+  Approval,
+  ApprovalDecision,
   AskDiff,
   BuildAnswers,
   BuildCreated,
@@ -37,6 +39,8 @@ export const api = {
     post<RunCreated>(`/api/flows/${flowId}/nodes/${nodeId}/run`, { items }),
   connections: () => get<ConnectionSummary[]>('/api/connections'),
   runs: (flowId: string) => get<RunSummary[]>(`/api/flows/${flowId}/runs`),
+  approvals: () => get<Approval[]>('/api/approvals'),
+  decide: (approvalId: string, decision: ApprovalDecision) => post<void>(`/api/approvals/${approvalId}/decide`, decision),
   templates: () => get<TemplateSummary[]>('/api/templates'),
   /** Copies a template into the workspace; returns the new flow. */
   useTemplate: (id: string) => post<Flow>(`/api/templates/${id}/use`, {}),
