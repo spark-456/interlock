@@ -136,6 +136,7 @@ mod tests {
             workspace_id: "ws".into(),
             node_id: "node".into(),
             settings: json!({"store":"sandbox"}),
+            credential_ids: Default::default(),
             services: fakes.services(),
             runner: runner.clone(),
             cancel: CancellationToken::new(),
