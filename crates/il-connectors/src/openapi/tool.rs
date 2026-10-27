@@ -214,7 +214,7 @@ mod tests {
             "id":"flow_1","workspaceId":"ws_a","version":1,"name":"Support","kind":"app","edges":[],
             "nodes":[{"id":"agent","type":"ai.agent","name":"Billing",
                 "settings":{"instructions":"Check invoices","apiTools":{"spec":file.id,
-                    "operations":["lookup_customer","list_invoices"]}}}]
+                    "operations":["lookup_customer","list_invoices","delete_customer"]}}}]
         }))
         .unwrap();
         let tools = for_flow(&flow, &fakes.services()).await.unwrap();
