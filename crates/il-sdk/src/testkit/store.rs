@@ -82,6 +82,18 @@ impl Store for MemoryStore {
     async fn is_flow_active(&self, id: &str) -> StoreResult<bool> {
         Ok(self.lock()?.active.contains(id))
     }
+    async fn active_flows(&self) -> StoreResult<Vec<Flow>> {
+        let g = self.lock()?;
+        let mut flows: Vec<_> = g
+            .flows
+            .values()
+            .filter_map(|versions| versions.last())
+            .filter(|flow| g.active.contains(&flow.id))
+            .cloned()
+            .collect();
+        flows.sort_by(|a, b| a.id.cmp(&b.id));
+        Ok(flows)
+    }
     async fn put_run(&self, run: &Run) -> StoreResult<()> {
         self.lock()?.runs.insert(run.id.clone(), run.clone());
         Ok(())
@@ -95,6 +107,22 @@ impl Store for MemoryStore {
         out.sort_by_key(|r| std::cmp::Reverse(r.started_at));
         out.truncate(limit);
         Ok(out)
+    }
+    async fn recoverable_runs(&self) -> StoreResult<Vec<Run>> {
+        let g = self.lock()?;
+        let mut runs: Vec<_> = g
+            .runs
+            .values()
+            .filter(|run| {
+                matches!(
+                    run.status,
+                    il_core::RunStatus::Queued | il_core::RunStatus::Running | il_core::RunStatus::Waiting
+                )
+            })
+            .cloned()
+            .collect();
+        runs.sort_by_key(|run| run.started_at);
+        Ok(runs)
     }
     async fn put_node_run(&self, nr: &NodeRun) -> StoreResult<()> {
         self.lock()?.node_runs.entry(nr.run_id.clone()).or_default().insert(nr.node_id.clone(), nr.clone());
