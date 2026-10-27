@@ -11,12 +11,16 @@ il-core.workspace = true
 il-sdk.workspace = true
 async-trait.workspace = true
 inventory.workspace = true
+base64 = "0.22"
+chrono.workspace = true
 reqwest.workspace = true
 serde_json.workspace = true
-url.workspace = true
 serde_yaml = "0.9"
+ulid.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 il-sdk = { workspace = true, features = ["testkit"] }
 wiremock.workspace = true
 tokio.workspace = true
+tokio-util.workspace = true

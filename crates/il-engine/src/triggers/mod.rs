@@ -65,6 +65,7 @@ impl TriggerSupervisor {
                 workspace_id: flow.workspace_id.clone(),
                 node_id: node.id.clone(),
                 settings: node.settings.clone(),
+                credential_ids: node.credentials.clone(),
                 services: self.services.clone(),
                 runner: self.runner.clone(),
                 cancel: CancellationToken::new(),

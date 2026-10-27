@@ -177,6 +177,7 @@ mod tests {
             workspace_id: "ws".into(),
             node_id: "n_sched".into(),
             settings: json!({ "cron": "0 * * * *", "timezone": "UTC" }),
+            credential_ids: Default::default(),
             services: fakes.services(),
             runner: runner.clone(),
             cancel: CancellationToken::new(),

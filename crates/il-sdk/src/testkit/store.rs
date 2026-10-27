@@ -208,6 +208,10 @@ impl Store for MemoryStore {
     async fn credential(&self, _workspace_id: &str, id: &str) -> StoreResult<Option<Credential>> {
         Ok(self.lock()?.credentials.get(id).cloned())
     }
+    async fn put_credential(&self, _workspace_id: &str, credential: &Credential) -> StoreResult<()> {
+        self.lock()?.credentials.insert(credential.id.clone(), credential.clone());
+        Ok(())
+    }
     async fn kv_get(&self, key: &str) -> StoreResult<Option<Value>> {
         Ok(self.lock()?.kv.get(key).cloned())
     }

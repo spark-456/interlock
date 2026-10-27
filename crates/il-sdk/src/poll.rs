@@ -105,6 +105,7 @@ mod tests {
             workspace_id: "ws".into(),
             node_id: "n_mail".into(),
             settings: json!({}),
+            credential_ids: Default::default(),
             services: fakes.services(),
             runner: runner.clone(),
             cancel: CancellationToken::new(),
