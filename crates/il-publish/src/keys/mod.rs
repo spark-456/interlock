@@ -1,5 +1,9 @@
 //! API keys: hashed at rest, revealed once, revoked by id.
 
+mod routes;
+
+use chrono::{DateTime, Utc};
+use il_core::dto::ApiKeySummary;
 use il_sdk::services::{Store, StoreError};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -20,6 +24,8 @@ struct KeyRecord {
     name: String,
     hash: String,
     revoked: bool,
+    #[serde(default)]
+    last_used_at: Option<DateTime<Utc>>,
 }
 
 /// Manages published API keys in the shared store.
@@ -37,15 +43,60 @@ impl KeyManager {
     pub async fn create(&self, workspace_id: &str, name: &str) -> Result<(String, String), KeyError> {
         let id = ulid::Ulid::new().to_string();
         let raw = format!("ilk_{id}_{}{}", ulid::Ulid::new(), ulid::Ulid::new());
-        let record =
-            KeyRecord { workspace_id: workspace_id.into(), name: name.into(), hash: hash(&raw), revoked: false };
+        let record = KeyRecord {
+            workspace_id: workspace_id.into(),
+            name: name.into(),
+            hash: hash(&raw),
+            revoked: false,
+            last_used_at: None,
+        };
         self.store
             .kv_put(
                 &format!("publish_api_key:{id}"),
                 &serde_json::to_value(record).map_err(|e| StoreError::Backend(e.to_string()))?,
             )
             .await?;
+        let index_key = format!("publish_api_keys:{workspace_id}");
+        let mut ids: Vec<String> = self
+            .store
+            .kv_get(&index_key)
+            .await?
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(|e| StoreError::Backend(e.to_string()))?
+            .unwrap_or_default();
+        ids.push(id.clone());
+        self.store
+            .kv_put(&index_key, &serde_json::to_value(ids).map_err(|e| StoreError::Backend(e.to_string()))?)
+            .await?;
         Ok((id, raw))
+    }
+
+    /// Lists keys for one workspace without revealing secrets.
+    pub async fn list(&self, workspace_id: &str) -> Result<Vec<ApiKeySummary>, KeyError> {
+        let index_key = format!("publish_api_keys:{workspace_id}");
+        let ids: Vec<String> = self
+            .store
+            .kv_get(&index_key)
+            .await?
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(|e| StoreError::Backend(e.to_string()))?
+            .unwrap_or_default();
+        let mut keys = Vec::new();
+        for id in ids {
+            let Some(value) = self.store.kv_get(&format!("publish_api_key:{id}")).await? else { continue };
+            let record: KeyRecord = serde_json::from_value(value).map_err(|e| StoreError::Backend(e.to_string()))?;
+            if record.workspace_id == workspace_id {
+                keys.push(ApiKeySummary {
+                    id,
+                    name: record.name,
+                    revoked: record.revoked,
+                    last_used_at: record.last_used_at,
+                });
+            }
+        }
+        Ok(keys)
     }
 
     /// Returns the workspace only for a valid, active key.
@@ -57,11 +108,21 @@ impl KeyManager {
             return Ok(None);
         }
         let Some(value) = self.store.kv_get(&format!("publish_api_key:{id}")).await? else { return Ok(None) };
-        let record: KeyRecord = serde_json::from_value(value).map_err(|e| StoreError::Backend(e.to_string()))?;
+        let mut record: KeyRecord = serde_json::from_value(value).map_err(|e| StoreError::Backend(e.to_string()))?;
         let candidate = hash(raw);
         let same = candidate.len() == record.hash.len()
             && candidate.as_bytes().iter().zip(record.hash.as_bytes()).fold(0u8, |diff, (a, b)| diff | (a ^ b)) == 0;
-        Ok((!record.revoked && same).then_some(record.workspace_id))
+        if record.revoked || !same {
+            return Ok(None);
+        }
+        record.last_used_at = Some(Utc::now());
+        self.store
+            .kv_put(
+                &format!("publish_api_key:{id}"),
+                &serde_json::to_value(&record).map_err(|e| StoreError::Backend(e.to_string()))?,
+            )
+            .await?;
+        Ok(Some(record.workspace_id))
     }
 
     /// Revokes a key belonging to `workspace_id`.

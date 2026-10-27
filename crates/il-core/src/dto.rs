@@ -44,6 +44,34 @@ pub struct RunSummary {
     pub replay: bool,
 }
 
+/// Metadata returned when listing published API keys; secrets are omitted.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ApiKeySummary {
+    pub id: String,
+    pub name: String,
+    pub revoked: bool,
+    pub last_used_at: Option<DateTime<Utc>>,
+}
+
+/// `POST /api/keys` input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CreateApiKeyRequest {
+    pub name: String,
+}
+
+/// `POST /api/keys` response; `key` is revealed only here.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CreateApiKeyResponse {
+    pub id: String,
+    pub key: String,
+}
+
 /// `POST /api/builds`
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]
