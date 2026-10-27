@@ -17,7 +17,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 6 | B01 | Store: SQLite, migrations, files, secrets | P0 | T00 | done | codex-1 | t/B01-store | 2026-10-27 13:48 | [PR #9](https://github.com/spark-456/interlock/pull/9) |
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
 | 8 | B06 | Nodes: logic & data | P0 | T00 | claimed | codex-1 | t/B06-logic-data | 2026-10-27 14:03 | Executors and 50 node tests pushed at f99a77d; catalog regeneration and full check pending owner decision below |
-| 9 | B07 | Nodes: AI | P0 | T00 | ready | | | | |
+| 9 | B07 | Nodes: AI | P0 | T00 | claimed | codex-1 | t/B07-ai | 2026-10-27 14:11 | |
 | 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | done | claude-a | t/B04-server | 2026-10-27 08:05 | Part 1, commit 9fcc8b3: all /api routes, SSE, demo sessions, files, CORS. Rest is in B04b |
 | 11 | W03 | Node panel, schema forms, previews | P0 | T00 | review | claude-a | t/W03-panel | 2026-10-27 19:45 | PR https://github.com/spark-456/interlock/pull/10 |
 | 12 | B05 | Triggers & scheduler | P0 | T00 | done | claude-a | t/B05-triggers | 2026-10-27 07:30 | Commit 0b96b2b. App triggers use `il_sdk::poll` |
