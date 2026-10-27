@@ -10,9 +10,9 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | # | ID | Task | Prio | Hard deps | Status | Owner | Branch | Updated (UTC) | PR / Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | T00 | Contracts & skeleton | P0 | — | done | claude-a | t/T00-skeleton | 2026-10-27 05:15 | Merged locally (no remote yet), commit 90af90f. Read its commit message for notes to later tasks |
-| 2 | B03 | Engine: executor, events, approvals, caps | P0 | T00 | ready | | | | |
+| 2 | B03 | Engine: executor, events, approvals, caps | P0 | T00 | claimed | claude-a | t/B03-engine | 2026-10-27 06:20 | |
 | 3 | B02 | Model gateway (Token Factory + fake) | P0 | T00 | ready | | | | |
-| 4 | W01 | Design system & app shell | P0 | T00 | done | claude-a | t/W01-design-foundation | 2026-10-27 06:10 | Design v3 foundation merged (tokens, fonts, base components, shell, canvas foundation, Building). Remaining components moved to W01b |
+| 4 | W01 | Design system & app shell | P0 | T00 | done | claude-a | t/W01-design-foundation | 2026-10-27 06:10 | Design v3 foundation merged (tokens, fonts, base components, shell, canvas foundation, Building). Remaining components moved to W01b. Commit 44aa61e |
 | 5 | W02 | Canvas editor + Ask diff view | P0 | T00 | ready | | | | Canvas foundation (NodeCard, edges, toolbar, minimap) lands in the design PR; build the editor on it |
 | 6 | B01 | Store: SQLite, migrations, files, secrets | P0 | T00 | ready | | | | |
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
