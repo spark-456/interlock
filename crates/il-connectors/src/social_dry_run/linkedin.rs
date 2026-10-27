@@ -1,7 +1,6 @@
 //! `app.linkedin.post` — Post (LinkedIn).
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task C03 implements it.
+//! Validates a post and returns a dry-run preview.
 
 use il_sdk::prelude::*;
 
@@ -14,7 +13,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "app.linkedin.post",
         Category::App,
         "Post (LinkedIn)",
-        "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
+        "Previews a LinkedIn post; needs platform approval to post.",
     )
     .icon("send")
     .app("linkedin")
@@ -66,8 +65,14 @@ impl NodeExecutor for AppLinkedinPost {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let text = ctx.settings["text"].as_str().ok_or_else(|| NodeError::Failed("post text is required".into()))?;
+        if text.trim().is_empty() {
+            return Err(NodeError::Failed("post text is empty".into()));
+        }
+        let media = super::media(ctx, &input, "media", "media", false).await?;
+        let visibility = ctx.settings["visibility"].as_str().unwrap_or("public");
+        Ok(super::preview(input, "linkedin", text, media, json!({"visibility":visibility})))
     }
 }
 

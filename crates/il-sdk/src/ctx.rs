@@ -43,6 +43,9 @@ pub struct ApprovalSpec {
     pub target: Option<String>,
     pub timeout_hours: Option<f64>,
     pub on_timeout: il_core::ApprovalTimeout,
+    /// Connector credential selected by the node, if a channel needs one.
+    #[serde(default)]
+    pub credential_id: Option<String>,
 }
 
 /// Receives progress from nodes (the engine forwards it as `node.progress`).

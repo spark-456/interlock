@@ -10,6 +10,8 @@ publish.workspace = true
 il-sdk.workspace = true
 async-trait.workspace = true
 inventory.workspace = true
+tokio.workspace = true
+bytes.workspace = true
 
 [dev-dependencies]
 il-sdk = { workspace = true, features = ["testkit"] }

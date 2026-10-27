@@ -1144,7 +1144,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Post (Bluesky)",
       "trigger": false,
       "typeId": "app.bluesky.post",
@@ -1197,6 +1197,11 @@
             "type": "string",
             "x-widget": "expression"
           },
+          "channelId": {
+            "description": "Required when using a Discord bot token instead of a webhook.",
+            "title": "Bot channel ID",
+            "type": "string"
+          },
           "content": {
             "title": "Message",
             "type": "string",
@@ -1209,7 +1214,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Send message (Discord)",
       "trigger": false,
       "typeId": "app.discord.send",
@@ -1518,7 +1523,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post reel post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews an Instagram reel; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -1588,7 +1593,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews a LinkedIn post; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -1795,7 +1800,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Get products (Shopify)",
       "trigger": false,
       "typeId": "app.shopify.get_products",
@@ -1857,7 +1862,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "New product (Shopify)",
       "trigger": true,
       "typeId": "app.shopify.new_product",
@@ -1938,7 +1943,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Approval (Slack)",
       "trigger": false,
       "typeId": "app.slack.approval",
@@ -2004,7 +2009,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Send message (Slack)",
       "trigger": false,
       "typeId": "app.slack.send",
@@ -2073,7 +2078,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Send message (Telegram)",
       "trigger": false,
       "typeId": "app.telegram.send",
@@ -2093,7 +2098,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post video post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews a TikTok video; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -2168,7 +2173,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews an X post; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -3594,10 +3599,72 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Add captions",
       "trigger": false,
       "typeId": "media.captions",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "media",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Converts a video or audio file to MP4, WebM, MP3 or WAV.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "file": "{{ item.files.video }}",
+            "format": "mp4"
+          },
+          "title": "Convert to MP4"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "repeat",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "file": {
+            "title": "Media file",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "format": {
+            "enum": [
+              "mp4",
+              "webm",
+              "mp3",
+              "wav"
+            ],
+            "title": "Format",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "required": [
+          "file",
+          "format"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "Convert media",
+      "trigger": false,
+      "typeId": "media.convert",
       "version": 1
     },
     {
@@ -3670,7 +3737,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Cut clips",
       "trigger": false,
       "typeId": "media.cut_clips",
@@ -3745,7 +3812,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Merge audio and video",
       "trigger": false,
       "typeId": "media.merge_av",
@@ -3827,7 +3894,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Resize for platform",
       "trigger": false,
       "typeId": "media.resize",
@@ -3891,7 +3958,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Thumbnail",
       "trigger": false,
       "typeId": "media.thumbnail",

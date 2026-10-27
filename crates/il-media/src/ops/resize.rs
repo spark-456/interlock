@@ -1,7 +1,6 @@
 //! `media.resize` — Resize for platform.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task M01 implements it.
+//! Preserves source proportions by cropping or padding each target aspect.
 
 use il_sdk::prelude::*;
 
@@ -17,6 +16,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Makes 9:16, 1:1 and 16:9 versions with smart crop or padding.",
     )
     .icon("crop")
+    .status(NodeStatus::Ready)
     .settings_schema(json!({
         "type": "object",
         "required": [
@@ -77,8 +77,51 @@ impl NodeExecutor for MediaResize {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let id = super::ffmpeg::file_id(ctx, &input, "video")?;
+        let source = super::ffmpeg::input_path(ctx, &id).await?;
+        let duration = super::ffmpeg::duration(&source).await?;
+        let aspects = ctx.settings["aspects"]
+            .as_array()
+            .cloned()
+            .unwrap_or_else(|| vec![json!("9:16"), json!("1:1"), json!("16:9")]);
+        let fit = ctx.settings["fit"].as_str().unwrap_or("crop");
+        let mut item = input.main().first().cloned().unwrap_or_default();
+        for aspect in aspects {
+            let (width, height, label) = match aspect.as_str() {
+                Some("9:16") => (1080, 1920, "9x16"),
+                Some("1:1") => (1080, 1080, "1x1"),
+                Some("16:9") => (1920, 1080, "16x9"),
+                _ => return Err(NodeError::Failed("invalid aspect".into())),
+            };
+            let filter = if fit == "pad" {
+                format!(
+                    "scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2"
+                )
+            } else {
+                format!("scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}")
+            };
+            let target = super::ffmpeg::output_path("mp4");
+            let args = vec![
+                "-i".into(),
+                source.as_os_str().into(),
+                "-vf".into(),
+                filter.into(),
+                "-c:v".into(),
+                "libx264".into(),
+                "-preset".into(),
+                "veryfast".into(),
+                "-c:a".into(),
+                "aac".into(),
+                "-movflags".into(),
+                "+faststart".into(),
+                target.as_os_str().into(),
+            ];
+            super::ffmpeg::run(ctx, &args, Some(duration), None).await?;
+            let file = super::ffmpeg::save(ctx, &target, &format!("clip_{label}.mp4"), "video/mp4").await?;
+            item.files.insert(format!("clip_{label}"), file);
+        }
+        Ok(NodeOutput::out(vec![item]))
     }
 }
 
