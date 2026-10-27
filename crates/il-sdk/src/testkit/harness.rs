@@ -17,6 +17,7 @@ pub struct NodeHarness<N: NodeExecutor> {
     node: N,
     settings: Value,
     input: Vec<Item>,
+    ports: Option<BTreeMap<String, Vec<Item>>>,
     credentials: BTreeMap<String, String>,
     /// The fakes; tweak them (script the gateway, seed credentials) before `run`.
     pub fakes: FakeServices,
@@ -31,6 +32,7 @@ impl<N: NodeExecutor> NodeHarness<N> {
             node,
             settings: Value::Object(Default::default()),
             input: vec![],
+            ports: None,
             credentials: BTreeMap::new(),
             fakes: FakeServices::default(),
             progress: Arc::new(NoopProgress::default()),
@@ -52,6 +54,11 @@ impl<N: NodeExecutor> NodeHarness<N> {
         self.input = items;
         self
     }
+    /// Named input ports for batch nodes such as Merge.
+    pub fn ports(mut self, ports: BTreeMap<String, Vec<Item>>) -> Self {
+        self.ports = Some(ports);
+        self
+    }
     /// Binds a credential key to a credential id (seed it in `fakes.store`).
     pub fn credential(mut self, key: &str, id: &str) -> Self {
         self.credentials.insert(key.into(), id.into());
@@ -62,7 +69,8 @@ impl<N: NodeExecutor> NodeHarness<N> {
     pub async fn run(&self) -> Result<NodeOutput, NodeError> {
         self.node.validate(&self.settings).map_err(NodeError::InvalidSettings)?;
         let all: Vec<Value> = self.input.iter().map(|i| i.json.clone()).collect();
-        let per_item = self.node.manifest().exec_mode == ExecMode::PerItem && !self.input.is_empty();
+        let per_item =
+            self.ports.is_none() && self.node.manifest().exec_mode == ExecMode::PerItem && !self.input.is_empty();
         let batches: Vec<(usize, Vec<Item>)> = if per_item {
             self.input.iter().cloned().enumerate().map(|(i, it)| (i, vec![it])).collect()
         } else {
@@ -93,7 +101,9 @@ impl<N: NodeExecutor> NodeHarness<N> {
                 approvals: self.approvals.clone(),
                 resume: None,
             };
-            let out = self.node.execute(&mut ctx, NodeInput::items(items)).await?;
+            let node_input =
+                self.ports.clone().map(|ports| NodeInput { ports }).unwrap_or_else(|| NodeInput::items(items));
+            let out = self.node.execute(&mut ctx, node_input).await?;
             for (port, items) in out.ports {
                 merged.ports.entry(port).or_default().extend(items);
             }

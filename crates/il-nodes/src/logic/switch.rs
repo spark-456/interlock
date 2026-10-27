@@ -1,7 +1,5 @@
 //! `logic.switch` — Switch.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task B06 implements it.
 
 use il_sdk::prelude::*;
 
@@ -17,6 +15,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Routes each item to the first case whose value matches; others go to `default`.",
     )
     .icon("switch")
+    .status(NodeStatus::Ready)
     .outputs(&["default"])
     .dynamic_outputs("cases")
     .settings_schema(json!({
@@ -79,8 +78,22 @@ impl NodeExecutor for LogicSwitch {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let value = &ctx.settings["value"];
+        let cases =
+            ctx.settings["cases"].as_array().ok_or_else(|| NodeError::Failed("cases must be an array".into()))?;
+        let mut selected = "default";
+        for case in cases {
+            let name = case["name"].as_str().ok_or_else(|| NodeError::Failed("case name must be text".into()))?;
+            if name.is_empty() || name == "default" {
+                return Err(NodeError::Failed("case name must be nonempty and not default".into()));
+            }
+            if value == &case["equals"] {
+                selected = name;
+                break;
+            }
+        }
+        Ok(NodeOutput::port(selected, input.main().to_vec()))
     }
 }
 
@@ -88,8 +101,23 @@ inventory::submit! { NodeFactory::new(|| Box::new(LogicSwitch)) }
 
 #[cfg(test)]
 mod tests {
+    use il_sdk::testkit::NodeHarness;
+    use serde_json::json;
+
     #[test]
     fn manifest_is_valid() {
         il_sdk::testkit::assert_manifest_valid(&super::LogicSwitch);
+    }
+
+    #[tokio::test]
+    async fn b06_switch_routes_first_match_and_default() {
+        let output = NodeHarness::new(super::LogicSwitch)
+            .settings(json!({"value":"{{ item.kind }}","cases":[{"name":"billing","equals":"billing"}]}))
+            .input_json(vec![json!({"kind":"billing"}), json!({"kind":"other"})])
+            .run()
+            .await
+            .unwrap();
+        assert_eq!(output.ports["billing"].len(), 1);
+        assert_eq!(output.ports["default"].len(), 1);
     }
 }
