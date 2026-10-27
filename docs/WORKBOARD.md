@@ -33,7 +33,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 22 | C01 | OAuth broker + Gmail, Sheets, YouTube | P0 | T00 | claimed | codex-1 | t/C01-google | 2026-10-27 15:52 | Pushed `d0ccaebaf06f2a6d83d1ee0f0b925cd7de82f1f1`; OAuth broker and Google nodes pass Rust checks. Left: authenticated OAuth HTTP route wiring (B05 auth), generated `web/fixtures/api/nodes.json` for full check, PR. |
 | 23 | C02 | Slack, Discord, Telegram, Bluesky | P0 | T00 | claimed | codex-1 | t/C02-messaging | 2026-10-27 16:12 | 77bdf615918bb4f10c9f61bb808c6e1d7aae47f9 pushed; 25 connector tests and Rust check stages pass; generated `web/fixtures/api/nodes.json` drift blocks full check under no-web instruction; PR pending. |
 | 24 | M01 | Media ops (ffmpeg) | P0 | T00 | claimed | codex-1 | t/M01-media-ops | 2026-10-27 16:32 | 6295632eff30c793c55e1698010ebdbd5aa420ed pushed; Windows ffmpeg fixture and Rust check stages pass. Claude-a owns generated `web/fixtures/api/nodes.json` on this branch; full check and PR follow that commit. |
-| 25 | M02 | Media generation (video, voice, image) | P0 | T00 | claimed | codex-1 | t/M02-media-gen | 2026-10-27 16:49 | |
+| 25 | M02 | Media generation (video, voice, image) | P0 | T00 | claimed | codex-1 | t/M02-media-gen | 2026-10-27 17:05 | Pushed `92085e45290dfc7029804127990d41178cea1f8d`: Runway and recorded adapters, nodes, wiremock tests. Rust check stages pass; generated `web/fixtures/api/nodes.json` drift awaits claude-a per handoff row. Then rerun full check and open PR. |
 | 26 | C03 | Shopify sandbox + social dry-run nodes | P0 | T00 | claimed | codex-1 | t/C03-sandbox-social | 2026-10-27 16:49 | 22f3e9ea0fa6c04f03af3542421038282eab5086 pushed; five C03 tests and Rust check stages pass. Claude-a owns generated `web/fixtures/api/nodes.json` on this branch; full check and PR follow that commit. |
 | 27 | W07 | Landing, demo mode, settings, error states | P0 | T00 | ready | | | | |
 | 28 | R02 | Deploy to Nebius | P0 | B04 | ready | | | | Prep (Dockerfile, account checks) can start before B04 is done |
@@ -41,7 +41,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 30 | R04 | README, docs, video script, Devpost | P0 | — | ready | | | | Draft any time; finalise Fri |
 | 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | ready | | | | Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow, ApiCard; gallery page with every SpecV3 state; vitest for interactive components |
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | claimed | codex-1 | t/N01-guardrails | 2026-10-27 14:38 | Node, three fake-gateway tests, and generated docs pushed at 16d9560; full check and PR need generated `web/` fixture decision |
-| 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | ready | | | | Follow-up of B04 part 1 (see its commit message) |
+| 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | review | codex-1 | t/B04b-server-finish | 2026-10-27 17:26 | [PR #12](https://github.com/spark-456/interlock/pull/12); `cargo xtask check` passed |
 | 34 | B03b | Engine: approval expiry and timeout policy | P0 | B03 | ready | | | | Needed to finish B08 timeout behaviour |
 
 ## Waiting on the owner
