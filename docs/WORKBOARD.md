@@ -43,7 +43,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | claimed | codex-1 | t/N01-guardrails | 2026-10-27 14:38 | Node, three fake-gateway tests, and generated docs pushed at 16d9560; full check and PR need generated `web/` fixture decision |
 | 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | done | codex-1 | t/B04b-server-finish | 2026-10-27 17:34 | [PR #12](https://github.com/spark-456/interlock/pull/12); Ubuntu and Windows CI passed |
 | 34 | B03b | Engine: approval expiry and timeout policy | P0 | B03 | ready | | | | Needed to finish B08 timeout behaviour |
-| 35 | T01 | Build size: lighter dev/test debug info | P1 | — | claimed | claude-a | t/T01-build-size | 2026-10-27 19:13 | |
+| 35 | T01 | Build size: lighter dev/test debug info | P1 | — | done | claude-a | t/T01-build-size | 2026-10-27 19:33 | [PR #14](https://github.com/spark-456/interlock/pull/14). Clean build target 3.0 GB (was 7–9 GB) |
 
 ## Waiting on the owner
 
