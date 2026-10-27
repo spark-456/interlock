@@ -1144,7 +1144,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Post (Bluesky)",
       "trigger": false,
       "typeId": "app.bluesky.post",
@@ -1197,6 +1197,11 @@
             "type": "string",
             "x-widget": "expression"
           },
+          "channelId": {
+            "description": "Required when using a Discord bot token instead of a webhook.",
+            "title": "Bot channel ID",
+            "type": "string"
+          },
           "content": {
             "title": "Message",
             "type": "string",
@@ -1209,7 +1214,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Send message (Discord)",
       "trigger": false,
       "typeId": "app.discord.send",
@@ -1938,7 +1943,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Approval (Slack)",
       "trigger": false,
       "typeId": "app.slack.approval",
@@ -2004,7 +2009,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Send message (Slack)",
       "trigger": false,
       "typeId": "app.slack.send",
@@ -2073,7 +2078,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Send message (Telegram)",
       "trigger": false,
       "typeId": "app.telegram.send",

@@ -1,7 +1,6 @@
 //! `app.telegram.send` — Send message (Telegram).
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task C02 implements it.
+//! Bot token is obtained from `NodeCtx`, never from item data.
 
 use il_sdk::prelude::*;
 
@@ -17,6 +16,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Sends a message or media to a Telegram chat via your bot.",
     )
     .icon("send")
+    .status(NodeStatus::Ready)
     .app("telegram")
     .external()
     .credential(cred("telegram", "telegram", CredentialKind::BotToken, "Telegram bot token", &[]))
@@ -58,8 +58,15 @@ impl NodeExecutor for AppTelegramSend {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let chat_id = ctx.settings["chatId"].as_str().ok_or_else(|| NodeError::Failed("chatId is required".into()))?;
+        let text = ctx.settings["text"].as_str().ok_or_else(|| NodeError::Failed("text is required".into()))?;
+        let token = ctx.credential("telegram").await?.secret["token"]
+            .as_str()
+            .ok_or_else(|| NodeError::Failed("Telegram bot token is missing".into()))?
+            .to_owned();
+        super::send(ctx, &token, chat_id, text, &ctx.settings["media"]).await?;
+        Ok(NodeOutput::out(input.main().to_vec()))
     }
 }
 
@@ -67,8 +74,39 @@ inventory::submit! { NodeFactory::new(|| Box::new(AppTelegramSend)) }
 
 #[cfg(test)]
 mod tests {
+    use il_sdk::services::{Credential, FileStore};
+    use il_sdk::testkit::NodeHarness;
+    use serde_json::json;
+    use wiremock::{
+        Mock, MockServer, ResponseTemplate,
+        matchers::{method, path},
+    };
+
     #[test]
     fn manifest_is_valid() {
         il_sdk::testkit::assert_manifest_valid(&super::AppTelegramSend);
+    }
+
+    #[tokio::test]
+    async fn c02_telegram_sends_photo_from_file_store() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/botsecret/sendPhoto"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"ok":true,"result":{"message_id":7}})))
+            .expect(1)
+            .mount(&server)
+            .await;
+        let harness = NodeHarness::new(super::AppTelegramSend).credential("telegram", "cred");
+        let file = harness.fakes.files.put("pic.png", "image/png", "pixels".into()).await.unwrap();
+        let harness = harness.settings(json!({"chatId":"42","text":"caption","media":file.id,"_base":server.uri()}));
+        harness.fakes.store.add_credential(Credential {
+            id: "cred".into(),
+            app: "telegram".into(),
+            secret: json!({"token":"secret"}),
+            meta: json!({}),
+        });
+        assert!(harness.run().await.is_ok());
+        let requests = server.received_requests().await.unwrap();
+        assert!(String::from_utf8_lossy(&requests[0].body).contains("pic.png"));
     }
 }

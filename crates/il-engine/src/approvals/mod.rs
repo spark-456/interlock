@@ -56,7 +56,7 @@ impl ApprovalGate for EngineGate {
                 body: spec.message.clone(),
                 approval_id: Some(id.clone()),
                 payload: spec.payload.clone(),
-                credential_id: None,
+                credential_id: spec.credential_id.clone(),
             };
             if let Err(e) = self.notifier.send(&note).await {
                 tracing::warn!(approval_id = %id, channel = %channel, error = %e, "approval notification failed");

@@ -113,6 +113,7 @@ impl NodeExecutor for HumanAsk {
             target: None,
             timeout_hours: None,
             on_timeout: il_core::ApprovalTimeout::KeepWaiting,
+            credential_id: None,
         };
         Ok(NodeOutput::waiting(ctx.request_approval(spec).await?))
     }

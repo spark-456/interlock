@@ -106,6 +106,7 @@ impl NodeExecutor for Fake {
                             Some("reject") => il_core::ApprovalTimeout::Reject,
                             _ => il_core::ApprovalTimeout::KeepWaiting,
                         },
+                        credential_id: None,
                     };
                     Ok(NodeOutput::waiting(ctx.request_approval(spec).await?))
                 }
