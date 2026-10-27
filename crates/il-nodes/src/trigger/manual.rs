@@ -1,7 +1,7 @@
 //! `trigger.manual` — Manual.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task B05 implements it.
+//! Manual runs come from "Run"/"Test" (`FlowRunner::start` with this node).
+//! Activation starts nothing in the background.
 
 use il_sdk::prelude::*;
 
@@ -18,6 +18,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
     )
     .icon("hand")
     .trigger()
+    .status(NodeStatus::Ready)
     .settings_schema(json!({
         "type": "object",
         "properties": {
@@ -49,8 +50,20 @@ impl NodeExecutor for TriggerManual {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, _ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        // The engine emits a trigger's items as its output; executing it again passes them through.
+        Ok(NodeOutput::out(input.main().to_vec()))
+    }
+
+    fn as_trigger(&self) -> Option<&dyn TriggerNode> {
+        Some(self)
+    }
+}
+
+#[async_trait]
+impl TriggerNode for TriggerManual {
+    async fn start(&self, _ctx: il_sdk::TriggerCtx) -> Result<il_sdk::TriggerHandle, NodeError> {
+        Ok(il_sdk::TriggerHandle::noop())
     }
 }
 

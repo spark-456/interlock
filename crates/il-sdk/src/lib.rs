@@ -6,6 +6,7 @@
 pub mod ctx;
 pub mod http;
 pub mod node;
+pub mod poll;
 pub mod prelude;
 pub mod registry;
 pub mod services;

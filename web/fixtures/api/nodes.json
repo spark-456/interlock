@@ -3944,7 +3944,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "API call",
       "trigger": true,
       "typeId": "trigger.api_call",
@@ -3995,7 +3995,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Chat message",
       "trigger": true,
       "typeId": "trigger.chat",
@@ -4043,7 +4043,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Manual",
       "trigger": true,
       "typeId": "trigger.manual",
@@ -4095,7 +4095,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "MCP call",
       "trigger": true,
       "typeId": "trigger.mcp_call",
@@ -4145,7 +4145,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Schedule",
       "trigger": true,
       "typeId": "trigger.schedule",
@@ -4203,7 +4203,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Webhook",
       "trigger": true,
       "typeId": "trigger.webhook",

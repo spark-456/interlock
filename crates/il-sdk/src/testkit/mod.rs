@@ -4,6 +4,7 @@ mod files;
 mod gateway;
 mod harness;
 mod misc;
+mod runner;
 mod store;
 
 use std::sync::Arc;
@@ -12,6 +13,7 @@ pub use files::FakeFiles;
 pub use gateway::FakeGateway;
 pub use harness::{NodeHarness, assert_manifest_valid};
 pub use misc::{FakeApprovals, FakeClock, FakeKnowledge, FakeMedia, FakeNotifier, NoopProgress};
+pub use runner::{FakeArchitect, FakeRunner};
 pub use store::MemoryStore;
 
 use crate::http::SafeHttp;

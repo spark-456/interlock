@@ -23,6 +23,8 @@ pub struct AppState {
     pub architect: Arc<dyn ArchitectService>,
     /// The engine itself (event bus for SSE, waits, recovery).
     pub engine: il_engine::Engine,
+    /// Starts/stops flow triggers on activate/deactivate; chat/API/MCP entry point.
+    pub triggers: Arc<il_engine::triggers::TriggerSupervisor>,
 }
 
 impl AppState {
@@ -63,13 +65,13 @@ pub fn build_state(config: Config) -> AppState {
     let mut engine_config: il_engine::EngineConfig = config.section("engine").unwrap_or_default();
     engine_config.caps = config.section("caps").unwrap_or_default();
     let engine = il_engine::Engine::new(services.clone(), il_engine::NodeLookup::default(), engine_config);
-    AppState {
-        config: Arc::new(config),
-        services,
-        runner: Arc::new(engine.clone()),
-        architect: Arc::new(NotWired),
-        engine,
-    }
+    let runner: Arc<dyn FlowRunner> = Arc::new(engine.clone());
+    let triggers = Arc::new(il_engine::triggers::TriggerSupervisor::new(
+        services.clone(),
+        runner.clone(),
+        il_engine::NodeLookup::default(),
+    ));
+    AppState { config: Arc::new(config), services, runner, architect: Arc::new(NotWired), engine, triggers }
 }
 
 /// Placeholder until the architect (A01) is wired. (The runner is the engine.)

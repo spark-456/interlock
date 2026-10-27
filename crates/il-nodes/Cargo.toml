@@ -12,7 +12,15 @@ il-sdk.workspace = true
 async-trait.workspace = true
 inventory.workspace = true
 serde_json.workspace = true
+axum = { workspace = true, features = ["json"] }
+chrono.workspace = true
+chrono-tz.workspace = true
+cron.workspace = true
+tokio.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
+tokio-util.workspace = true
+tower.workspace = true
 il-sdk = { workspace = true, features = ["testkit"] }
 tokio.workspace = true
