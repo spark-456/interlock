@@ -224,7 +224,7 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 ### R04 · README, docs, video script, Devpost
 - **Owns**: `README.md`, `docs/**` (except PRD and WORKBOARD), `assets/**`.
 - **Acceptance** [PRD §13]: README with what/why, demo link, screenshots, architecture diagram, setup for Windows and Linux, how Nemotron Ultra/Super/Nano and Token Factory are used (with file paths), Tavily usage, Nebius deployment, honest limitations; `docs/NODES.md` generated; a demo video script under 3 minutes; Devpost text including the Tilo lineage note and feedback on Nebius/NVIDIA tools.
-- **Licence (owner decision, 2026-10-27)**: the repo is public under an all-rights-reserved `LICENSE` for now. The submission checklist (PRD §13) asks for Apache-2.0 visible in the About section, so switch `LICENSE`, `Cargo.toml`, `web/package.json` and the README back to Apache-2.0 at submission (owner's decision).
+- **Licence (owner decision, 2026-10-27)**: the repo is public under an all-rights-reserved `LICENSE` for now. The submission checklist (PRD §13) asks for Apache-2.0 visible in the About section, so switch `LICENSE`, `Cargo.toml`, `web/package.json` and the README back to Apache-2.0 at submission (owner's decision). The root `README.md` was removed on 2026-10-27 so the public repo page stays bare (owner's decision); write it again from scratch for submission (its last version is in git history, commit 7c53926).
 
 ---
 
