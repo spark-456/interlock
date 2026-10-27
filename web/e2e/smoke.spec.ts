@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 // Fixture mode smoke: every PRD §7.3 screen renders, and recorded streams replay.
 const screens = [
   '/', '/new', '/new/bld_fa/building', '/flows', '/flows/flw_promos', '/flows/flw_promos/runs/run_fa',
-  '/flows/flw_promos/publish', '/flows/flw_promos/chat', '/templates', '/connections', '/approvals', '/settings', '/demo'
+  '/flows/flw_promos/publish', '/flows/flw_promos/chat', '/templates', '/connections', '/approvals', '/settings', '/demo', '/dev/components'
 ];
 
 for (const path of screens) {

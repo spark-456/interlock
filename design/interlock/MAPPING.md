@@ -21,7 +21,7 @@ Web tasks must match this folder and this file. When a screen changes, update it
 | M3 | Connect (mobile) | `/flows/[id]/publish` @390 | same as S4 | W06 | Responsive layout of S4. |
 | M4 | Playground (mobile) | `/flows/[id]/chat` @390 | same as S5 | W06 | Responsive layout of S5. |
 | — | NodeCanvas component | used by `/`, `/new/[id]/building`, `/flows/[id]`, run view | `lib/canvas/` | W02 (foundation **in this PR**) | Built on Svelte Flow (`@xyflow/svelte`) for drag, pan and zoom, as the PRD requires. The design describes its own pointer handling; Svelte Flow provides the same behaviour. |
-| SP1 | Spec sheet | `/dev/components` (gallery) | `lib/design/` | W01 | Base components are **in this PR**. The gallery page is still open on W01. |
+| SP1 | Spec sheet | `/dev/components` (gallery) | `lib/design/` | W01, W01b (**built**) | Every component in every state at `/dev/components`. W01b added Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow (Knowledge/Instructions) and ApiCard; their interactive logic (menu keys, file checks) is in `interactions.ts` with unit tests. |
 | SP2 | Brand sheet | — | `lib/design/Logo.svelte`, `static/favicon.svg` | W01 | The mark, lockup and app icon come from `brand/*.svg`. |
 
 ## App shell

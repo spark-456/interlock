@@ -5,13 +5,14 @@
   import { api, appNames as loadAppNames } from '$lib/api';
   import AppTile from '$lib/design/AppTile.svelte';
   import Button from '$lib/design/Button.svelte';
+  import DropZone from '$lib/design/DropZone.svelte';
+  import FileRow from '$lib/design/FileRow.svelte';
   import Chip from '$lib/design/Chip.svelte';
   import Icon from '$lib/design/Icon.svelte';
   import Input from '$lib/design/Input.svelte';
   import TextArea from '$lib/design/TextArea.svelte';
   import TopBar from '$lib/design/TopBar.svelte';
   import { toast } from '$lib/design/toasts.svelte';
-  import AttachmentRow from './AttachmentRow.svelte';
   import VoiceButton from './VoiceButton.svelte';
   import { EXAMPLES, MAX_BYTES, buildRequest, detectApps, fileDraft, linkDraft, uploaded, type Draft } from './create';
 
@@ -22,10 +23,9 @@
   let spec = $state('');
   let specError = $state('');
   let skipped = $state<string[]>([]);
-  let dragging = $state(false);
   let starting = $state(false);
+  const ICONS = { link: 'globe', file: 'docs', audio: 'mic', api: 'plug' } as const;
   let appNames = $state<Record<string, string>>({});
-  let filePicker = $state<HTMLInputElement>();
   let specPicker = $state<HTMLInputElement>();
 
   loadAppNames().then((names) => (appNames = names), () => {});
@@ -66,18 +66,6 @@
     drafts = [...drafts, d];
     if (kind === 'link') link = '';
     else spec = '';
-  }
-
-  function drop(e: DragEvent) {
-    e.preventDefault();
-    dragging = false;
-    const files = [...(e.dataTransfer?.files ?? [])];
-    const uri = e.dataTransfer?.getData('text/uri-list');
-    if (files.length) void addFiles(files);
-    else if (uri) {
-      link = uri;
-      addLink('link');
-    }
   }
 
   function picked(input: HTMLInputElement | undefined, asSpec = false) {
@@ -141,34 +129,16 @@
 
   <section class="card" aria-labelledby="s2">
     <h2 id="s2"><span class="num">2</span>What should it know?<span class="aside">Optional</span></h2>
-    <div
-      class="drop"
-      class:dragging
-      role="region"
-      aria-label="Drop files here"
-      ondragover={(e) => {
-        e.preventDefault();
-        dragging = true;
+    <DropZone
+      title="Drop files or paste a link"
+      hint="PDF, DOCX, Markdown, TXT, CSV or a voice memo, up to {MAX_BYTES / 1024 / 1024} MB. Websites are crawled for you."
+      accept=".pdf,.docx,.md,.txt,.csv,audio/*"
+      onfiles={(files) => void addFiles(files)}
+      onlink={(url) => {
+        link = url;
+        addLink('link');
       }}
-      ondragleave={() => (dragging = false)}
-      ondrop={drop}
-    >
-      <span class="drop-icon"><Icon name="upload" size={20} /></span>
-      <div class="drop-text">
-        <strong>Drop files or paste a link</strong>
-        <span class="muted">PDF, DOCX, Markdown, TXT, CSV or a voice memo, up to {MAX_BYTES / 1024 / 1024} MB. Websites are crawled for you.</span>
-      </div>
-      <Button size="s" onclick={() => filePicker?.click()}>Browse files</Button>
-      <input
-        bind:this={filePicker}
-        type="file"
-        multiple
-        hidden
-        accept=".pdf,.docx,.md,.txt,.csv,audio/*"
-        data-testid="file-input"
-        onchange={() => picked(filePicker)}
-      />
-    </div>
+    />
     <form
       class="add"
       onsubmit={(e) => {
@@ -183,7 +153,15 @@
       <p class="note"><Icon name="info" size={14} /> Knowledge is searched when needed. Instructions are always followed.</p>
       <ul class="list" aria-label="Attachments">
         {#each knowledge as d (d.key)}
-          <AttachmentRow draft={d} onrole={(role) => update(d.key, { role })} onremove={() => remove(d.key)} />
+          <FileRow
+            icon={ICONS[d.kind]}
+            name={d.name}
+            detail={d.detail}
+            error={d.error}
+            busy={d.uploading}
+            bind:role={() => d.role, (role) => role && update(d.key, { role })}
+            onremove={() => remove(d.key)}
+          />
         {/each}
       </ul>
     {/if}
@@ -225,7 +203,7 @@
     {#if apis.length}
       <ul class="list" aria-label="APIs">
         {#each apis as d (d.key)}
-          <AttachmentRow draft={d} onrole={() => {}} onremove={() => remove(d.key)} />
+          <FileRow icon="plug" name={d.name} detail={d.detail} error={d.error} busy={d.uploading} onremove={() => remove(d.key)} />
         {/each}
       </ul>
     {/if}
@@ -259,16 +237,6 @@
   .goal { position: relative; }
   .voice { position: absolute; right: 10px; bottom: 10px; }
   .examples { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
-  .drop {
-    display: flex; align-items: center; gap: var(--s-4); padding: var(--s-4) var(--s-5); border-radius: var(--r-card);
-    border: 1px dashed var(--primary-line); background: var(--primary-soft);
-  }
-  .drop.dragging { border-style: solid; border-color: var(--primary); }
-  .drop-icon {
-    flex: 0 0 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    background: var(--surface); color: var(--primary); box-shadow: var(--shadow-tile);
-  }
-  .drop-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
   .add { display: flex; align-items: flex-end; gap: var(--s-2); }
   .add :global(.field) { flex: 1 1 auto; }
   .note { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--text-2); }
@@ -292,7 +260,7 @@
   @media (max-width: 767px) {
     .page { padding: var(--s-4); }
     .card { padding: var(--s-4); }
-    .drop, .add { flex-wrap: wrap; }
+    .add { flex-wrap: wrap; }
     .estimate { display: none; }
     .bar { padding: var(--s-3) var(--s-4); justify-content: flex-end; }
   }
