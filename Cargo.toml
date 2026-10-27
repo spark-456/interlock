@@ -56,3 +56,11 @@ wiremock = "0.6"
 lto = "thin"
 codegen-units = 4
 strip = true
+
+# Full debug info made each Windows test binary's PDB ~200 MB. Line tables keep
+# file:line in panics and backtraces; dependencies rarely need stepping into.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
