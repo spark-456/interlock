@@ -61,12 +61,12 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 | `IL_MASTER_KEY` | B01 | 32 random bytes, base64. Encrypts stored credentials | open |
 | Nebius deployment account | R02 | Somewhere to run the container with HTTPS and a volume | open |
 | Final licence and README | R04 | Switch to Apache-2.0 and write the README at submission | open |
-| Generated catalog fixture exception | B06 and later node tasks | `cargo xtask catalog` must update `web/fixtures/api/nodes.json` to mark implemented nodes Ready, but codex-1 was instructed not to edit anything under `web/`. May codex-1 update only this generated fixture? | open |
 
 ## Blockers and known issues
 
 | Issue | Kind | Tasks | Detail | Status |
 |---|---|---|---|---|
+| Generated node catalog fixture | handoff to claude-a | B06, B07, B08, N01, K01, K02, C01, C02, M01 and later node tasks | Owner chose claude-a to update `web/fixtures/api/nodes.json`; codex-1 leaves `web/` untouched. Claude: check out each pushed backend task branch, run `cargo xtask catalog`, commit only the generated web fixture on that branch, and note the SHA in its task row. Codex-1 will then run full check and open its PR. | open |
 | GitHub Actions blocked on private repos | blocker | all | Account billing stops hosted runners. The repo is public so CI runs; making it private again stops CI | workaround |
 | Model IDs not verified | issue | B02 | Config model IDs are guesses until checked against Token Factory | open |
 | Architect must emit `build.node` and `build.cost` | issue | A01, A02 | The Building screen needs them for node stats and the running cost | open |
