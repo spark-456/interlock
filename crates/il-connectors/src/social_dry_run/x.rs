@@ -1,7 +1,6 @@
 //! `app.x.post` — Post (X).
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task C03 implements it.
+//! Validates a post and returns a dry-run preview.
 
 use il_sdk::prelude::*;
 
@@ -10,41 +9,36 @@ use il_sdk::prelude::*;
 pub struct AppXPost;
 
 static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
-    NodeManifest::new(
-        "app.x.post",
-        Category::App,
-        "Post (X)",
-        "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
-    )
-    .icon("send")
-    .app("x")
-    .external()
-    .status(NodeStatus::DryRun)
-    .credential(CredentialSpec { optional: true, ..cred("x", "x", CredentialKind::OAuth2, "X account", &[]) })
-    .settings_schema(json!({
-        "type": "object",
-        "required": [
-            "text"
-        ],
-        "properties": {
-            "text": {
-                "type": "string",
-                "title": "Post",
-                "x-widget": "longtext"
-            },
-            "media": {
-                "type": "string",
-                "title": "Media",
-                "x-widget": "expression"
+    NodeManifest::new("app.x.post", Category::App, "Post (X)", "Previews an X post; needs platform approval to post.")
+        .icon("send")
+        .app("x")
+        .external()
+        .status(NodeStatus::DryRun)
+        .credential(CredentialSpec { optional: true, ..cred("x", "x", CredentialKind::OAuth2, "X account", &[]) })
+        .settings_schema(json!({
+            "type": "object",
+            "required": [
+                "text"
+            ],
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "title": "Post",
+                    "x-widget": "longtext"
+                },
+                "media": {
+                    "type": "string",
+                    "title": "Media",
+                    "x-widget": "expression"
+                }
             }
-        }
-    }))
-    .example(
-        "Preview",
-        json!({
-            "text": "{{ item.post }}"
-        }),
-    )
+        }))
+        .example(
+            "Preview",
+            json!({
+                "text": "{{ item.post }}"
+            }),
+        )
 });
 
 #[async_trait]
@@ -53,8 +47,13 @@ impl NodeExecutor for AppXPost {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let text = ctx.settings["text"].as_str().ok_or_else(|| NodeError::Failed("post text is required".into()))?;
+        if text.trim().is_empty() {
+            return Err(NodeError::Failed("post text is empty".into()));
+        }
+        let media = super::media(ctx, &input, "media", "media", false).await?;
+        Ok(super::preview(input, "x", text, media, json!({})))
     }
 }
 

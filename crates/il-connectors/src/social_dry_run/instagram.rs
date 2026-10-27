@@ -1,7 +1,6 @@
 //! `app.instagram.post_reel` — Post reel (Instagram).
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task C03 implements it.
+//! Validates a reel and returns a dry-run preview.
 
 use il_sdk::prelude::*;
 
@@ -14,7 +13,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "app.instagram.post_reel",
         Category::App,
         "Post reel (Instagram)",
-        "Prepares a post reel post. Dry-run: validates and previews the post; needs platform approval to post.",
+        "Previews an Instagram reel; needs platform approval to post.",
     )
     .icon("send")
     .app("instagram")
@@ -63,8 +62,16 @@ impl NodeExecutor for AppInstagramPostReel {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let file = super::media(ctx, &input, "video", "clip_9x16", true)
+            .await?
+            .ok_or_else(|| NodeError::Failed("video is required".into()))?;
+        if !file.mime.starts_with("video/") {
+            return Err(NodeError::Failed("Instagram reel requires a video file".into()));
+        }
+        let caption = ctx.settings["caption"].as_str().unwrap_or("");
+        let cover = ctx.settings["coverAtSec"].as_f64().unwrap_or(1.0);
+        Ok(super::preview(input, "instagram", caption, Some(file), json!({"coverAtSec":cover})))
     }
 }
 
