@@ -34,6 +34,12 @@ export const api = {
   flow: (id: string) => get<Flow>(`/api/flows/${id}`),
   saveFlow: (flow: Flow) => put<Flow>(`/api/flows/${flow.id}`, flow),
   ask: (flowId: string, message: string) => post<AskDiff>(`/api/flows/${flowId}/ask`, { message }),
+  activate: (flowId: string) => post<void>(`/api/flows/${flowId}/activate`, {}),
+  deactivate: (flowId: string) => post<void>(`/api/flows/${flowId}/deactivate`, {}),
+  /** The integration guide (INTERLOCK.md) for a published AI app. */
+  guide: (flowId: string) => get<{ markdown: string }>(`/api/flows/${flowId}/guide`),
+  /** Creates an API key; the full key is in this response only. */
+  createKey: (name: string) => post<{ id: string; key: string }>('/api/keys', { name }),
   testRun: (flowId: string) => post<RunCreated>(`/api/flows/${flowId}/test`, { items: [] }),
   runStep: (flowId: string, nodeId: string, items: JsonValue[]) =>
     post<RunCreated>(`/api/flows/${flowId}/nodes/${nodeId}/run`, { items }),
