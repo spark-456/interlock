@@ -2986,7 +2986,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Add to knowledge",
       "trigger": false,
       "typeId": "knowledge.add",
@@ -3081,7 +3081,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Knowledge base",
       "trigger": false,
       "typeId": "knowledge.base",
@@ -3151,7 +3151,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Search knowledge",
       "trigger": false,
       "typeId": "knowledge.search",

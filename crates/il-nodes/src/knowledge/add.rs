@@ -1,9 +1,9 @@
 //! `knowledge.add` — Add to knowledge.
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task K01 implements it.
+//! Adds text to a knowledge base.
 
 use il_sdk::prelude::*;
+use il_sdk::services::knowledge::SourceInput;
 
 /// Add to knowledge node.
 #[derive(Debug, Default)]
@@ -17,6 +17,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "Adds text or a file from each item to a knowledge base.",
     )
     .icon("book-plus")
+    .status(NodeStatus::Ready)
     .cost(CostHint::Low)
     .settings_schema(json!({
         "type": "object",
@@ -67,8 +68,25 @@ impl NodeExecutor for KnowledgeAdd {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let kb = ctx.settings["knowledgeBase"]
+            .as_str()
+            .ok_or_else(|| NodeError::Failed("knowledge base is required".into()))?;
+        let content =
+            ctx.settings["content"].as_str().ok_or_else(|| NodeError::Failed("content is required".into()))?;
+        let title = ctx.settings["title"].as_str().unwrap_or("Added text");
+        let source = if ctx.settings["markAs"] == "instructions" {
+            SourceInput::InstructionsText { title: title.into(), text: content.into() }
+        } else {
+            SourceInput::Text { title: title.into(), text: content.into() }
+        };
+        let ids = ctx.knowledge().add_sources(kb, vec![source]).await.map_err(|e| NodeError::Failed(e.to_string()))?;
+        let mut item = input.main().first().cloned().unwrap_or_default();
+        if !item.json.is_object() {
+            item.json = json!({});
+        }
+        item.json["sourceIds"] = json!(ids);
+        Ok(NodeOutput::out(vec![item]))
     }
 }
 
@@ -76,8 +94,18 @@ inventory::submit! { NodeFactory::new(|| Box::new(KnowledgeAdd)) }
 
 #[cfg(test)]
 mod tests {
+    use il_sdk::testkit::NodeHarness;
+    use serde_json::json;
     #[test]
     fn manifest_is_valid() {
         il_sdk::testkit::assert_manifest_valid(&super::KnowledgeAdd);
+    }
+
+    #[tokio::test]
+    async fn k01_add_returns_source_id() {
+        let harness = NodeHarness::new(super::KnowledgeAdd)
+            .settings(json!({"knowledgeBase":"kb_1","content":"{{ item.body }}"}))
+            .input_json(vec![json!({"body":"Policy"})]);
+        assert_eq!(harness.run().await.unwrap().ports["out"][0].json["sourceIds"].as_array().unwrap().len(), 1);
     }
 }
