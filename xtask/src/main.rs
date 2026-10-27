@@ -31,9 +31,12 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
-/// Repo root (xtask lives one level below it).
+/// Repo root (xtask lives one level below it). Prefers the runtime `CARGO_MANIFEST_DIR` that `cargo run`
+/// sets, so a binary built from another worktree (shared target dir) still points at this checkout.
 pub fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."))
+    let manifest_dir = std::env::var_os("CARGO_MANIFEST_DIR").map(PathBuf::from);
+    let manifest_dir = manifest_dir.unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")));
+    manifest_dir.parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."))
 }
 
 /// A command for a tool; on Windows `.cmd` shims (pnpm) need `cmd /C`.
