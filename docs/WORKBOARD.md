@@ -30,7 +30,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 19 | W05 | Runs, approvals, flows list, templates, connections | P0 | T00 | ready | | | | |
 | 20 | W06 | Publish/Connect & chat playground | P0 | T00 | ready | | | | |
 | 21 | K02 | Use any API (OpenAPI → tools) | P0 | T00 | claimed | codex-1 | t/K02-openapi | 2026-10-27 15:21 | Pushed `450df7fd17c276b1049d081fe2a768b8b4903b21`; Rust checks pass. Full check needs generated `web/fixtures/api/nodes.json`; awaiting owner decision on no-web rule before PR. |
-| 22 | C01 | OAuth broker + Gmail, Sheets, YouTube | P0 | T00 | ready | | | | |
+| 22 | C01 | OAuth broker + Gmail, Sheets, YouTube | P0 | T00 | claimed | codex-1 | t/C01-google | 2026-10-27 15:36 | |
 | 23 | C02 | Slack, Discord, Telegram, Bluesky | P0 | T00 | ready | | | | |
 | 24 | M01 | Media ops (ffmpeg) | P0 | T00 | ready | | | | |
 | 25 | M02 | Media generation (video, voice, image) | P0 | T00 | ready | | | | |
