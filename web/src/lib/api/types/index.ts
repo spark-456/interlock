@@ -25,6 +25,7 @@ export type * from './ConnectionSummary';
 export type * from './CostHint';
 export type * from './CreateApiKeyRequest';
 export type * from './CreateApiKeyResponse';
+export type * from './CreateConnectionRequest';
 export type * from './CredentialKind';
 export type * from './CredentialSpec';
 export type * from './Decision';

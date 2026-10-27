@@ -37,6 +37,14 @@ impl std::fmt::Debug for Credential {
     }
 }
 
+/// A stored credential without its secret, for listing connections.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CredentialInfo {
+    pub id: String,
+    pub app: String,
+    pub meta: Value,
+}
+
 /// One cost entry (us_ledger).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SpendEntry {
@@ -101,6 +109,8 @@ pub trait Store: Send + Sync {
     async fn credential(&self, workspace_id: &str, id: &str) -> StoreResult<Option<Credential>>;
     /// Persists an encrypted credential or updates its token after refresh.
     async fn put_credential(&self, workspace_id: &str, credential: &Credential) -> StoreResult<()>;
+    /// The workspace's credentials, without secrets.
+    async fn credentials(&self, workspace_id: &str) -> StoreResult<Vec<CredentialInfo>>;
 
     // Small key/value state: poll cursors, trigger state, dedupe keys.
     async fn kv_get(&self, key: &str) -> StoreResult<Option<Value>>;

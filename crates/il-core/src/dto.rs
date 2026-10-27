@@ -198,6 +198,20 @@ pub struct ConnectionSummary {
     pub account: Option<String>,
 }
 
+/// `POST /api/connections`: saves a key-based connection (API key, bot token, app password, webhook).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CreateConnectionRequest {
+    pub app: String,
+    /// Shown in lists, e.g. "Support bot".
+    #[serde(default)]
+    #[ts(optional)]
+    pub label: Option<String>,
+    /// Secret fields the app's steps read (`token`, `url`, `identifier` + `app_password`…). Encrypted at rest, never returned.
+    pub secret: std::collections::BTreeMap<String, String>,
+}
+
 /// Connection state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]

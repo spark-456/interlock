@@ -6,7 +6,9 @@
   import Button from '$lib/design/Button.svelte';
   import Modal from '$lib/design/Modal.svelte';
   import StatusPill, { type PillTone } from '$lib/design/StatusPill.svelte';
-  import { appRows, connectHref, type AppRow } from './connections';
+  import Input from '$lib/design/Input.svelte';
+  import { toast } from '$lib/design/toasts.svelte';
+  import { appRows, connectHref, keyFields, type AppRow } from './connections';
 
   let rows = $state.raw<AppRow[] | null>(null);
   let failed = $state(false);
@@ -14,7 +16,28 @@
   let open = $state<AppRow | null>(null);
   let drawer = $state(false);
 
-  Promise.all([api.nodes(), api.connections()]).then(([c, conns]) => (rows = appRows(c.nodes, conns)), () => (failed = true));
+  const load = () =>
+    Promise.all([api.nodes(), api.connections()]).then(([c, conns]) => (rows = appRows(c.nodes, conns)), () => (failed = true));
+  load();
+
+  // The key form for apps that use a key, token, password or webhook instead of a sign-in.
+  let values = $state<Record<string, string>>({});
+  let label = $state('');
+  let saving = $state(false);
+
+  async function save(row: AppRow) {
+    saving = true;
+    try {
+      await api.createConnection({ app: row.app, label: label.trim() || undefined, secret: { ...values } });
+      toast(`${row.name} is connected.`, 'success');
+      drawer = false;
+      await load();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not save the connection.', 'error');
+    } finally {
+      saving = false;
+    }
+  }
   api.flows().then((f) => (flows = f), () => {});
 
   const STATUS: Record<AppRow['status'], [PillTone, string]> = {
@@ -28,6 +51,8 @@
 
   function show(row: AppRow) {
     open = row;
+    values = Object.fromEntries(keyFields(row).map((f) => [f.key, '']));
+    label = '';
     drawer = true;
   }
 </script>
@@ -74,11 +99,20 @@
       </div>
     </dl>
     {#if !connectHref(open)}
-      <p class="hint">{open.name} uses a {open.label.toLowerCase()} rather than a sign-in. Add it from the step that needs it.</p>
+      {@const row = open}
+      <form id="key-form" class="keys" onsubmit={(e) => (e.preventDefault(), save(row))}>
+        <p class="hint">{row.name} uses a {row.label.toLowerCase()} rather than a sign-in. It's encrypted on the server and never shown again.</p>
+        {#each keyFields(row) as f (f.key)}
+          <Input label={f.label} placeholder={f.placeholder} type={f.secret ? 'password' : 'text'} autocomplete="off" required bind:value={values[f.key]} />
+        {/each}
+        <Input label="Name (optional)" placeholder="{row.name} for support" bind:value={label} />
+      </form>
     {/if}
     {#snippet footer()}
       {#if open && connectHref(open)}
         <Button variant="primary" href={connectHref(open) ?? undefined}>{open.status === 'notConnected' ? 'Connect' : 'Reconnect'}</Button>
+      {:else if open}
+        <Button variant="primary" type="submit" form="key-form" loading={saving}>Save</Button>
       {/if}
     {/snippet}
   </Modal>
@@ -101,7 +135,8 @@
   dt { color: var(--text-3); font: var(--t-small); }
   dd { margin: var(--s-1) 0 0; display: flex; flex-wrap: wrap; gap: var(--s-2); }
   dd a { color: var(--primary); }
-  .hint { color: var(--text-2); margin: var(--s-4) 0 0; }
+  .hint { color: var(--text-2); margin: 0; }
+  .keys { display: flex; flex-direction: column; gap: var(--s-3); margin-top: var(--s-4); }
   .error { color: var(--error-text); }
   @media (max-width: 767px) {
     .page { padding: var(--s-4); }

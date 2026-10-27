@@ -105,6 +105,9 @@ async fn b01_credentials_are_encrypted_and_workspace_scoped() {
     store.put_credential("ws_1", &credential).await.unwrap();
     assert_eq!(store.credential("ws_1", "cred_1").await.unwrap().unwrap().secret, credential.secret);
     assert!(store.credential("ws_2", "cred_1").await.unwrap().is_none());
+    let listed = store.credentials("ws_1").await.unwrap();
+    assert_eq!((listed.len(), listed[0].id.as_str(), listed[0].meta.clone()), (1, "cred_1", credential.meta.clone()));
+    assert!(store.credentials("ws_2").await.unwrap().is_empty());
     let conn = store.conn.lock().unwrap();
     let ciphertext: Vec<u8> = conn.query_row("SELECT ciphertext FROM cn_credentials", [], |r| r.get(0)).unwrap();
     assert!(!String::from_utf8_lossy(&ciphertext).contains("top secret"));

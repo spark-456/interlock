@@ -1,6 +1,7 @@
 //! Internal HTTP API (PRD §8.5). One file per area; all errors use the PRD error shape.
 
 mod builds;
+mod connections;
 mod flows;
 mod github;
 mod misc;
@@ -28,6 +29,7 @@ pub fn router() -> Router<AppState> {
         .merge(misc::routes())
         .merge(github::routes())
         .merge(templates::routes())
+        .merge(connections::routes())
 }
 
 /// An API error response: status + `{ error: { code, message, details } }`.

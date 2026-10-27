@@ -1,4 +1,4 @@
-//! Me, demo sessions, files, templates, connections, knowledge.
+//! Me, demo sessions, files, knowledge.
 
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Multipart, Path, State};
@@ -7,7 +7,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use il_core::FileRef;
-use il_core::dto::{ConnectionSummary, Me};
+use il_core::dto::Me;
 
 use super::session::{SESSION_COOKIE, Session, session_key};
 use super::{ApiErr, ApiResult, Ws};
@@ -22,7 +22,6 @@ pub fn routes() -> Router<AppState> {
         .route("/api/demo/session", post(demo_session))
         .route("/api/files", post(upload).layer(DefaultBodyLimit::max(MAX_UPLOAD + 64 * 1024)))
         .route("/api/files/{id}", get(download))
-        .route("/api/connections", get(connections))
         .route("/api/knowledge", get(knowledge).post(knowledge))
 }
 
@@ -80,11 +79,6 @@ async fn download(State(state): State<AppState>, _ws: Ws, Path(id): Path<String>
     let disposition = format!("inline; filename=\"{}\"", file.name.replace('"', ""));
     Ok(([(header::CONTENT_TYPE, file.mime), (header::CONTENT_DISPOSITION, disposition)], Body::from(bytes))
         .into_response())
-}
-
-/// Connections arrive with C01/C02; until then every app is listed as not connected.
-async fn connections() -> Json<Vec<ConnectionSummary>> {
-    Json(vec![])
 }
 
 async fn knowledge() -> ApiErr {

@@ -38,3 +38,15 @@ test('lists apps with their state and opens the connect drawer', async ({ page }
   await apps.getByRole('button', { name: 'Slack, Connected' }).click();
   await expect(page.getByRole('dialog', { name: 'Slack' }).getByRole('link', { name: 'Reconnect' })).toHaveAttribute('href', '/api/oauth/slack/start');
 });
+
+test('saves a bot token for a key-based app', async ({ page }) => {
+  await page.goto('/connections');
+  await page.getByRole('list', { name: 'Apps' }).getByRole('button', { name: 'Telegram, Not connected' }).click();
+  const drawer = page.getByRole('dialog', { name: 'Telegram' });
+  await drawer.getByLabel('Bot token').fill('123456:ABC');
+  const sent = page.waitForRequest((r) => r.url().includes('connections.post'));
+  await drawer.getByRole('button', { name: 'Save' }).click();
+  expect(JSON.parse((await sent).postData() ?? '{}')).toBeTruthy();
+  await expect(page.getByText('Telegram is connected.')).toBeVisible();
+});
+
