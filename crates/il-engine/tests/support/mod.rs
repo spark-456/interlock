@@ -100,7 +100,12 @@ impl NodeExecutor for Fake {
                         payload: items.first().map(|i| i.json.clone()).unwrap_or(Value::Null),
                         channels: vec!["inapp".into(), "slack".into()],
                         target: Some("#marketing".into()),
-                        timeout_hours: None,
+                        timeout_hours: s["timeoutHours"].as_f64(),
+                        on_timeout: match s["onTimeout"].as_str() {
+                            Some("approve") => il_core::ApprovalTimeout::Approve,
+                            Some("reject") => il_core::ApprovalTimeout::Reject,
+                            _ => il_core::ApprovalTimeout::KeepWaiting,
+                        },
                     };
                     Ok(NodeOutput::waiting(ctx.request_approval(spec).await?))
                 }

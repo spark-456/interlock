@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use il_core::{Approval, BuildEvent, Flow, NodeRun, Run, RunEvent};
+use il_core::{Approval, ApprovalTimeout, BuildEvent, Flow, NodeRun, Run, RunEvent};
 use il_sdk::services::store::{Credential, SpendEntry, SpendScope, Store, StoreError, StoreResult};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Serialize, de::DeserializeOwned};
@@ -228,6 +228,38 @@ impl Store for SqliteStore {
                 "SELECT body FROM rn_approvals WHERE workspace_id=?1 ORDER BY created_at DESC"
             };
             list(c, sql, &id)
+        })
+        .await
+    }
+
+    async fn due_approvals(&self, now: chrono::DateTime<chrono::Utc>) -> StoreResult<Vec<Approval>> {
+        self.with_conn(move |c| {
+            let mut stmt = c.prepare("SELECT body FROM rn_approvals WHERE status='Pending'").map_err(backend)?;
+            let bodies = stmt.query_map([], |row| row.get::<_, String>(0)).map_err(backend)?;
+            let mut due = Vec::new();
+            for body in bodies {
+                let approval: Approval = parse(body.map_err(backend)?)?;
+                if approval.expires_at.is_some_and(|deadline| deadline <= now)
+                    && !matches!(approval.on_timeout, None | Some(ApprovalTimeout::KeepWaiting))
+                {
+                    due.push(approval);
+                }
+            }
+            Ok(due)
+        })
+        .await
+    }
+
+    async fn transition_approval(&self, approval: &Approval) -> StoreResult<bool> {
+        let approval = approval.clone();
+        self.with_conn(move |c| {
+            let changed = c
+                .execute(
+                    "UPDATE rn_approvals SET status=?2, body=?3 WHERE id=?1 AND status='Pending'",
+                    params![approval.id, format!("{:?}", approval.status), json(&approval)?],
+                )
+                .map_err(backend)?;
+            Ok(changed == 1)
         })
         .await
     }

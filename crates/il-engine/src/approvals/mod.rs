@@ -22,6 +22,13 @@ impl ApprovalGate for EngineGate {
     async fn request(&self, run: &RunInfo, spec: ApprovalSpec) -> Result<String, NodeError> {
         let id = il_sdk::id("apr");
         let channels = if spec.channels.is_empty() { vec!["inapp".to_string()] } else { spec.channels.clone() };
+        let expires_at = match spec.timeout_hours {
+            Some(hours) if hours.is_finite() && hours > 0.0 && hours <= 876_000.0 => {
+                Some(self.clock.now() + chrono::Duration::milliseconds((hours * 3_600_000.0).round() as i64))
+            }
+            Some(_) => return Err(NodeError::Failed("invalid approval timeout".into())),
+            None => None,
+        };
         let approval = Approval {
             id: id.clone(),
             workspace_id: run.workspace_id.clone(),
@@ -34,6 +41,8 @@ impl ApprovalGate for EngineGate {
             status: ApprovalStatus::Pending,
             channels: channels.clone(),
             created_at: self.clock.now(),
+            expires_at,
+            on_timeout: Some(spec.on_timeout),
             decided_at: None,
             decided_by: None,
         };

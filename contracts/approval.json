@@ -9,6 +9,15 @@
         "expired"
       ],
       "type": "string"
+    },
+    "ApprovalTimeout": {
+      "description": "Action to take when an approval deadline passes.",
+      "enum": [
+        "approve",
+        "reject",
+        "keepWaiting"
+      ],
+      "type": "string"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -37,6 +46,13 @@
         "null"
       ]
     },
+    "expiresAt": {
+      "format": "date-time",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "flowId": {
       "type": "string"
     },
@@ -48,6 +64,16 @@
     },
     "nodeId": {
       "type": "string"
+    },
+    "onTimeout": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApprovalTimeout"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "payload": {
       "description": "Editable payload shown to the approver (e.g. post drafts)."

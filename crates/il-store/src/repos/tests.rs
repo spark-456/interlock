@@ -63,6 +63,15 @@ async fn b01_runs_node_runs_and_approvals() {
     store.put_approval(&approval).await.unwrap();
     assert_eq!(store.get_approval("ap_1").await.unwrap(), Some(approval.clone()));
     assert_eq!(store.list_approvals("ws_1", true).await.unwrap(), vec![approval]);
+    let mut due = store.get_approval("ap_1").await.unwrap().unwrap();
+    due.expires_at = Some(Utc::now() - chrono::Duration::minutes(1));
+    due.on_timeout = Some(il_core::ApprovalTimeout::Reject);
+    store.put_approval(&due).await.unwrap();
+    assert_eq!(store.due_approvals(Utc::now()).await.unwrap(), vec![due.clone()]);
+    due.status = il_core::ApprovalStatus::Rejected;
+    assert!(store.transition_approval(&due).await.unwrap());
+    assert!(!store.transition_approval(&due).await.unwrap());
+    assert!(store.due_approvals(Utc::now()).await.unwrap().is_empty());
 }
 
 #[tokio::test]

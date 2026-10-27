@@ -1,7 +1,7 @@
 //! `FlowRunner` for `Engine`: start, invoke, decide, cancel, replay; plus restart recovery.
 
 use async_trait::async_trait;
-use il_core::{ApprovalDecision, ApprovalStatus, Decision, Flow, Item, Run, RunEventKind, RunStatus};
+use il_core::{ApprovalDecision, ApprovalStatus, ApprovalTimeout, Decision, Flow, Item, Run, RunEventKind, RunStatus};
 use il_sdk::services::runner::InvokeOutcome;
 use il_sdk::services::{FlowRunner, RunnerError, StartRun};
 
@@ -103,6 +103,49 @@ impl Engine {
         decision: ApprovalDecision,
         by: Option<String>,
     ) -> Result<(), EngineError> {
+        self.decide_approval_internal(approval_id, decision, by, false).await
+    }
+
+    /// Applies due approval policies, including after a server restart.
+    pub async fn expire_due_approvals(&self) -> Result<usize, EngineError> {
+        let due = self
+            .inner
+            .services
+            .store
+            .due_approvals(self.inner.services.clock.now())
+            .await
+            .map_err(|e| EngineError::Store(e.to_string()))?;
+        let mut completed = 0;
+        for approval in due {
+            let decision = match approval.on_timeout {
+                Some(ApprovalTimeout::Approve) => Decision::Approve,
+                Some(ApprovalTimeout::Reject) => Decision::Reject,
+                _ => continue,
+            };
+            let outcome = self
+                .decide_approval_internal(
+                    &approval.id,
+                    ApprovalDecision { decision, payload: None, comment: None },
+                    Some("timeout".into()),
+                    true,
+                )
+                .await;
+            match outcome {
+                Ok(()) => completed += 1,
+                Err(EngineError::Approval(_)) => {}
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(completed)
+    }
+
+    async fn decide_approval_internal(
+        &self,
+        approval_id: &str,
+        decision: ApprovalDecision,
+        by: Option<String>,
+        timeout: bool,
+    ) -> Result<(), EngineError> {
         let inner = &self.inner;
         let store = &inner.services.store;
         let mut approval = store
@@ -110,6 +153,32 @@ impl Engine {
             .await
             .map_err(|e| EngineError::Store(e.to_string()))?
             .filter(|a| a.status == ApprovalStatus::Pending)
+            .ok_or_else(|| EngineError::Approval(approval_id.into()))?;
+        let overdue = approval.expires_at.is_some_and(|deadline| deadline <= inner.services.clock.now());
+        let policy = approval.on_timeout.unwrap_or(ApprovalTimeout::KeepWaiting);
+        let matches_policy = matches!(
+            (policy, decision.decision),
+            (ApprovalTimeout::Approve, Decision::Approve) | (ApprovalTimeout::Reject, Decision::Reject)
+        );
+        if (timeout && (!overdue || !matches_policy)) || (!timeout && overdue && policy != ApprovalTimeout::KeepWaiting)
+        {
+            return Err(EngineError::Approval(approval_id.into()));
+        }
+        let run = store
+            .get_run(&approval.run_id)
+            .await
+            .map_err(|e| EngineError::Store(e.to_string()))?
+            .ok_or_else(|| EngineError::RunNotFound(approval.run_id.clone()))?;
+        if run.status.is_terminal() {
+            return Err(EngineError::Approval(approval_id.into()));
+        }
+        let flow = self.load_flow(&run.flow_id, Some(run.flow_version)).await?;
+        let cp = Checkpoint::from_state(&run.state);
+        let partial = cp
+            .partial
+            .get(&approval.node_id)
+            .filter(|p| p.waiting.contains_key(approval_id))
+            .cloned()
             .ok_or_else(|| EngineError::Approval(approval_id.into()))?;
         approval.status = match decision.decision {
             Decision::Approve => ApprovalStatus::Approved,
@@ -120,23 +189,11 @@ impl Engine {
         if let Some(p) = &decision.payload {
             approval.payload = p.clone();
         }
-        store.put_approval(&approval).await.map_err(|e| EngineError::Store(e.to_string()))?;
+        if !store.transition_approval(&approval).await.map_err(|e| EngineError::Store(e.to_string()))? {
+            return Err(EngineError::Approval(approval_id.into()));
+        }
         let kind = RunEventKind::ApprovalDecided { approval_id: approval_id.into(), decision: decision.decision, by };
         inner.bus.emit(&approval.run_id, Some(&approval.node_id), kind).await;
-
-        let run = store
-            .get_run(&approval.run_id)
-            .await
-            .map_err(|e| EngineError::Store(e.to_string()))?
-            .ok_or_else(|| EngineError::RunNotFound(approval.run_id.clone()))?;
-        let flow = self.load_flow(&run.flow_id, Some(run.flow_version)).await?;
-        let cp = Checkpoint::from_state(&run.state);
-        let partial = cp
-            .partial
-            .get(&approval.node_id)
-            .filter(|p| p.waiting.contains_key(approval_id))
-            .cloned()
-            .ok_or_else(|| EngineError::Approval(approval_id.into()))?;
         let resume = Resume { partial, approval_id: approval_id.into(), decision };
         inner.set_status(&run.id, RunStatus::Running);
         tokio::spawn(drive(inner.clone(), run, flow, cp, Some((approval.node_id.clone(), resume))));

@@ -42,6 +42,7 @@ pub struct ApprovalSpec {
     /// Channel destination from settings (e.g. Slack channel).
     pub target: Option<String>,
     pub timeout_hours: Option<f64>,
+    pub on_timeout: il_core::ApprovalTimeout,
 }
 
 /// Receives progress from nodes (the engine forwards it as `node.progress`).

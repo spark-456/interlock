@@ -122,6 +122,16 @@ pub async fn recover_startup(state: &AppState) -> anyhow::Result<()> {
     let ids: Vec<_> = flows.into_iter().map(|flow| flow.id).collect();
     let restored = state.triggers.restore(&ids).await;
     tracing::info!(restored, "active flow triggers restored");
+    state.engine.expire_due_approvals().await?;
+    let engine = state.engine.clone();
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            if let Err(error) = engine.expire_due_approvals().await {
+                tracing::error!(error = %error, "approval expiry scan failed");
+            }
+        }
+    });
     Ok(())
 }
 
