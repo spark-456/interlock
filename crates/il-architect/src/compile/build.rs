@@ -16,7 +16,7 @@ use il_sdk::services::runner::FlowRunner;
 use serde_json::json;
 use tokio::sync::oneshot;
 
-use super::{Outcome, compile, revise};
+use super::{Compiled, Draft, Outcome, assemble, compile, revise, to_draft};
 use crate::appkit::{self, Case};
 use crate::ask::{changed, diff};
 use crate::catalog::Catalog;
@@ -24,6 +24,10 @@ use crate::testfix::{Failure, MAX_FIX_ROUNDS, fix_request, smoke};
 
 /// How long a build waits for answers to its questions.
 const ANSWER_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+
+fn words(text: &str) -> BTreeSet<String> {
+    text.split(|c: char| !c.is_alphanumeric()).filter(|word| word.len() >= 3).map(str::to_lowercase).collect()
+}
 
 /// The architect service: builds run in the background and persist their events to the store.
 #[derive(Clone)]
@@ -35,6 +39,7 @@ struct Inner {
     services: Services,
     runner: Arc<dyn FlowRunner>,
     catalog: Catalog,
+    fake_templates: bool,
     /// Builds waiting for answers, by build id.
     waiting: Mutex<HashMap<String, oneshot::Sender<BuildAnswers>>>,
 }
@@ -42,7 +47,17 @@ struct Inner {
 impl Architect {
     /// An architect that may use the node types in `catalog` and test-runs flows with `runner`.
     pub fn new(services: Services, runner: Arc<dyn FlowRunner>, catalog: Catalog) -> Self {
-        Self { inner: Arc::new(Inner { services, runner, catalog, waiting: Mutex::default() }) }
+        Self::new_with_fake_templates(services, runner, catalog, false)
+    }
+
+    /// Uses the workspace's seeded templates for offline builds when `fake_templates` is true.
+    pub fn new_with_fake_templates(
+        services: Services,
+        runner: Arc<dyn FlowRunner>,
+        catalog: Catalog,
+        fake_templates: bool,
+    ) -> Self {
+        Self { inner: Arc::new(Inner { services, runner, catalog, fake_templates, waiting: Mutex::default() }) }
     }
 }
 
@@ -140,7 +155,11 @@ impl Inner {
         ev.stage("understand").await;
         ev.log("Reading your request.").await;
         let mut brief = self.brief(ev, req).await;
-        let mut compiled = compile(models, &self.catalog, &req.goal, &brief, true).await.map_err(|e| e.to_string())?;
+        let mut compiled = if self.fake_templates {
+            self.compile_template(ws, &req.goal).await?
+        } else {
+            compile(models, &self.catalog, &req.goal, &brief, true).await.map_err(|e| e.to_string())?
+        };
         ev.cost(compiled.cost_usd).await;
         if let Outcome::Questions(questions) = &compiled.outcome {
             let answers = self.ask_questions(ev, questions.clone()).await?;
@@ -172,6 +191,41 @@ impl Inner {
         ev.stage("test").await;
         self.test_and_fix(ev, *flow, &sample, &brief).await;
         Ok(flow_id)
+    }
+
+    async fn compile_template(&self, ws: &str, goal: &str) -> Result<Compiled, String> {
+        let goal_words = words(goal);
+        let flows = self.services.store.list_flows(ws).await.map_err(|e| e.to_string())?;
+        let template = flows
+            .into_iter()
+            .filter(|flow| flow.meta.created_by.as_deref() == Some("template"))
+            .max_by(|a, b| {
+                let score = |flow: &Flow| {
+                    goal_words
+                        .intersection(&words(&format!("{} {}", flow.name, flow.meta.goal.as_deref().unwrap_or(""))))
+                        .count()
+                };
+                score(a).cmp(&score(b)).then_with(|| b.name.cmp(&a.name))
+            })
+            .ok_or_else(|| "no seeded templates are available for an offline build".to_string())?;
+        let draft: Draft = serde_json::from_value(to_draft(&template)).map_err(|e| e.to_string())?;
+        let flow = assemble(&draft, &self.catalog, goal);
+        let issues = crate::validate::validate(&flow, &self.catalog);
+        if !issues.is_empty() {
+            return Err(format!(
+                "offline template is invalid: {}",
+                issues.iter().map(ToString::to_string).collect::<Vec<_>>().join("; ")
+            ));
+        }
+        Ok(Compiled {
+            outcome: Outcome::Flow {
+                flow: Box::new(flow),
+                notes: vec![format!("Started from the {} template in offline mode.", template.name)],
+                sample: json!({}),
+            },
+            cost_usd: 0.0,
+            repairs: Vec::new(),
+        })
     }
 
     /// Test-runs the saved flow and fixes what fails, at most [`MAX_FIX_ROUNDS`] times (AR-6, AR-9).

@@ -37,6 +37,19 @@ async fn start(
     if req.goal.trim().is_empty() {
         return Err(ApiErr::bad_request("Describe what you want to build."));
     }
+    if state.config.providers == "fake" {
+        let has_templates = state
+            .services
+            .store
+            .list_flows(ws.id())
+            .await
+            .map_err(ApiErr::internal)?
+            .iter()
+            .any(|flow| flow.meta.created_by.as_deref() == Some("template"));
+        if !has_templates {
+            super::templates::seed(&state, ws.id()).await?;
+        }
+    }
     let build_id = state.architect.start_build(ws.id(), req).await.map_err(architect_err)?;
     Ok((StatusCode::ACCEPTED, Json(BuildCreated { build_id })))
 }

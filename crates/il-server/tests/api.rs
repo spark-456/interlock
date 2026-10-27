@@ -198,6 +198,50 @@ async fn approvals_builds_and_stubs_use_the_error_shape() {
 }
 
 #[tokio::test]
+async fn r06_fake_build_selects_a_template_and_emits_ready() {
+    let dir = tempfile::tempdir().unwrap();
+    let templates = dir.path().join("templates");
+    std::fs::create_dir(&templates).unwrap();
+    for (id, name, goal) in [
+        ("support", "Support chat", "Answer support chat questions from documents"),
+        ("promos", "Promo clips", "Make a product promo video"),
+    ] {
+        let template = json!({
+            "id": format!("flw_{id}"), "workspaceId": "template", "version": 1,
+            "name": name, "kind": "automation", "edges": [],
+            "nodes": [{"id": "n_start", "type": "trigger.manual", "name": "Start", "settings": {}}],
+            "meta": {"createdBy": "template", "goal": goal}
+        });
+        std::fs::write(templates.join(format!("{id}.json")), template.to_string()).unwrap();
+    }
+    let state =
+        build_state(Config::from_value(json!({"server": {"templates_dir": templates.to_str().unwrap()}})).unwrap());
+    let app = app(state.clone());
+    let (status, body, _) =
+        call(&app, "POST", "/api/builds", Some(json!({"goal": "Build a support chat agent"})), None).await;
+    assert_eq!(status, StatusCode::ACCEPTED);
+    let build_id = body["buildId"].as_str().unwrap();
+    for _ in 0..100 {
+        let events = state.services.store.build_events(build_id, 0).await.unwrap();
+        if let Some(event) = events.last() {
+            match &event.kind {
+                il_core::BuildEventKind::Ready { flow_id } => {
+                    let flow = state.services.store.get_flow(flow_id).await.unwrap().unwrap();
+                    assert_eq!(flow.name, "Support chat");
+                    assert_eq!(flow.meta.goal.as_deref(), Some("Build a support chat agent"));
+                    assert!(events.iter().any(|e| matches!(e.kind, il_core::BuildEventKind::FlowPatch { .. })));
+                    return;
+                }
+                il_core::BuildEventKind::Failed { error } => panic!("fake build failed: {error}"),
+                _ => {}
+            }
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    }
+    panic!("fake build never completed");
+}
+
+#[tokio::test]
 async fn templates_are_listed_and_copied_into_the_workspace() {
     let root = tempfile::tempdir().unwrap();
     let (templates, recorded) = (root.path().join("templates"), root.path().join("recorded"));
