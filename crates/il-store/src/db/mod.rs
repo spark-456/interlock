@@ -48,7 +48,7 @@ impl SqliteStore {
     }
 
     /// Runs one SQLite operation without blocking an async executor thread.
-    pub(crate) async fn with_conn<T, F>(&self, f: F) -> StoreResult<T>
+    pub async fn with_conn<T, F>(&self, f: F) -> StoreResult<T>
     where
         T: Send + 'static,
         F: FnOnce(&mut Connection) -> StoreResult<T> + Send + 'static,
