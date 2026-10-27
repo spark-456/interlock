@@ -34,7 +34,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 23 | C02 | Slack, Discord, Telegram, Bluesky | P0 | T00 | claimed | codex-1 | t/C02-messaging | 2026-10-27 16:12 | 77bdf615918bb4f10c9f61bb808c6e1d7aae47f9 pushed; 25 connector tests and Rust check stages pass; generated `web/fixtures/api/nodes.json` drift blocks full check under no-web instruction; PR pending. |
 | 24 | M01 | Media ops (ffmpeg) | P0 | T00 | claimed | codex-1 | t/M01-media-ops | 2026-10-27 16:32 | 6295632eff30c793c55e1698010ebdbd5aa420ed pushed; Windows ffmpeg fixture and Rust check stages pass. Claude-a owns generated `web/fixtures/api/nodes.json` on this branch; full check and PR follow that commit. |
 | 25 | M02 | Media generation (video, voice, image) | P0 | T00 | ready | | | | |
-| 26 | C03 | Shopify sandbox + social dry-run nodes | P0 | T00 | claimed | codex-1 | t/C03-sandbox-social | 2026-10-27 16:33 | |
+| 26 | C03 | Shopify sandbox + social dry-run nodes | P0 | T00 | claimed | codex-1 | t/C03-sandbox-social | 2026-10-27 16:49 | 22f3e9ea0fa6c04f03af3542421038282eab5086 pushed; five C03 tests and Rust check stages pass. Claude-a owns generated `web/fixtures/api/nodes.json` on this branch; full check and PR follow that commit. |
 | 27 | W07 | Landing, demo mode, settings, error states | P0 | T00 | ready | | | | |
 | 28 | R02 | Deploy to Nebius | P0 | B04 | ready | | | | Prep (Dockerfile, account checks) can start before B04 is done |
 | 29 | R03 | Integration pass & E2E | P0 | B03, B04, A01, W02, W03 | ready | | | | Integrator role; start Thu |
