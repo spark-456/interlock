@@ -68,7 +68,7 @@ describe('build state from the recorded Larkspur build', () => {
     expect(labelViews(s, cards).map((l) => [l.text, l.x, l.tone])).toEqual([
       ['Inputs', 0, 'source'], ['Understanding', 304, 'kb'], ['Agents', 608, 'agent'], ['Safety', 912, 'guard'], ['Outputs', 1216, 'output']
     ]);
-    const groups = groupViews(s, cards);
+    const groups = groupViews(s.flow.groups, cards);
     expect(groups.map(groupStatus)).toEqual(['Ready', 'Ready', 'In progress', 'Ready', 'Next']);
   });
 

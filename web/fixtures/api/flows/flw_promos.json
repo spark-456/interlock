@@ -66,7 +66,7 @@
       "name": "Write video script",
       "position": {
         "x": 912,
-        "y": 0
+        "y": 200
       },
       "group": "g_make",
       "settings": {
@@ -86,7 +86,7 @@
       "name": "Generate promo video",
       "position": {
         "x": 1216,
-        "y": 0
+        "y": 60
       },
       "group": "g_make",
       "settings": {
@@ -105,7 +105,7 @@
       "name": "Generate voiceover",
       "position": {
         "x": 1216,
-        "y": 400
+        "y": 340
       },
       "group": "g_make",
       "settings": {
@@ -162,8 +162,8 @@
       "typeVersion": 1,
       "name": "Add captions",
       "position": {
-        "x": 1824,
-        "y": 400
+        "x": 2128,
+        "y": 200
       },
       "group": "g_cut",
       "settings": {
@@ -180,8 +180,8 @@
       "typeVersion": 1,
       "name": "Write post text",
       "position": {
-        "x": 1824,
-        "y": 0
+        "x": 2432,
+        "y": 200
       },
       "group": "g_post",
       "settings": {
@@ -201,7 +201,7 @@
       "typeVersion": 1,
       "name": "Approve in Slack",
       "position": {
-        "x": 1824,
+        "x": 2736,
         "y": 200
       },
       "group": "g_post",
@@ -224,8 +224,8 @@
       "typeVersion": 1,
       "name": "YouTube Shorts (private)",
       "position": {
-        "x": 2128,
-        "y": 0
+        "x": 3040,
+        "y": -500
       },
       "group": "g_post",
       "settings": {
@@ -243,8 +243,8 @@
       "typeVersion": 1,
       "name": "Bluesky",
       "position": {
-        "x": 2128,
-        "y": 200
+        "x": 3040,
+        "y": -300
       },
       "group": "g_post",
       "settings": {
@@ -261,8 +261,8 @@
       "typeVersion": 1,
       "name": "Discord",
       "position": {
-        "x": 2128,
-        "y": 400
+        "x": 3040,
+        "y": -100
       },
       "group": "g_post",
       "settings": {
@@ -279,8 +279,8 @@
       "typeVersion": 1,
       "name": "Instagram Reels (dry-run)",
       "position": {
-        "x": 2128,
-        "y": 600
+        "x": 3040,
+        "y": 100
       },
       "group": "g_post",
       "settings": {
@@ -297,8 +297,8 @@
       "typeVersion": 1,
       "name": "TikTok (dry-run)",
       "position": {
-        "x": 2128,
-        "y": 800
+        "x": 3040,
+        "y": 300
       },
       "group": "g_post",
       "settings": {
@@ -315,8 +315,8 @@
       "typeVersion": 1,
       "name": "LinkedIn (dry-run)",
       "position": {
-        "x": 2128,
-        "y": 1000
+        "x": 3040,
+        "y": 500
       },
       "group": "g_post",
       "settings": {
@@ -333,8 +333,8 @@
       "typeVersion": 1,
       "name": "Log in Google Sheets",
       "position": {
-        "x": 2128,
-        "y": 1200
+        "x": 3040,
+        "y": 700
       },
       "group": "g_post",
       "settings": {

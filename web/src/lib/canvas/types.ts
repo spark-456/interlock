@@ -28,7 +28,11 @@ export interface CardView {
   showOut: boolean;
   /** App logo slot key for app nodes. */
   app?: string | null;
+  /** How an Ask Interlock proposal touches this node. */
+  diff?: Diff;
 }
+
+export type Diff = 'added' | 'changed' | 'removed';
 
 export type EdgeState = 'ready' | 'queued' | 'active' | 'failed';
 
@@ -39,6 +43,9 @@ export interface EdgeView {
   state: EdgeState;
   /** Vertical link (bottom → top), e.g. the test suite under an agent. */
   vertical?: boolean;
+  /** Items that passed along this edge in the current run. */
+  count?: number;
+  diff?: Diff;
 }
 
 export interface GroupView {

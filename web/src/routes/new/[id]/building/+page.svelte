@@ -61,7 +61,7 @@
   const cards = $derived(cardViews(build, catalog));
   const edges = $derived(edgeViews(build));
   const labels = $derived(labelViews(build, cards));
-  const groups = $derived(groupViews(build, cards));
+  const groups = $derived(groupViews(build.flow.groups, cards));
   const stepIndex = $derived(currentStageIndex(build));
   const stage = $derived(STAGES[stepIndex]!);
   const pct = $derived(progress(build));

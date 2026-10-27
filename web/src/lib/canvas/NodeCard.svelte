@@ -9,7 +9,8 @@
   import { NODE_WIDTH, nodeHeight } from './geometry';
   import { pillLabel, type CardView } from './types';
 
-  let { data, selected = false, dragging = false }: NodeProps<Node<{ card: CardView }, 'card'>> = $props();
+  let { data, selected = false, dragging = false, isConnectable = false }: NodeProps<Node<{ card: CardView }, 'card'>> =
+    $props();
   const card = $derived(data.card);
   const vars = $derived(toneVars(card.tone));
   const tone = $derived<PillTone>(card.status);
@@ -24,6 +25,7 @@
   style:height="{nodeHeight(card.stats.length)}px"
   aria-label="{card.subtitle}: {card.title}, {pillLabel(card)}"
   data-testid="node-{card.id}"
+  data-diff={card.diff}
 >
   {#if card.status === 'building'}
     <div class="bar" aria-hidden="true"><div style:width="{Math.round((card.progress ?? 0.7) * 100)}%"></div></div>
@@ -49,8 +51,8 @@
     </div>
   {/if}
   <div class="foot"><StatusPill {tone} label={pillLabel(card)} /></div>
-  <Handle type="target" position={Position.Left} class="il-handle {card.showIn ? '' : 'hidden'}" isConnectable={false} />
-  <Handle type="source" position={Position.Right} class="il-handle {card.showOut ? '' : 'hidden'}" isConnectable={false} />
+  <Handle type="target" position={Position.Left} class="il-handle {card.showIn ? '' : 'hidden'}" isConnectable={isConnectable && card.showIn} />
+  <Handle type="source" position={Position.Right} class="il-handle {card.showOut ? '' : 'hidden'}" isConnectable={isConnectable && card.showOut} />
   <Handle type="source" id="bottom" position={Position.Bottom} class="il-handle hidden" isConnectable={false} />
   <Handle type="target" id="top" position={Position.Top} class="il-handle hidden" isConnectable={false} />
 </div>
@@ -67,6 +69,9 @@
   .card.dragging { box-shadow: var(--shadow-pop-drag); transform: translateY(-6px) rotate(-0.6deg); cursor: grabbing; }
   .card.waiting { opacity: .6; border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
   .card.failed { border-color: var(--error); box-shadow: 0 0 0 1px var(--error), var(--shadow-pop); }
+  .card[data-diff='added'] { border-color: var(--success); box-shadow: 0 0 0 2px var(--success), var(--shadow-pop); }
+  .card[data-diff='changed'] { border-color: var(--warning); box-shadow: 0 0 0 2px var(--warning), var(--shadow-pop); }
+  .card[data-diff='removed'] { opacity: .55; border-style: dashed; }
   @keyframes enter { from { opacity: 0; transform: translateY(8px); } }
 
   .bar { position: absolute; left: 12px; right: 12px; top: -1px; height: 3px; border-radius: 0 0 3px 3px; background: var(--primary-track); overflow: hidden; }
