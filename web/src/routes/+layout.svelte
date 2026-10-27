@@ -21,6 +21,10 @@
   const plan = $derived(me?.demo ? 'Demo workspace' : 'Free plan');
 </script>
 
+{#if page.route.id === '/'}
+  <!-- The landing page brings its own header and footer. -->
+  {@render children()}
+{:else}
 <div class="app">
   <Sidebar collapsed={isCanvasRoute(page.route.id)} path={page.url.pathname} {user} {plan} />
   <div class="content">
@@ -29,6 +33,7 @@
     <TabBar path={page.url.pathname} />
   </div>
 </div>
+{/if}
 <Toast />
 
 <style>
