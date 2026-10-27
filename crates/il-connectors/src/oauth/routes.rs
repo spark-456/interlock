@@ -158,7 +158,7 @@ mod tests {
 
     use axum::body::Body;
     use axum::http::Request;
-    use il_sdk::services::Store;
+    use il_sdk::services::{NoFlowTools, Store};
     use il_sdk::testkit::{FakeArchitect, FakeRunner, FakeServices};
     use tower::ServiceExt;
 
@@ -172,6 +172,7 @@ mod tests {
             services: fakes.services(),
             runner: Arc::new(FakeRunner::default()),
             architect: Arc::new(FakeArchitect),
+            flow_tools: Arc::new(NoFlowTools),
             config: json!({}),
         };
         let router = routes(&ctx);
