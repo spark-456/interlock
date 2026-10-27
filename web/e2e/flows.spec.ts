@@ -21,7 +21,8 @@ test('lists flows with filters and search', async ({ page }) => {
 
 test('uses a template and opens it in the editor', async ({ page }) => {
   await page.goto('/templates');
-  await expect(page.getByRole('heading', { name: 'Weekly product promos' })).toBeVisible();
-  await page.getByRole('button', { name: 'Use template' }).click();
+  await expect(page.getByRole('article')).toHaveCount(10);
+  const promos = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Weekly product promos' }) });
+  await promos.getByRole('button', { name: 'Use template' }).click();
   await expect(page).toHaveURL(/\/flows\/flw_promos$/);
 });

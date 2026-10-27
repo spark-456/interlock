@@ -193,8 +193,45 @@ async fn approvals_builds_and_stubs_use_the_error_shape() {
     assert!(created["buildId"].as_str().unwrap().starts_with("bld_"));
 
     let (s, err, _) = call(&app, "POST", "/api/templates/tpl_x/use", None, None).await;
-    assert_eq!(s, StatusCode::NOT_IMPLEMENTED);
-    assert_eq!(err["error"]["code"], "not_implemented");
+    assert_eq!(s, StatusCode::NOT_FOUND);
+    assert_eq!(err["error"]["code"], "not_found");
+}
+
+#[tokio::test]
+async fn templates_are_listed_and_copied_into_the_workspace() {
+    let root = tempfile::tempdir().unwrap();
+    let (templates, recorded) = (root.path().join("templates"), root.path().join("recorded"));
+    std::fs::create_dir_all(&templates).unwrap();
+    std::fs::create_dir_all(&recorded).unwrap();
+    let mut flow = manual_flow();
+    flow["id"] = json!("flw_hello");
+    flow["workspaceId"] = json!("template");
+    flow["version"] = json!(1);
+    flow["kind"] = json!("automation");
+    flow["meta"] = json!({ "goal": "Say hello every morning." });
+    std::fs::write(templates.join("tpl_hello.json"), flow.to_string()).unwrap();
+    std::fs::write(templates.join("notes.txt"), "not a template").unwrap();
+    std::fs::write(recorded.join("tpl_hello.json"), "[]").unwrap();
+    let config = Config::from_value(json!({"server":{"templates_dir":templates.to_str().unwrap()}})).unwrap();
+    let app = app(build_state(config));
+
+    let (s, list, _) = call(&app, "GET", "/api/templates", None, None).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(list.as_array().unwrap().len(), 1);
+    assert_eq!(list[0]["id"], "tpl_hello");
+    assert_eq!(list[0]["description"], "Say hello every morning.");
+    assert_eq!(list[0]["hasRecordedRun"], true);
+
+    let (s, copy, _) = call(&app, "POST", "/api/templates/tpl_hello/use", None, None).await;
+    assert_eq!(s, StatusCode::OK);
+    assert!(copy["id"].as_str().unwrap().starts_with("flw_"));
+    assert_ne!(copy["id"], flow["id"]);
+    let (_, flows, _) = call(&app, "GET", "/api/flows", None, None).await;
+    assert!(flows.as_array().unwrap().iter().any(|f| f["id"] == copy["id"]));
+    for missing in ["tpl_nope", "..%2Ftpl_hello", "notes"] {
+        let (s, _, _) = call(&app, "POST", &format!("/api/templates/{missing}/use"), None, None).await;
+        assert_eq!(s, StatusCode::NOT_FOUND, "{missing}");
+    }
 }
 
 #[tokio::test]

@@ -1,0 +1,146 @@
+{
+  "id": "flw_contracts",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Contract clause checker",
+  "kind": "app",
+  "nodes": [
+    {
+      "id": "n_chat",
+      "type": "trigger.chat",
+      "typeVersion": 1,
+      "name": "Ask about a contract",
+      "position": {
+        "x": 0.0,
+        "y": 300.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "suggestedQuestions": [
+          "Which contracts have auto-renewal?",
+          "Is our liability cap standard in the Northwind MSA?",
+          "Which NDAs last longer than two years?"
+        ],
+        "welcomeMessage": "Ask me about any contract, or paste a clause to check."
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_kb",
+      "type": "knowledge.base",
+      "typeVersion": 1,
+      "name": "Contract library",
+      "position": {
+        "x": 0.0,
+        "y": 100.0
+      },
+      "group": "g_know",
+      "settings": {
+        "name": "Contract library",
+        "sources": [
+          {
+            "kind": "text",
+            "value": "Standard terms: liability capped at 12 months of fees; 30-day termination for convenience; no auto-renewal."
+          }
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_agent",
+      "type": "ai.agent",
+      "typeVersion": 1,
+      "name": "Clause checker",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "input": "{{ item.message }}",
+        "instructions": "You review contracts. Answer only from the contract library. When a clause differs from our standard terms, say how it differs and quote the clause with its document and page.",
+        "knowledgeBases": [
+          "Contract library"
+        ]
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_respond",
+      "type": "output.respond",
+      "typeVersion": 1,
+      "name": "Reply",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_answer",
+      "settings": {
+        "body": "{{ item.answer }}",
+        "includeSources": true
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_chat_agent",
+      "from": {
+        "node": "n_chat",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_agent",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_kb_agent",
+      "from": {
+        "node": "n_kb",
+        "port": "kb"
+      },
+      "to": {
+        "node": "n_agent",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_agent_respond",
+      "from": {
+        "node": "n_agent",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_respond",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_know",
+      "label": "Contract library"
+    },
+    {
+      "id": "g_answer",
+      "label": "Answer"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "Answer questions about our contract library and flag clauses that differ from our standard terms, quoting the page each one came from."
+  }
+}

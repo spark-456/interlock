@@ -1,0 +1,579 @@
+{
+  "id": "flw_promos",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Weekly product promos",
+  "kind": "automation",
+  "nodes": [
+    {
+      "id": "n_schedule",
+      "type": "trigger.schedule",
+      "typeVersion": 1,
+      "name": "Every Monday 9:00",
+      "position": {
+        "x": 0.0,
+        "y": 200.0
+      },
+      "group": "g_find",
+      "settings": {
+        "cron": "0 9 * * MON",
+        "timezone": "Asia/Kolkata"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_products",
+      "type": "app.shopify.get_products",
+      "typeVersion": 1,
+      "name": "Three newest products",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_find",
+      "settings": {
+        "limit": 3,
+        "sort": "newest",
+        "store": "sandbox"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_loop",
+      "type": "logic.loop",
+      "typeVersion": 1,
+      "name": "Each product",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_find",
+      "settings": {
+        "field": "{{ item.products }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_script",
+      "type": "ai.write",
+      "typeVersion": 1,
+      "name": "Write video script",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_make",
+      "settings": {
+        "input": "{{ item.title }}: {{ item.description }} (${{ item.price }})",
+        "instructions": "Write a 20-second upbeat promo script for this product. End with the price.",
+        "length": "short",
+        "tone": "upbeat"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_video",
+      "type": "ai.generate_video",
+      "typeVersion": 1,
+      "name": "Generate promo video",
+      "position": {
+        "x": 1216.0,
+        "y": 100.0
+      },
+      "group": "g_make",
+      "settings": {
+        "aspect": "16:9",
+        "durationSec": 20,
+        "prompt": "{{ item.text }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_voice",
+      "type": "ai.generate_voice",
+      "typeVersion": 1,
+      "name": "Generate voiceover",
+      "position": {
+        "x": 1216.0,
+        "y": 300.0
+      },
+      "group": "g_make",
+      "settings": {
+        "text": "{{ nodes.n_script.json.text }}",
+        "voice": "warm"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_merge",
+      "type": "media.merge_av",
+      "typeVersion": 1,
+      "name": "Add voiceover",
+      "position": {
+        "x": 1520.0,
+        "y": 200.0
+      },
+      "group": "g_make",
+      "settings": {
+        "audio": "{{ item.files.audio }}",
+        "video": "{{ item.files.video }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_resize",
+      "type": "media.resize",
+      "typeVersion": 1,
+      "name": "Cut for each platform",
+      "position": {
+        "x": 1824.0,
+        "y": 200.0
+      },
+      "group": "g_cut",
+      "settings": {
+        "aspects": [
+          "9:16",
+          "1:1",
+          "16:9"
+        ],
+        "video": "{{ item.files.video }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_captions",
+      "type": "media.captions",
+      "typeVersion": 1,
+      "name": "Add captions",
+      "position": {
+        "x": 2128.0,
+        "y": 200.0
+      },
+      "group": "g_cut",
+      "settings": {
+        "text": "{{ nodes.n_script.json.text }}",
+        "video": "{{ item.files.video }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_posts",
+      "type": "ai.write",
+      "typeVersion": 1,
+      "name": "Write post text",
+      "position": {
+        "x": 2432.0,
+        "y": 200.0
+      },
+      "group": "g_post",
+      "settings": {
+        "input": "{{ item.title }}",
+        "instructions": "Write a short post for Reels, TikTok, Shorts and LinkedIn. Friendly, no hashtags spam, max two hashtags.",
+        "length": "short",
+        "outputField": "post",
+        "tone": "friendly"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_approve",
+      "type": "human.approval",
+      "typeVersion": 1,
+      "name": "Approve in Slack",
+      "position": {
+        "x": 2736.0,
+        "y": 200.0
+      },
+      "group": "g_post",
+      "settings": {
+        "channels": [
+          "inapp",
+          "slack"
+        ],
+        "payload": "{{ item }}",
+        "slackChannel": "#marketing",
+        "title": "Approve this week's promo posts"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_youtube",
+      "type": "app.youtube.upload",
+      "typeVersion": 1,
+      "name": "YouTube Shorts (private)",
+      "position": {
+        "x": 3040.0,
+        "y": -400.0
+      },
+      "group": "g_post",
+      "settings": {
+        "privacy": "private",
+        "title": "{{ item.title }}",
+        "video": "{{ item.files.clip_9x16 }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_bluesky",
+      "type": "app.bluesky.post",
+      "typeVersion": 1,
+      "name": "Bluesky",
+      "position": {
+        "x": 3040.0,
+        "y": -200.0
+      },
+      "group": "g_post",
+      "settings": {
+        "media": "{{ item.files.clip_1x1 }}",
+        "text": "{{ item.post }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_discord",
+      "type": "app.discord.send",
+      "typeVersion": 1,
+      "name": "Discord",
+      "position": {
+        "x": 3040.0,
+        "y": 0.0
+      },
+      "group": "g_post",
+      "settings": {
+        "attachments": "{{ item.files.clip_16x9 }}",
+        "content": "{{ item.post }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_instagram",
+      "type": "app.instagram.post_reel",
+      "typeVersion": 1,
+      "name": "Instagram Reels (dry-run)",
+      "position": {
+        "x": 3040.0,
+        "y": 200.0
+      },
+      "group": "g_post",
+      "settings": {
+        "caption": "{{ item.post }}",
+        "video": "{{ item.files.clip_9x16 }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_tiktok",
+      "type": "app.tiktok.post",
+      "typeVersion": 1,
+      "name": "TikTok (dry-run)",
+      "position": {
+        "x": 3040.0,
+        "y": 400.0
+      },
+      "group": "g_post",
+      "settings": {
+        "caption": "{{ item.post }}",
+        "video": "{{ item.files.clip_9x16 }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_linkedin",
+      "type": "app.linkedin.post",
+      "typeVersion": 1,
+      "name": "LinkedIn (dry-run)",
+      "position": {
+        "x": 3040.0,
+        "y": 600.0
+      },
+      "group": "g_post",
+      "settings": {
+        "media": "{{ item.files.clip_16x9 }}",
+        "text": "{{ item.post }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_log",
+      "type": "app.sheets.append_row",
+      "typeVersion": 1,
+      "name": "Log in Google Sheets",
+      "position": {
+        "x": 3040.0,
+        "y": 800.0
+      },
+      "group": "g_post",
+      "settings": {
+        "sheet": "Log",
+        "spreadsheetId": "1LarkspurPromoLog",
+        "values": {
+          "Product": "{{ item.title }}",
+          "Status": "posted"
+        }
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_schedule_products",
+      "from": {
+        "node": "n_schedule",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_products",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_products_loop",
+      "from": {
+        "node": "n_products",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_loop",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_loop_script",
+      "from": {
+        "node": "n_loop",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_script",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_script_video",
+      "from": {
+        "node": "n_script",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_video",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_script_voice",
+      "from": {
+        "node": "n_script",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_voice",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_video_merge",
+      "from": {
+        "node": "n_video",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_merge",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_voice_merge",
+      "from": {
+        "node": "n_voice",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_merge",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_merge_resize",
+      "from": {
+        "node": "n_merge",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_resize",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_resize_captions",
+      "from": {
+        "node": "n_resize",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_captions",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_captions_posts",
+      "from": {
+        "node": "n_captions",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_posts",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_posts_approve",
+      "from": {
+        "node": "n_posts",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_approve",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_youtube",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_youtube",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_bluesky",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_bluesky",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_discord",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_discord",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_instagram",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_instagram",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_tiktok",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_tiktok",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_linkedin",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_linkedin",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_log",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_log",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_find",
+      "label": "Find new products"
+    },
+    {
+      "id": "g_make",
+      "label": "Make the videos"
+    },
+    {
+      "id": "g_cut",
+      "label": "Cut and caption"
+    },
+    {
+      "id": "g_post",
+      "label": "Approve and post"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "Every Monday, take our three newest Shopify products, make a short promo video for each with a voiceover, cut it for Reels, TikTok, Shorts and LinkedIn with captions, write the post text, and post once I approve in Slack."
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "id": "flw_digest",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Weekly blog digest",
+  "kind": "automation",
+  "nodes": [
+    {
+      "id": "n_schedule",
+      "type": "trigger.schedule",
+      "typeVersion": 1,
+      "name": "Fridays at 4 pm",
+      "position": {
+        "x": 0.0,
+        "y": 200.0
+      },
+      "group": "g_in",
+      "settings": {
+        "cron": "0 16 * * FRI"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_posts",
+      "type": "data.http",
+      "typeVersion": 1,
+      "name": "This week's posts",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_in",
+      "settings": {
+        "method": "GET",
+        "url": "https://blog.larkspur.example/feed.json"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_summary",
+      "type": "ai.summarise",
+      "typeVersion": 1,
+      "name": "Summarise the week",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_write",
+      "settings": {
+        "format": "bullets",
+        "input": "{{ item.items }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_email",
+      "type": "app.gmail.send",
+      "typeVersion": 1,
+      "name": "Email the team",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_send",
+      "settings": {
+        "body": "{{ item.summary }}",
+        "subject": "This week on the blog",
+        "to": "team@larkspur.example"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_schedule_posts",
+      "from": {
+        "node": "n_schedule",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_posts",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_posts_summary",
+      "from": {
+        "node": "n_posts",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_summary",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_summary_email",
+      "from": {
+        "node": "n_summary",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_email",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_in",
+      "label": "This week"
+    },
+    {
+      "id": "g_write",
+      "label": "Write"
+    },
+    {
+      "id": "g_send",
+      "label": "Send"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "Every Friday, summarise the week's posts from our product blog and email the digest to the team."
+  }
+}

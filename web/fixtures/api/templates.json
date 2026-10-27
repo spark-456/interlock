@@ -1,14 +1,107 @@
 [
   {
-    "id": "tpl_promos",
-    "name": "Weekly product promos",
-    "description": "Promo videos for new products, cut for every platform, posted after approval.",
+    "id": "tpl_contracts",
+    "name": "Contract clause checker",
+    "description": "Answer questions about our contract library and flag clauses that differ from our standard terms, quoting the page each one came from.",
+    "kind": "app",
+    "apps": [],
+    "hasRecordedRun": false
+  },
+  {
+    "id": "tpl_digest",
+    "name": "Weekly blog digest",
+    "description": "Every Friday, summarise the week's posts from our product blog and email the digest to the team.",
     "kind": "automation",
     "apps": [
+      "gmail"
+    ],
+    "hasRecordedRun": false
+  },
+  {
+    "id": "tpl_invoices",
+    "name": "Invoices to a sheet",
+    "description": "When an invoice arrives by email, read the PDF, pull out the supplier, number, date and total, and add a row to our invoices sheet.",
+    "kind": "automation",
+    "apps": [
+      "gmail",
+      "sheets"
+    ],
+    "hasRecordedRun": false
+  },
+  {
+    "id": "tpl_meeting_notes",
+    "name": "Meeting notes to Slack",
+    "description": "When a meeting recording is uploaded, transcribe it, write a summary with decisions and action items, and post it to Slack.",
+    "kind": "automation",
+    "apps": [
+      "slack"
+    ],
+    "hasRecordedRun": false
+  },
+  {
+    "id": "tpl_mentions",
+    "name": "Mentions triage",
+    "description": "Every hour, check new Bluesky mentions, sort them into praise, questions and complaints, and send complaints to our Discord support channel.",
+    "kind": "automation",
+    "apps": [
+      "discord"
+    ],
+    "hasRecordedRun": false
+  },
+  {
+    "id": "tpl_promos",
+    "name": "Weekly product promos",
+    "description": "Every Monday, take our three newest Shopify products, make a short promo video for each with a voiceover, cut it for Reels, TikTok, Shorts and LinkedIn with captions, write the post text, and post once I approve in Slack.",
+    "kind": "automation",
+    "apps": [
+      "bluesky",
+      "discord",
+      "instagram",
+      "linkedin",
+      "sheets",
       "shopify",
-      "slack",
+      "tiktok",
       "youtube"
     ],
     "hasRecordedRun": true
+  },
+  {
+    "id": "tpl_support_agent",
+    "name": "Larkspur support agent",
+    "description": "A support chat agent that answers from these documents and can look up invoices through our API.",
+    "kind": "app",
+    "apps": [],
+    "hasRecordedRun": true
+  },
+  {
+    "id": "tpl_support_inbox",
+    "name": "Support inbox replies",
+    "description": "Reply to emails sent to support@ using our help center and policies. Send simple answers automatically; ask me in Slack before sending anything about refunds or complaints. Log everything in a sheet.",
+    "kind": "automation",
+    "apps": [
+      "gmail",
+      "sheets",
+      "slack"
+    ],
+    "hasRecordedRun": false
+  },
+  {
+    "id": "tpl_translate",
+    "name": "Product launch in three languages",
+    "description": "When we publish a new product in Shopify, translate its description into Spanish and German and ask me before posting it to Telegram.",
+    "kind": "automation",
+    "apps": [
+      "shopify",
+      "telegram"
+    ],
+    "hasRecordedRun": false
+  },
+  {
+    "id": "tpl_travel",
+    "name": "Travel policy assistant",
+    "description": "A travel policy assistant that answers from our policy and hands anything above the limits to a person.",
+    "kind": "app",
+    "apps": [],
+    "hasRecordedRun": false
   }
 ]

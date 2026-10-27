@@ -1,0 +1,165 @@
+{
+  "id": "flw_translate",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Product launch in three languages",
+  "kind": "automation",
+  "nodes": [
+    {
+      "id": "n_product",
+      "type": "app.shopify.new_product",
+      "typeVersion": 1,
+      "name": "New product",
+      "position": {
+        "x": 0.0,
+        "y": 200.0
+      },
+      "group": "g_in",
+      "settings": {
+        "store": "sandbox"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_es",
+      "type": "ai.translate",
+      "typeVersion": 1,
+      "name": "Spanish",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_tr",
+      "settings": {
+        "input": "{{ item.description }}",
+        "targetLanguage": "Spanish"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_de",
+      "type": "ai.translate",
+      "typeVersion": 1,
+      "name": "German",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_tr",
+      "settings": {
+        "input": "{{ nodes.n_product.json.description }}",
+        "targetLanguage": "German"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_approve",
+      "type": "human.approval",
+      "typeVersion": 1,
+      "name": "Check the translations",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_post",
+      "settings": {
+        "title": "Post the launch in three languages?"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_telegram",
+      "type": "app.telegram.send",
+      "typeVersion": 1,
+      "name": "Post to Telegram",
+      "position": {
+        "x": 1216.0,
+        "y": 200.0
+      },
+      "group": "g_post",
+      "settings": {
+        "chatId": "@larkspur",
+        "text": "{{ nodes.n_product.json.title }}\n\nES: {{ nodes.n_es.json.translation }}\n\nDE: {{ item.translation }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_product_es",
+      "from": {
+        "node": "n_product",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_es",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_es_de",
+      "from": {
+        "node": "n_es",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_de",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_de_approve",
+      "from": {
+        "node": "n_de",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_approve",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_approve_telegram",
+      "from": {
+        "node": "n_approve",
+        "port": "approved"
+      },
+      "to": {
+        "node": "n_telegram",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_in",
+      "label": "New product"
+    },
+    {
+      "id": "g_tr",
+      "label": "Translate"
+    },
+    {
+      "id": "g_post",
+      "label": "Approve and post"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "When we publish a new product in Shopify, translate its description into Spanish and German and ask me before posting it to Telegram."
+  }
+}

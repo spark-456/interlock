@@ -1,0 +1,156 @@
+{
+  "id": "flw_invoices",
+  "workspaceId": "",
+  "version": 1,
+  "name": "Invoices to a sheet",
+  "kind": "automation",
+  "nodes": [
+    {
+      "id": "n_inbox",
+      "type": "app.gmail.new_email",
+      "typeVersion": 1,
+      "name": "Invoice emails",
+      "position": {
+        "x": 0.0,
+        "y": 200.0
+      },
+      "group": "g_in",
+      "settings": {
+        "query": "has:attachment subject:invoice"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_parse",
+      "type": "data.parse_document",
+      "typeVersion": 1,
+      "name": "Read the PDF",
+      "position": {
+        "x": 304.0,
+        "y": 200.0
+      },
+      "group": "g_read",
+      "settings": {
+        "file": "{{ item.files.attachment }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_extract",
+      "type": "ai.extract",
+      "typeVersion": 1,
+      "name": "Pull out the details",
+      "position": {
+        "x": 608.0,
+        "y": 200.0
+      },
+      "group": "g_read",
+      "settings": {
+        "fields": [
+          {
+            "name": "supplier"
+          },
+          {
+            "name": "invoiceNumber"
+          },
+          {
+            "name": "date",
+            "type": "date"
+          },
+          {
+            "name": "total",
+            "type": "number"
+          }
+        ],
+        "input": "{{ item.text }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
+      "id": "n_sheet",
+      "type": "app.sheets.append_row",
+      "typeVersion": 1,
+      "name": "Add to the invoices sheet",
+      "position": {
+        "x": 912.0,
+        "y": 200.0
+      },
+      "group": "g_log",
+      "settings": {
+        "spreadsheetId": "1InvoicesLog",
+        "values": {
+          "Date": "{{ item.date }}",
+          "Number": "{{ item.invoiceNumber }}",
+          "Supplier": "{{ item.supplier }}",
+          "Total": "{{ item.total }}"
+        }
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_inbox_parse",
+      "from": {
+        "node": "n_inbox",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_parse",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_parse_extract",
+      "from": {
+        "node": "n_parse",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_extract",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_extract_sheet",
+      "from": {
+        "node": "n_extract",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_sheet",
+        "port": "in"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_in",
+      "label": "New invoice"
+    },
+    {
+      "id": "g_read",
+      "label": "Read it"
+    },
+    {
+      "id": "g_log",
+      "label": "Log it"
+    }
+  ],
+  "settings": {
+    "timezone": "UTC",
+    "spendCapUsdPerRun": null
+  },
+  "meta": {
+    "createdBy": "template",
+    "goal": "When an invoice arrives by email, read the PDF, pull out the supplier, number, date and total, and add a row to our invoices sheet."
+  }
+}
