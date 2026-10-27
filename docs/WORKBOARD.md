@@ -67,6 +67,7 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 | Issue | Kind | Tasks | Detail | Status |
 |---|---|---|---|---|
 | Generated node catalog fixture | handoff to claude-a | B06, B07, B08, N01, K01, K02, C01, C02, M01 and later node tasks | Owner chose claude-a to update `web/fixtures/api/nodes.json`; codex-1 leaves `web/` untouched. Claude: check out each pushed backend task branch, run `cargo xtask catalog`, commit only the generated web fixture on that branch, and note the SHA in its task row. Codex-1 will then run full check and open its PR. | open |
+| Publish widget | handoff to claude-a | P01 | P01 requires a tiny vanilla TS widget under `web/widget/` with streamed answers and sources. codex-1 owns the backend P01 branch but cannot edit `web/`; add the widget on `t/P01-publish` and note the SHA in its task row. | open |
 | GitHub Actions blocked on private repos | blocker | all | Account billing stops hosted runners. The repo is public so CI runs; making it private again stops CI | workaround |
 | Model IDs not verified | issue | B02 | Config model IDs are guesses until checked against Token Factory | open |
 | Architect must emit `build.node` and `build.cost` | issue | A01, A02 | The Building screen needs them for node stats and the running cost | open |
