@@ -21,6 +21,7 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use crate::keys::KeyManager;
+use crate::openai::slug;
 
 mod flow;
 mod platform;
@@ -88,11 +89,11 @@ impl ServerHandler for McpServer {
     }
 }
 
-/// Registers platform MCP on `/mcp` and per-flow MCP on `/mcp/flows/:id`.
+/// Registers platform MCP on `/mcp` and per-flow MCP on `/mcp/:slug`.
 pub fn routes(ctx: &RouteCtx) -> Router {
     Router::new()
         .route("/mcp", any(platform_request))
-        .route("/mcp/flows/{flow_id}", any(flow_request))
+        .route("/mcp/{flow_slug}", any(flow_request))
         .with_state(ctx.clone())
 }
 
@@ -108,7 +109,7 @@ async fn platform_request(State(ctx): State<RouteCtx>, headers: HeaderMap, reque
 
 async fn flow_request(
     State(ctx): State<RouteCtx>,
-    Path(flow_id): Path<String>,
+    Path(flow_slug): Path<String>,
     headers: HeaderMap,
     request: Request,
 ) -> Response {
@@ -116,11 +117,15 @@ async fn flow_request(
         Ok(id) => id,
         Err(status) => return status.into_response(),
     };
-    let flow = match ctx.services.store.get_flow(&flow_id).await {
-        Ok(Some(flow)) if flow.workspace_id == workspace_id && flow.kind == FlowKind::App => flow,
-        Ok(_) => return StatusCode::NOT_FOUND.into_response(),
+    let flows = match ctx.services.store.list_flows(&workspace_id).await {
+        Ok(flows) => flows,
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
+    let mut matches = flows.into_iter().filter(|flow| flow.kind == FlowKind::App && slug(flow) == flow_slug);
+    let Some(flow) = matches.next() else { return StatusCode::NOT_FOUND.into_response() };
+    if matches.next().is_some() {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     if !ctx.services.store.is_flow_active(&flow.id).await.unwrap_or(false) {
         return StatusCode::NOT_FOUND.into_response();
     }
@@ -271,7 +276,7 @@ mod tests {
         let flow_tools = router
             .clone()
             .oneshot(
-                Request::post("/mcp/flows/flow_1")
+                Request::post("/mcp/demo")
                     .header("host", "localhost")
                     .header("content-type", "application/json")
                     .header("accept", "application/json, text/event-stream")
@@ -289,7 +294,7 @@ mod tests {
         let invoice = router
             .clone()
             .oneshot(
-                Request::post("/mcp/flows/flow_1")
+                Request::post("/mcp/demo")
                     .header("host", "localhost")
                     .header("content-type", "application/json")
                     .header("accept", "application/json, text/event-stream")
@@ -309,7 +314,7 @@ mod tests {
         let asked = router
             .clone()
             .oneshot(
-                Request::post("/mcp/flows/flow_1")
+                Request::post("/mcp/demo")
                     .header("host", "localhost")
                     .header("content-type", "application/json")
                     .header("accept", "application/json, text/event-stream")
@@ -329,7 +334,7 @@ mod tests {
         let (_, other_key) = KeyManager::new(fakes.store).create("ws_b", "other").await.unwrap();
         let denied = router
             .oneshot(
-                Request::post("/mcp/flows/flow_1")
+                Request::post("/mcp/demo")
                     .header("authorization", format!("Bearer {other_key}"))
                     .body(Body::empty())
                     .unwrap(),

@@ -1,19 +1,11 @@
 //! `INTERLOCK.md` integration guide generator.
 
+use crate::openai::slug;
 use il_core::Flow;
 
 /// Generates a copyable integration guide for a published AI app.
 pub fn generate(flow: &Flow, base_url: &str) -> String {
-    let slug = flow
-        .name
-        .to_ascii_lowercase()
-        .chars()
-        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '-' })
-        .collect::<String>()
-        .split('-')
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join("-");
+    let slug = slug(flow);
     let endpoint = format!("{}/v1/chat/completions", base_url.trim_end_matches('/'));
     format!(
         r#"# {name} integration
@@ -25,6 +17,8 @@ Endpoint: `{endpoint}`
 Authentication: `Authorization: Bearer $INTERLOCK_API_KEY`
 
 The API accepts OpenAI chat completion messages and supports `stream: true` for server-sent events. List published models at `{base}/v1/models`.
+
+MCP endpoint: `{base}/mcp/{slug}` (streamable HTTP, with the same Bearer API key).
 
 ## cURL
 
@@ -77,7 +71,7 @@ mod tests {
             "name":"Support Agent","kind":"app","nodes":[],"edges":[]}))
         .unwrap();
         let guide = generate(&flow, "https://interlock.example/");
-        for name in ["## cURL", "## JavaScript", "## Python", "## Rust", "support-agent"] {
+        for name in ["## cURL", "## JavaScript", "## Python", "## Rust", "support-agent", "/mcp/support-agent"] {
             assert!(guide.contains(name));
         }
         assert!(!guide.contains("ilk_"));
