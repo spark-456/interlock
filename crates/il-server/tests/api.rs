@@ -264,8 +264,19 @@ async fn demo_session_seeds_template_flows_when_fixtures_exist() {
         "name":"Demo flow", "kind":"automation",
         "nodes":[{"id":"n_start","type":"trigger.manual","name":"Start","settings":{}}], "edges":[]
     });
-    std::fs::write(dir.path().join("demo.json"), template.to_string()).unwrap();
-    let config = Config::from_value(json!({"server":{"templates_dir":dir.path().to_str().unwrap()}})).unwrap();
+    let (templates, recorded) = (dir.path().join("templates"), dir.path().join("recorded"));
+    std::fs::create_dir_all(&templates).unwrap();
+    std::fs::create_dir_all(&recorded).unwrap();
+    std::fs::write(templates.join("demo.json"), template.to_string()).unwrap();
+    let ev = |seq: u64, node: Option<&str>, kind: &str, data: Value| json!({"seq": seq, "ts": format!("2026-10-26T09:00:0{seq}Z"), "runId": "rec", "nodeId": node, "type": kind, "data": data});
+    let recording = json!([
+        ev(1, None, "run.started", json!({"flowId": "template_1", "trigger": "trigger.manual"})),
+        ev(2, Some("n_start"), "node.started", json!({})),
+        ev(3, Some("n_start"), "node.succeeded", json!({"count": 1, "ms": 5, "costUsd": 0.0})),
+        ev(4, None, "run.succeeded", json!({"ms": 3000, "costUsd": 0.002})),
+    ]);
+    std::fs::write(recorded.join("demo.json"), recording.to_string()).unwrap();
+    let config = Config::from_value(json!({"server":{"templates_dir":templates.to_str().unwrap()}})).unwrap();
     let app = app(build_state(config));
     let (_, first, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
     let cookie = cookie.unwrap();
@@ -273,6 +284,12 @@ async fn demo_session_seeds_template_flows_when_fixtures_exist() {
     let (_, flows, _) = call(&app, "GET", "/api/flows", None, Some(cookie)).await;
     assert_eq!(flows.as_array().unwrap().len(), 1);
     assert_eq!(flows[0]["name"], "Demo flow");
+    // The recorded run comes with it, as a finished replay run of the seeded flow.
+    let path = format!("/api/flows/{}/runs", flows[0]["id"].as_str().unwrap());
+    let (_, runs, _) = call(&app, "GET", &path, None, Some(cookie)).await;
+    assert_eq!(runs.as_array().unwrap().len(), 1);
+    assert_eq!((runs[0]["status"].as_str(), runs[0]["replay"].as_bool()), (Some("succeeded"), Some(true)));
+    assert_eq!(runs[0]["costUsd"], 0.002);
     let (_, second, _) = call(&app, "POST", "/api/demo/session", None, None).await;
     assert_ne!(first["workspaceId"], second["workspaceId"]);
 }

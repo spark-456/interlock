@@ -34,7 +34,7 @@ async fn me(ws: Ws) -> Json<Me> {
 async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
     let token = format!("{}{}", il_sdk::id("ses"), il_sdk::id("")).replace('_', "");
     let session = Session { workspace_id: il_sdk::id("ws_demo"), user: None, demo: true };
-    seed_demo(&state, &session.workspace_id).await?;
+    super::templates::seed(&state, &session.workspace_id).await?;
     let value = serde_json::to_value(&session).map_err(ApiErr::internal)?;
     state.services.store.kv_put(&session_key(&token), &value).await.map_err(ApiErr::internal)?;
     let secure = if state.config.server.public_url.as_deref().is_some_and(|url| url.starts_with("https://")) {
@@ -45,15 +45,6 @@ async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
     let cookie = format!("{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800{secure}");
     let me = Me { user: None, workspace_id: session.workspace_id, demo: true };
     Ok(([(header::SET_COOKIE, cookie)], Json(me)).into_response())
-}
-
-/// Copies every checked-in template into a new demo workspace.
-async fn seed_demo(state: &AppState, workspace_id: &str) -> ApiResult<()> {
-    for (_, flow) in super::templates::load_all(&state.config.server.templates_dir).await? {
-        let flow = super::templates::instance(flow, workspace_id);
-        state.services.store.put_flow(&flow).await.map_err(ApiErr::internal)?;
-    }
-    Ok(())
 }
 
 /// Multipart upload: every file part is stored; returns their `FileRef`s.
