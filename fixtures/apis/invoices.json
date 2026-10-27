@@ -1,0 +1,1 @@
+{"openapi":"3.1.0","servers":[{"url":"https://api.example.com"}],"paths":{"/invoices/{invoiceId}":{"get":{"operationId":"getInvoice","summary":"Get invoice","parameters":[{"name":"invoiceId","in":"path","required":true,"schema":{"type":"string"}}]},"delete":{"operationId":"deleteInvoice","summary":"Delete invoice"}}}}

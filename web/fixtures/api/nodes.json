@@ -2500,7 +2500,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "Use any API",
       "trigger": false,
       "typeId": "data.openapi",
