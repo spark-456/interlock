@@ -4,6 +4,7 @@
 
 pub mod agent;
 pub mod classify;
+mod common;
 pub mod decide;
 pub mod describe_image;
 pub mod extract;

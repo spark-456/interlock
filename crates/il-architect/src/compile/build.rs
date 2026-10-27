@@ -9,14 +9,18 @@ use std::time::Duration;
 use async_trait::async_trait;
 use il_core::dto::{AskDiff, AttachmentKind, AttachmentRole, BuildAnswers, BuildRequest};
 use il_core::events::{BuildQuestion, StageStatus};
-use il_core::{BuildEvent, BuildEventKind, Flow};
+use il_core::{BuildEvent, BuildEventKind, Flow, FlowKind, Json};
 use il_sdk::Services;
 use il_sdk::services::architect::{ArchitectError, ArchitectService};
+use il_sdk::services::runner::FlowRunner;
 use serde_json::json;
 use tokio::sync::oneshot;
 
-use super::{Outcome, compile};
+use super::{Outcome, compile, revise};
+use crate::appkit::{self, Case};
+use crate::ask::{changed, diff};
 use crate::catalog::Catalog;
+use crate::testfix::{Failure, MAX_FIX_ROUNDS, fix_request, smoke};
 
 /// How long a build waits for answers to its questions.
 const ANSWER_TIMEOUT: Duration = Duration::from_secs(30 * 60);
@@ -29,15 +33,16 @@ pub struct Architect {
 
 struct Inner {
     services: Services,
+    runner: Arc<dyn FlowRunner>,
     catalog: Catalog,
     /// Builds waiting for answers, by build id.
     waiting: Mutex<HashMap<String, oneshot::Sender<BuildAnswers>>>,
 }
 
 impl Architect {
-    /// An architect that may use the node types in `catalog`.
-    pub fn new(services: Services, catalog: Catalog) -> Self {
-        Self { inner: Arc::new(Inner { services, catalog, waiting: Mutex::default() }) }
+    /// An architect that may use the node types in `catalog` and test-runs flows with `runner`.
+    pub fn new(services: Services, runner: Arc<dyn FlowRunner>, catalog: Catalog) -> Self {
+        Self { inner: Arc::new(Inner { services, runner, catalog, waiting: Mutex::default() }) }
     }
 }
 
@@ -57,8 +62,12 @@ impl ArchitectService for Architect {
             .map_err(|_| ArchitectError::Failed("the build stopped waiting for answers".into()))
     }
 
-    async fn ask(&self, _flow: &il_core::Flow, _message: &str) -> Result<AskDiff, ArchitectError> {
-        Err(ArchitectError::Failed("Ask Interlock arrives with task A02".into()))
+    async fn ask(&self, flow: &Flow, message: &str) -> Result<AskDiff, ArchitectError> {
+        let models = self.inner.services.models.as_ref();
+        let (diff, _) = crate::ask::ask(models, &self.inner.catalog, flow, message)
+            .await
+            .map_err(|e| ArchitectError::Failed(e.to_string()))?;
+        Ok(diff)
     }
 }
 
@@ -146,7 +155,7 @@ impl Inner {
         for fixed in &compiled.repairs {
             ev.log(format!("Checked the draft and fixed {fixed} problem{}.", if *fixed == 1 { "" } else { "s" })).await;
         }
-        let Outcome::Flow { mut flow, notes } = compiled.outcome else {
+        let Outcome::Flow { mut flow, notes, sample } = compiled.outcome else {
             return Err("the architect asked questions again after they were answered".into());
         };
         for note in notes {
@@ -159,7 +168,85 @@ impl Inner {
         }
         self.stream(ev, &flow).await;
         self.services.store.put_flow(&flow).await.map_err(|e| format!("could not save the flow: {e}"))?;
-        Ok(flow.id)
+        let flow_id = flow.id.clone();
+        ev.stage("test").await;
+        self.test_and_fix(ev, *flow, &sample, &brief).await;
+        Ok(flow_id)
+    }
+
+    /// Test-runs the saved flow and fixes what fails, at most [`MAX_FIX_ROUNDS`] times (AR-6, AR-9).
+    /// Problems left after the last round are logged, not fatal: the person sees them in the editor.
+    async fn test_and_fix(&self, ev: &mut Events<'_>, mut flow: Flow, sample: &Json, brief: &str) {
+        let models = self.services.models.as_ref();
+        let mut cases = Vec::new();
+        if flow.kind == FlowKind::App {
+            ev.log("Writing test questions for the app.").await;
+            match appkit::suite(models, &flow, brief).await {
+                Ok((suite, usd)) => {
+                    ev.cost(usd).await;
+                    cases = suite;
+                }
+                Err(e) => tracing::warn!(build_id = %ev.build_id, error = %e, "could not write a test suite"),
+            }
+        }
+        for round in 0..=MAX_FIX_ROUNDS {
+            let (passed, failures) = self.test(ev, &flow, sample, &cases).await;
+            let failed = u32::try_from(failures.len()).unwrap_or(u32::MAX);
+            ev.emit(None, BuildEventKind::TestResult { passed, failed }).await;
+            if failures.is_empty() {
+                ev.log("All tests passed.").await;
+                return;
+            }
+            if round == MAX_FIX_ROUNDS {
+                ev.log(format!(
+                    "{failed} test problem(s) remain after {MAX_FIX_ROUNDS} fixes; check them in the editor."
+                ))
+                .await;
+                return;
+            }
+            ev.log(format!("Fixing {failed} problem(s) the tests found.")).await;
+            let revised = match revise(models, &self.catalog, &flow, &fix_request(&failures)).await {
+                Ok(revised) => revised,
+                Err(e) => {
+                    ev.log(format!("Could not fix the failing tests: {e}")).await;
+                    return;
+                }
+            };
+            ev.cost(revised.cost_usd).await;
+            let next = revised.flow;
+            if let Err(e) = self.services.store.put_flow(&next).await {
+                ev.log(format!("Could not save the fixed flow: {e}")).await;
+                return;
+            }
+            let patch = diff(&flow, &next).json_patch;
+            ev.emit(None, BuildEventKind::FlowPatch { json_patch: patch }).await;
+            let source = if cases.is_empty() { "Test run" } else { "Test suite" };
+            for node in next.nodes.iter().filter(|n| flow.node(&n.id).is_none_or(|old| changed(old, n))) {
+                let problem = failures.iter().find(|f| f.node_id.as_deref() == Some(&node.id)).or(failures.first());
+                let fix = BuildEventKind::Fix {
+                    description: problem.map_or_else(String::new, |f| f.problem.clone()),
+                    title: Some(format!("Fixed {}", node.name)),
+                    before: None,
+                    after: None,
+                    source: Some(source.into()),
+                };
+                ev.emit(Some(&node.id), fix).await;
+            }
+            flow = next;
+        }
+    }
+
+    /// One test round: the app's suite and safety check, or one sample run for an automation.
+    async fn test(&self, ev: &mut Events<'_>, flow: &Flow, sample: &Json, cases: &[Case]) -> (u32, Vec<Failure>) {
+        if flow.kind == FlowKind::App && !cases.is_empty() {
+            let models = self.services.models.as_ref();
+            let (passed, mut failures, usd) = appkit::run(models, self.runner.as_ref(), &flow.id, cases).await;
+            ev.cost(usd).await;
+            failures.extend(appkit::missing_guardrails(flow, &self.catalog));
+            return (passed, failures);
+        }
+        let failures = smoke(self.runner.as_ref(), self.services.store.as_ref(), &flow.id, sample).await;
+        (u32::from(failures.is_empty()), failures)
     }
 
     /// The goal plus attachments and hints; voice memos marked Instructions are transcribed.

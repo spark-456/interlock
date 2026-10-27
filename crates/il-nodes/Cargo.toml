@@ -19,9 +19,11 @@ chrono-tz.workspace = true
 cron.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+base64 = "0.22"
 
 [dev-dependencies]
 tokio-util.workspace = true
 tower.workspace = true
 il-sdk = { workspace = true, features = ["testkit"] }
 wiremock.workspace = true
+insta = "1"

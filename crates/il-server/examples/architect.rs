@@ -24,7 +24,8 @@ async fn main() -> anyhow::Result<()> {
     let fakes = FakeServices::default();
     let mut services = fakes.services();
     services.models = Arc::new(il_ai::Gateway::from_config(&models, false)?);
-    let architect = Architect::new(services.clone(), Catalog::registered());
+    let architect =
+        Architect::new(services.clone(), Arc::new(il_sdk::testkit::FakeRunner::default()), Catalog::registered());
     let req = BuildRequest { goal, kind: None, attachments: vec![], hints: vec![] };
     let id = architect.start_build("ws_live", req).await?;
 

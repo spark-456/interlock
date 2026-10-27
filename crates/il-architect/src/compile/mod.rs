@@ -40,6 +40,9 @@ pub struct Draft {
     pub nodes: Vec<DraftNode>,
     #[serde(default)]
     pub edges: Vec<DraftEdge>,
+    /// One item the trigger would emit, for the test run (AR-6).
+    #[serde(default)]
+    pub sample: Option<Json>,
 }
 
 /// A step in a draft.
@@ -84,7 +87,8 @@ fn draft_schema() -> Json {
             "nodes": {"type": "array", "items": {"type": "object", "required": ["id", "type", "name"],
                 "properties": {"id": text, "type": text, "name": text, "group": text, "settings": {"type": "object"}}}},
             "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to"],
-                "properties": {"from": text, "to": text, "fromPort": text, "toPort": text}}}
+                "properties": {"from": text, "to": text, "fromPort": text, "toPort": text}}},
+            "sample": {"type": "object"}
         }
     })
 }
@@ -151,8 +155,8 @@ pub fn assemble(draft: &Draft, catalog: &Catalog, goal: &str) -> Flow {
 /// What compiling produced.
 #[derive(Debug)]
 pub enum Outcome {
-    /// A valid flow, plus the model's notes for the build log.
-    Flow { flow: Box<Flow>, notes: Vec<String> },
+    /// A valid flow, the model's notes for the build log, and the sample trigger item.
+    Flow { flow: Box<Flow>, notes: Vec<String>, sample: Json },
     /// Clarifying questions to answer before compiling again.
     Questions(Vec<BuildQuestion>),
 }
@@ -187,8 +191,78 @@ pub async fn compile(
     brief: &str,
     may_ask: bool,
 ) -> Result<Compiled, CompileError> {
-    let mut messages =
-        vec![ChatMessage::system(format!("{SYSTEM}\nCatalog:\n{}", catalog.prompt())), ChatMessage::user(brief)];
+    draft_loop(models, catalog, goal, vec![system(catalog), ChatMessage::user(brief)], may_ask).await
+}
+
+fn system(catalog: &Catalog) -> ChatMessage {
+    ChatMessage::system(format!("{SYSTEM}\nCatalog:\n{}", catalog.prompt()))
+}
+
+/// A revised flow and what revising it cost.
+#[derive(Debug)]
+pub struct Revised {
+    pub flow: Flow,
+    pub notes: Vec<String>,
+    pub cost_usd: f64,
+}
+
+/// Asks for `flow` changed as `request` says. The result keeps the flow's id, and steps whose id
+/// and type survive keep their position, credentials and disabled state.
+pub async fn revise(
+    models: &dyn ModelGateway,
+    catalog: &Catalog,
+    flow: &Flow,
+    request: &str,
+) -> Result<Revised, CompileError> {
+    let current = serde_json::to_string_pretty(&to_draft(flow)).unwrap_or_default();
+    let user = format!(
+        "This is the current flow:\n{current}\n\n{request}\n\nChange only what that needs, keep the ids of steps \
+         you keep, and reply with the whole revised JSON object."
+    );
+    let goal = flow.meta.goal.clone().unwrap_or_default();
+    let compiled = draft_loop(models, catalog, &goal, vec![system(catalog), ChatMessage::user(user)], false).await?;
+    let Outcome::Flow { flow: next, notes, .. } = compiled.outcome else {
+        return Err(CompileError::Invalid(vec![Issue { path: "reply".into(), message: "asked questions".into() }]));
+    };
+    let mut next = *next;
+    for node in &mut next.nodes {
+        if let Some(old) = flow.node(&node.id).filter(|old| old.node_type == node.node_type) {
+            node.position = old.position;
+            node.credentials = old.credentials.clone();
+            node.disabled = old.disabled;
+            node.notes = old.notes.clone();
+        }
+    }
+    next.id = flow.id.clone();
+    next.workspace_id = flow.workspace_id.clone();
+    next.version = flow.version;
+    next.settings = flow.settings.clone();
+    next.meta = flow.meta.clone();
+    Ok(Revised { flow: next, notes, cost_usd: compiled.cost_usd })
+}
+
+/// A flow in the draft format the model writes, for revising it.
+pub fn to_draft(flow: &Flow) -> Json {
+    json!({
+        "name": flow.name,
+        "kind": flow.kind,
+        "groups": flow.groups,
+        "nodes": flow.nodes.iter().map(|n| json!({
+            "id": n.id, "type": n.node_type, "name": n.name, "group": n.group, "settings": n.settings,
+        })).collect::<Vec<_>>(),
+        "edges": flow.edges.iter().map(|e| json!({
+            "from": e.from.node, "fromPort": e.from.port, "to": e.to.node, "toPort": e.to.port,
+        })).collect::<Vec<_>>(),
+    })
+}
+
+async fn draft_loop(
+    models: &dyn ModelGateway,
+    catalog: &Catalog,
+    goal: &str,
+    mut messages: Vec<ChatMessage>,
+    may_ask: bool,
+) -> Result<Compiled, CompileError> {
     let mut cost_usd = 0.0;
     let mut repairs = Vec::new();
     loop {
@@ -210,7 +284,11 @@ pub async fn compile(
                 let issues = validate(&flow, catalog);
                 if issues.is_empty() {
                     return Ok(Compiled {
-                        outcome: Outcome::Flow { flow: Box::new(flow), notes: draft.notes },
+                        outcome: Outcome::Flow {
+                            flow: Box::new(flow),
+                            notes: draft.notes,
+                            sample: draft.sample.unwrap_or_else(|| json!({})),
+                        },
                         cost_usd,
                         repairs,
                     });
