@@ -51,7 +51,7 @@ Request: "Every Monday, take our three newest Shopify products, make a short pro
 
 Flow: Schedule → Shopify (sandbox store) get newest products → per item: AI write script → AI generate video → AI generate voice → Media merge → Media cut clips (9:16, 1:1, 16:9) → Media captions → AI write posts → Human approval (in-app + Slack) → post to YouTube (private), Bluesky, Discord (real); Instagram, TikTok, LinkedIn (dry-run) → Google Sheets log.
 
-Acceptance: generated from the sentence; test run produces visible clips and post drafts; approval works on desktop and mobile; approved posts go out on the real connectors; a recorded run replays in demo mode.
+Acceptance: generated from the sentence; test run produces visible clips and post drafts (video and voice generation use the `recorded` provider; real adapters exist but are not live-tested); approval works on desktop and mobile; approved posts go out on the real connectors; a recorded run replays in demo mode.
 
 ### F-B · Support inbox replies (automation)
 
@@ -457,7 +457,7 @@ Global definition of done for any task: acceptance criteria met; unit tests adde
 |---|---|
 | Nemotron tool calling / JSON schema output behaves differently than expected | Gateway fallback to JSON-in-prompt + validation/repair; architect uses strict schemas and few-shot examples from manifests |
 | Social platforms block posting | Dry-run nodes with previews; real posting via YouTube (private), Bluesky, Discord, Telegram |
-| Video/voice generation cost or latency | Replay-only in demo; per-run caps; recorded F-A run for the video |
+| Video/voice generation cost or latency | Not live-tested: adapters ship, the recorded provider is the default everywhere |
 | Integration crunch on Friday | Contracts first; fixture mode for UI; fakes for every service; integrator task starts Thursday |
 | Merge conflicts between agents | Owned paths per task; self-registration (no central lists); timestamped migrations; small PRs; rebase before merge |
 | Windows build issues (C deps) | Bundled SQLite and statically linked sqlite-vec; MSVC toolchain documented; CI on both Windows and Linux |

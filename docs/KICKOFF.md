@@ -13,7 +13,7 @@
    - GitHub OAuth app (sign-in) → `GITHUB_CLIENT_ID/SECRET`
    - Google Cloud OAuth client in testing mode with Gmail, Sheets and YouTube scopes; add yourself and test accounts as test users → `GOOGLE_CLIENT_ID/SECRET`
    - Slack app (bot token + interactivity URL), a Discord webhook, a Telegram bot token, a Bluesky app password
-   - One video, one voice and one image generation provider key (your choice; set in config)
+   - Media generation keys are **not needed**: the recorded provider is the default everywhere and the real adapters are not live-tested
    - `IL_MASTER_KEY`: generate 32 random bytes, base64
 6. **Codex setup**:
    - Codex CLI (local): run it inside its own git worktree; it reads `AGENTS.md` automatically.

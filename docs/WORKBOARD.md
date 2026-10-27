@@ -144,7 +144,7 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 ### M02 · Media generation
 - **Owns**: `crates/il-media/src/gen/**`.
 - **Soft deps**: none.
-- **Acceptance**: `MediaGen` implementations for video, voice and image via configurable HTTP providers (one real adapter each, chosen in config); a `recorded` provider that returns fixture media (used in demo mode and tests); nodes Generate video, Generate voice, Generate image with progress events and cost reporting; tests with wiremock.
+- **Acceptance**: `MediaGen` adapters for video, voice and image, each written to its provider's documented API and switched on only when that provider's key is configured (one real adapter each, chosen in config). **Live-provider testing is out of scope for the hackathon**: the build only shows that real generation is possible. A `recorded` provider returning fixture media is the default in demo mode, in test runs and in tests. Nodes Generate video, Generate voice, Generate image with progress events and cost reporting; adapter tests against wiremock only.
 
 ### A01 · Architect: goal → flow
 - **Owns**: `crates/il-architect/src/{compile,layout,catalog,validate}/**`, `prompts/architect/**`.
