@@ -11,6 +11,7 @@ import type {
   BuildRequest,
   CatalogResponse,
   ConnectionSummary,
+  CreateConnectionRequest,
   FileRef,
   Flow,
   FlowSummary,
@@ -48,6 +49,8 @@ export const api = {
   runStep: (flowId: string, nodeId: string, items: JsonValue[]) =>
     post<RunCreated>(`/api/flows/${flowId}/nodes/${nodeId}/run`, { items }),
   connections: () => get<ConnectionSummary[]>('/api/connections'),
+  /** Saves a key-based connection; the secret is encrypted on the server and never sent back. */
+  createConnection: (req: CreateConnectionRequest) => post<ConnectionSummary>('/api/connections', req),
   runs: (flowId: string) => get<RunSummary[]>(`/api/flows/${flowId}/runs`),
   approvals: () => get<Approval[]>('/api/approvals'),
   decide: (approvalId: string, decision: ApprovalDecision) => post<void>(`/api/approvals/${approvalId}/decide`, decision),

@@ -393,3 +393,30 @@ async fn persistent_server_keeps_sessions_across_restarts() {
     let (_, again, _) = call(&app(state), "GET", "/api/me", None, Some(&pair)).await;
     assert_eq!(again["workspaceId"], me["workspaceId"]);
 }
+
+#[tokio::test]
+async fn key_connections_are_saved_listed_and_never_returned() {
+    let app = app(build_state(Config::from_value(json!({})).unwrap()));
+    let (s, list, _) = call(&app, "GET", "/api/connections", None, None).await;
+    assert_eq!((s, list), (StatusCode::OK, json!([])));
+    let body = json!({"app": "telegram", "label": "Support bot", "secret": {"token": "123:ABC-secret"}});
+    let (s, created, _) = call(&app, "POST", "/api/connections", Some(body), None).await;
+    assert_eq!(s, StatusCode::CREATED);
+    assert_eq!(
+        (created["app"].as_str(), created["label"].as_str(), created["status"].as_str()),
+        (Some("telegram"), Some("Support bot"), Some("connected"))
+    );
+    let (_, list, _) = call(&app, "GET", "/api/connections", None, None).await;
+    assert_eq!(list.as_array().unwrap().len(), 1);
+    assert!(!list.to_string().contains("ABC-secret"), "secrets never leave the server");
+    let (s, _, _) =
+        call(&app, "POST", "/api/connections", Some(json!({"app": "telegram", "secret": {"token": " "}})), None).await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
+
+    let (_, _, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
+    let cookie = cookie.unwrap();
+    let demo = cookie.split(';').next().unwrap();
+    let body = json!({"app": "discord", "secret": {"url": "https://discord.example/hook"}});
+    let (s, err, _) = call(&app, "POST", "/api/connections", Some(body), Some(demo)).await;
+    assert_eq!((s, err["error"]["code"].as_str()), (StatusCode::FORBIDDEN, Some("demo_restricted")));
+}

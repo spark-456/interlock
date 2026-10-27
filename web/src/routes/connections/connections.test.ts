@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ConnectionSummary, NodeManifest } from '$lib/api/types';
-import { appRows, connectHref } from './connections';
+import { appRows, connectHref, keyFields, type AppRow } from './connections';
 
 const node = (...specs: [string, string, string][]) =>
   ({ credentials: specs.map(([app, kind, label]) => ({ key: app, app, kind, label, scopes: [], optional: false })) }) as unknown as NodeManifest;
@@ -30,5 +30,13 @@ describe('connections', () => {
     const [slack, , telegram] = appRows(nodes, conns);
     expect(connectHref(slack!)).toBe('/api/oauth/slack/start');
     expect(connectHref(telegram!)).toBeNull();
+  });
+
+  it('asks key-based apps for the fields their steps read', () => {
+    const row = (app: string, kind: AppRow['kind']): AppRow => ({ app, name: app, label: 'Key', kind, status: 'notConnected', account: null });
+    expect(keyFields(row('bluesky', 'appPassword')).map((f) => f.key)).toEqual(['identifier', 'app_password']);
+    expect(keyFields(row('telegram', 'botToken')).map((f) => f.key)).toEqual(['token']);
+    expect(keyFields(row('acme', 'webhook')).map((f) => f.key)).toEqual(['url']);
+    expect(keyFields(row('acme', 'apiKey'))[0]).toMatchObject({ key: 'api_key', secret: true });
   });
 });

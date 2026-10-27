@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use il_core::{Approval, ApprovalStatus, ApprovalTimeout, BuildEvent, Flow, NodeRun, Run, RunEvent};
 use serde_json::Value;
 
-use crate::services::store::{Credential, SpendEntry, SpendScope, Store, StoreError, StoreResult};
+use crate::services::store::{Credential, CredentialInfo, SpendEntry, SpendScope, Store, StoreError, StoreResult};
 
 #[derive(Default)]
 struct Inner {
@@ -19,6 +19,8 @@ struct Inner {
     build_events: HashMap<String, Vec<BuildEvent>>,
     approvals: HashMap<String, Approval>,
     credentials: HashMap<String, Credential>,
+    /// Workspace of each credential saved through `put_credential`.
+    credential_workspaces: HashMap<String, String>,
     kv: HashMap<String, Value>,
     spend: Vec<SpendEntry>,
 }
@@ -208,9 +210,22 @@ impl Store for MemoryStore {
     async fn credential(&self, _workspace_id: &str, id: &str) -> StoreResult<Option<Credential>> {
         Ok(self.lock()?.credentials.get(id).cloned())
     }
-    async fn put_credential(&self, _workspace_id: &str, credential: &Credential) -> StoreResult<()> {
-        self.lock()?.credentials.insert(credential.id.clone(), credential.clone());
+    async fn put_credential(&self, workspace_id: &str, credential: &Credential) -> StoreResult<()> {
+        let mut g = self.lock()?;
+        g.credentials.insert(credential.id.clone(), credential.clone());
+        g.credential_workspaces.insert(credential.id.clone(), workspace_id.into());
         Ok(())
+    }
+    async fn credentials(&self, workspace_id: &str) -> StoreResult<Vec<CredentialInfo>> {
+        let g = self.lock()?;
+        let mut out: Vec<_> = g
+            .credentials
+            .values()
+            .filter(|c| g.credential_workspaces.get(&c.id).is_some_and(|w| w == workspace_id))
+            .map(|c| CredentialInfo { id: c.id.clone(), app: c.app.clone(), meta: c.meta.clone() })
+            .collect();
+        out.sort_by(|a, b| a.id.cmp(&b.id));
+        Ok(out)
     }
     async fn kv_get(&self, key: &str) -> StoreResult<Option<Value>> {
         Ok(self.lock()?.kv.get(key).cloned())

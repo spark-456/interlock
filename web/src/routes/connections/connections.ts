@@ -32,3 +32,30 @@ export function appRows(nodes: NodeManifest[], connections: ConnectionSummary[])
 
 /** Where the Connect button goes: the OAuth start route, or nowhere for key-based apps. */
 export const connectHref = (row: AppRow) => (row.kind === 'oAuth2' ? `/api/oauth/${row.app}/start` : null);
+
+export interface KeyField {
+  key: string;
+  label: string;
+  placeholder: string;
+  secret: boolean;
+}
+
+const FIELDS: Record<string, KeyField[]> = {
+  bluesky: [
+    { key: 'identifier', label: 'Handle', placeholder: 'yourname.bsky.social', secret: false },
+    { key: 'app_password', label: 'App password', placeholder: 'xxxx-xxxx-xxxx-xxxx', secret: true }
+  ],
+  discord: [{ key: 'url', label: 'Webhook URL', placeholder: 'https://discord.com/api/webhooks/…', secret: true }],
+  telegram: [{ key: 'token', label: 'Bot token', placeholder: '123456:ABC…', secret: true }],
+  shopify: [{ key: 'access_token', label: 'Admin API access token', placeholder: 'shpat_…', secret: true }]
+};
+
+/** The fields a key-based app needs; the keys are what its steps read from the credential. */
+export function keyFields(row: AppRow): KeyField[] {
+  return (
+    FIELDS[row.app] ??
+    (row.kind === 'webhook'
+      ? [{ key: 'url', label: 'Webhook URL', placeholder: 'https://…', secret: true }]
+      : [{ key: 'api_key', label: row.label, placeholder: '', secret: true }])
+  );
+}

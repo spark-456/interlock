@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use il_core::{Approval, ApprovalTimeout, BuildEvent, Flow, NodeRun, Run, RunEvent};
-use il_sdk::services::store::{Credential, SpendEntry, SpendScope, Store, StoreError, StoreResult};
+use il_sdk::services::store::{Credential, CredentialInfo, SpendEntry, SpendScope, Store, StoreError, StoreResult};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
@@ -289,6 +289,26 @@ impl Store for SqliteStore {
 
     async fn put_credential(&self, workspace_id: &str, credential: &Credential) -> StoreResult<()> {
         SqliteStore::put_credential(self, workspace_id, credential).await
+    }
+
+    async fn credentials(&self, workspace_id: &str) -> StoreResult<Vec<CredentialInfo>> {
+        let workspace_id = workspace_id.to_owned();
+        self.with_conn(move |c| {
+            let mut stmt = c
+                .prepare("SELECT id,app,meta FROM cn_credentials WHERE workspace_id=?1 ORDER BY id")
+                .map_err(backend)?;
+            let rows = stmt
+                .query_map(params![workspace_id], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?))
+                })
+                .map_err(backend)?;
+            rows.map(|row| {
+                let (id, app, meta) = row.map_err(backend)?;
+                Ok(CredentialInfo { id, app, meta: parse(meta)? })
+            })
+            .collect()
+        })
+        .await
     }
 
     async fn kv_get(&self, key: &str) -> StoreResult<Option<Value>> {
