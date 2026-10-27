@@ -1081,11 +1081,13 @@ dependencies = [
  "il-core",
  "il-sdk",
  "inventory",
+ "reqwest",
  "serde_json",
  "tokio",
  "tokio-util",
  "tower",
  "tracing",
+ "wiremock",
 ]
 
 [[package]]
