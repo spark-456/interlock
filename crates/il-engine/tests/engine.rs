@@ -390,3 +390,67 @@ async fn replays_a_recorded_run_with_a_replay_label() {
     let first_live = live.recv().await.unwrap();
     assert_eq!(first_live.run_id, id, "replayed events are broadcast live");
 }
+
+/// An agent stand-in that outputs the names of the tools it was given.
+struct ListTools(il_core::NodeManifest);
+
+#[async_trait::async_trait]
+impl il_sdk::NodeExecutor for ListTools {
+    fn manifest(&self) -> &il_core::NodeManifest {
+        &self.0
+    }
+    async fn execute(
+        &self,
+        ctx: &mut il_sdk::ctx::NodeCtx,
+        _input: il_sdk::NodeInput,
+    ) -> Result<il_sdk::NodeOutput, il_sdk::NodeError> {
+        let names: Vec<_> = ctx.tools().iter().map(|t| t.name().to_string()).collect();
+        Ok(il_sdk::NodeOutput::out(vec![il_core::Item::json(json!({ "tools": names }))]))
+    }
+}
+
+struct NamedTool(&'static str);
+
+#[async_trait::async_trait]
+impl il_sdk::services::AgentTool for NamedTool {
+    fn name(&self) -> &str {
+        self.0
+    }
+    fn description(&self) -> &str {
+        "test tool"
+    }
+    fn schema(&self) -> serde_json::Value {
+        json!({ "type": "object" })
+    }
+    async fn invoke(&self, _args: serde_json::Value) -> Result<serde_json::Value, il_sdk::services::ToolError> {
+        Ok(json!({}))
+    }
+}
+
+/// Gives flows in `ws_t` a `lookup_customer` tool.
+struct WorkspaceTools;
+
+#[async_trait::async_trait]
+impl il_sdk::services::FlowToolProvider for WorkspaceTools {
+    async fn for_flow(
+        &self,
+        workspace_id: &str,
+        _flow: &il_core::Flow,
+    ) -> Result<Vec<std::sync::Arc<dyn il_sdk::services::AgentTool>>, il_sdk::services::ToolError> {
+        Ok(if workspace_id == "ws_t" { vec![std::sync::Arc::new(NamedTool("lookup_customer"))] } else { vec![] })
+    }
+}
+
+#[tokio::test]
+async fn agents_get_the_flows_own_tools_when_a_run_starts() {
+    let (fakes, mut svc) = services();
+    svc.flow_tools = std::sync::Arc::new(WorkspaceTools);
+    let (lookup, _) = lookup();
+    let lookup = lookup.with(std::sync::Arc::new(ListTools(m("ai.agent"))));
+    let engine = Engine::new(svc, lookup, config());
+    let f = flow(&[("t", "test.trigger", json!({})), ("a", "ai.agent", json!({}))], &[("t", "out", "a", "in")]);
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(outputs(&run, "a", "out")[0]["tools"], json!(["lookup_customer"]));
+}

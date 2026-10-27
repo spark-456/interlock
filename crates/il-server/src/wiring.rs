@@ -97,6 +97,7 @@ fn finish_state(config: Config, mut services: Services) -> AppState {
     }
     if config.providers != "fake" {
         wire_models(&mut services, &config);
+        services.flow_tools = Arc::new(PublishedFlowTools { services: services.clone() });
     }
     services.notifier =
         Arc::new(il_connectors::slack::MessagingNotifier::new(services.clone(), services.notifier.clone()));
