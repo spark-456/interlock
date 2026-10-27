@@ -1,6 +1,6 @@
 <script lang="ts">
-  // Desktop stepper: seven build stages with done / active / to-do markers and times.
-  import { STAGES, testsRun, type BuildState } from '$lib/canvas/buildState';
+  // Desktop stepper: the build's stages with done / active / to-do markers and times.
+  import { stagesOf, testsRun, type BuildState } from '$lib/canvas/buildState';
   import Icon from '$lib/design/Icon.svelte';
   import { clock } from '$lib/design/format';
 
@@ -21,7 +21,7 @@
 </script>
 
 <ol class="steps" aria-label="Build steps">
-  {#each STAGES as s (s.key)}
+  {#each stagesOf(build) as s (s.key)}
     {@const status = build.stages[s.key]?.status ?? (build.status === 'ready' ? 'done' : 'pending')}
     <li class={status} aria-current={status === 'active' ? 'step' : undefined}>
       {#if status === 'done'}

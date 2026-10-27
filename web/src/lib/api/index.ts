@@ -1,13 +1,15 @@
 // Typed endpoints (PRD §8.5). Add endpoints here as screens need them; types are generated.
 
-import { get, post, put } from './client';
+import { get, post, put, upload } from './client';
 import type {
   AskDiff,
+  BuildAnswers,
   BuildCreated,
   BuildEvent,
   BuildRequest,
   CatalogResponse,
   ConnectionSummary,
+  FileRef,
   Flow,
   FlowSummary,
   JsonValue,
@@ -36,7 +38,9 @@ export const api = {
   connections: () => get<ConnectionSummary[]>('/api/connections'),
   runs: (flowId: string) => get<RunSummary[]>(`/api/flows/${flowId}/runs`),
   templates: () => get<TemplateSummary[]>('/api/templates'),
-  startBuild: (req: BuildRequest) => post<BuildCreated>('/api/builds', req)
+  startBuild: (req: BuildRequest) => post<BuildCreated>('/api/builds', req),
+  answerBuild: (buildId: string, answers: BuildAnswers) => post<void>(`/api/builds/${buildId}/answers`, answers),
+  uploadFiles: (files: File[]) => upload<FileRef[]>('/api/files', files)
 };
 
 /** Live build events for the Building screen. */

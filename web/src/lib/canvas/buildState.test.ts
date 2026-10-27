@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { BuildEvent } from '$lib/api/types';
-import { initialBuildState, progress, reduce, testsRun, timeLeft, type BuildState } from './buildState';
+import { currentStageIndex, initialBuildState, progress, reduce, stagesOf, testsRun, timeLeft, type BuildState } from './buildState';
 import { applyPatch } from './jsonPatch';
 import { cardViews, edgeViews, groupStatus, groupViews, labelViews } from './views';
 import { bezier, nodeHeight } from './geometry';
@@ -89,5 +89,27 @@ describe('build state from the recorded Larkspur build', () => {
     expect(same).toBe(s);
     const unknown = reduce(s, { seq: s.lastSeq + 1, ts: stream[0]!.ts, buildId: 'x', nodeId: null, type: 'build.future', data: {} } as unknown as BuildEvent);
     expect(unknown.flow).toBe(s.flow);
+  });
+});
+
+describe('build questions', () => {
+  const ask = JSON.parse(readFileSync(join(process.cwd(), 'fixtures/streams/builds/bld_ask.json'), 'utf8')) as BuildEvent[];
+
+  it('keeps questions open until the build moves on, then shows why it failed', () => {
+    const asked = ask.slice(0, 3).reduce(reduce, initialBuildState());
+    expect(asked.questions.map((q) => q.id)).toEqual(['q_channel', 'q_sheet']);
+    const end = ask.reduce(reduce, initialBuildState());
+    expect(end.questions).toEqual([]);
+    expect([end.status, end.error]).toEqual(['failed', 'The flow still had problems after 3 repairs.']);
+  });
+});
+
+describe('stages', () => {
+  it('follows the stages the build reports', () => {
+    const fa = JSON.parse(readFileSync(join(process.cwd(), 'fixtures/streams/builds/bld_fa.json'), 'utf8')) as BuildEvent[];
+    const early = fa.slice(0, 5).reduce(reduce, initialBuildState());
+    expect(stagesOf(early).map((s) => s.key)).toEqual(['understand', 'assemble', 'test']);
+    expect(currentStageIndex(early)).toBe(1);
+    expect(stagesOf(replay(10)).map((s) => s.key)).toContain('team');
   });
 });

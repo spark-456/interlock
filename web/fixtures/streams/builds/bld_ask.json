@@ -1,0 +1,47 @@
+[
+  {
+    "seq": 1,
+    "ts": "2026-10-27T09:00:00.000000Z",
+    "buildId": "bld_ask",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": { "stage": "understand", "status": "active" }
+  },
+  {
+    "seq": 2,
+    "ts": "2026-10-27T09:00:00.400000Z",
+    "buildId": "bld_ask",
+    "nodeId": null,
+    "type": "build.log",
+    "data": { "text": "Reading your request." }
+  },
+  {
+    "seq": 3,
+    "ts": "2026-10-27T09:00:02.000000Z",
+    "buildId": "bld_ask",
+    "nodeId": null,
+    "type": "build.question",
+    "data": {
+      "questions": [
+        { "id": "q_channel", "text": "Which Slack channel should approvals go to?", "options": ["#support", "#ops"] },
+        { "id": "q_sheet", "text": "Log replies to a new sheet or an existing one?", "options": ["New sheet", "Existing sheet"] }
+      ]
+    }
+  },
+  {
+    "seq": 4,
+    "ts": "2026-10-27T09:00:40.000000Z",
+    "buildId": "bld_ask",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": { "stage": "understand", "status": "done" }
+  },
+  {
+    "seq": 5,
+    "ts": "2026-10-27T09:00:40.200000Z",
+    "buildId": "bld_ask",
+    "nodeId": null,
+    "type": "build.failed",
+    "data": { "error": "The flow still had problems after 3 repairs." }
+  }
+]
