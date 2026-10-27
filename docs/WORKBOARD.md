@@ -45,6 +45,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 34 | B03b | Engine: approval expiry and timeout policy | P0 | B03 | done | codex-1 | t/B03b-approval-expiry | 2026-10-27 20:56 | [PR #21](https://github.com/spark-456/interlock/pull/21) squash merged after Ubuntu and Windows CI passed; B08 node wiring is next. |
 | 35 | T01 | Build size: lighter dev/test debug info | P1 | — | done | claude-a | t/T01-build-size | 2026-10-27 19:33 | [PR #14](https://github.com/spark-456/interlock/pull/14). Clean build target 3.0 GB (was 7–9 GB) |
 | 36 | C04 | API-key connections: save keys and tokens from /connections | P1 | C01 | ready | | | | `POST /api/connections` (app, label, secret; encrypted via the secret store) and a key form in the /connections drawer for bot tokens, app passwords, webhooks and API keys |
+| 37 | U01 | Usage: spend by day and model role, editable caps (WS-5) | P1 | B04 | ready | | | | `GET /api/usage` from `us_ledger` (by day, by model role) and `PUT` for workspace caps; a Usage section in `/settings` (W07 explains caps today) |
 
 ## Waiting on the owner
 
