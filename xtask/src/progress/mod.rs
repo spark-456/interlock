@@ -34,9 +34,31 @@ pub fn write(root: &Path, out: &Path) -> anyhow::Result<()> {
     for (name, rows) in datasets {
         let n = rows.as_array().map_or(0, Vec::len);
         fs::write(out.join(format!("{name}.json")), serde_json::to_string_pretty(&rows)? + "\n")?;
-        eprintln!("{name}.json: {n} rows");
+        // The tracker can't read a JSON file with no rows, but it reads a CSV that has only its header.
+        let csv = out.join(format!("{name}.csv"));
+        if n == 0 {
+            fs::write(&csv, empty_columns(name).join(",") + "\n")?;
+            eprintln!("{name}.json: 0 rows (upload {name}.csv instead)");
+        } else {
+            let _ = fs::remove_file(&csv);
+            eprintln!("{name}.json: {n} rows");
+        }
     }
     Ok(())
+}
+
+/// The columns of a dataset that can be empty, for its header-only CSV.
+fn empty_columns(name: &str) -> &'static [&'static str] {
+    match name {
+        "owner" => &["item", "neededBy", "detail", "status"],
+        "blockers" => &["issue", "kind", "tasks", "detail", "status"],
+        "prs" => {
+            &["number", "title", "state", "isDraft", "headRefName", "createdAt", "mergedAt", "closedAt", "additions"]
+        }
+        "issues" => &["number", "title", "state", "createdAt", "closedAt", "labels", "url"],
+        "ci" => &["databaseId", "displayTitle", "headBranch", "event", "status", "conclusion", "createdAt", "url"],
+        _ => &["value"],
+    }
 }
 
 /// When and from which commit the snapshot was taken.
