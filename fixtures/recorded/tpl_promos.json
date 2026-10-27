@@ -1,0 +1,928 @@
+[
+  {
+    "seq": 1,
+    "ts": "2026-10-26T09:00:00.100000Z",
+    "runId": "rec_promos",
+    "nodeId": null,
+    "type": "run.started",
+    "data": {
+      "flowId": "flw_promos",
+      "trigger": "trigger.schedule"
+    }
+  },
+  {
+    "seq": 2,
+    "ts": "2026-10-26T09:00:00.300000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_schedule",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 3,
+    "ts": "2026-10-26T09:00:00.305000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_schedule",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "firedAt": "2026-10-26T03:30:00Z"
+          },
+          "files": {}
+        }
+      ],
+      "total": 1
+    }
+  },
+  {
+    "seq": 4,
+    "ts": "2026-10-26T09:00:00.405000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_schedule",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 5,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 5,
+    "ts": "2026-10-26T09:00:00.605000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_products",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 6,
+    "ts": "2026-10-26T09:00:01.025000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_products",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "products": [
+              {
+                "id": "prd_tote",
+                "title": "Larkspur Linen Tote",
+                "description": "A sturdy everyday tote in washed linen.",
+                "price": 38
+              },
+              {
+                "id": "prd_mug",
+                "title": "Fieldnote Ceramic Mug",
+                "description": "Hand-glazed stoneware, 350 ml.",
+                "price": 24
+              },
+              {
+                "id": "prd_candle",
+                "title": "Meadow Soy Candle",
+                "description": "Wildflower scent, 40-hour burn.",
+                "price": 29
+              }
+            ]
+          },
+          "files": {}
+        }
+      ],
+      "total": 1
+    }
+  },
+  {
+    "seq": 7,
+    "ts": "2026-10-26T09:00:01.125000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_products",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 420,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 8,
+    "ts": "2026-10-26T09:00:01.325000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_loop",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 9,
+    "ts": "2026-10-26T09:00:01.328000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_loop",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "id": "prd_tote",
+            "title": "Larkspur Linen Tote",
+            "description": "A sturdy everyday tote in washed linen.",
+            "price": 38
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "id": "prd_mug",
+            "title": "Fieldnote Ceramic Mug",
+            "description": "Hand-glazed stoneware, 350 ml.",
+            "price": 24
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "id": "prd_candle",
+            "title": "Meadow Soy Candle",
+            "description": "Wildflower scent, 40-hour burn.",
+            "price": 29
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 10,
+    "ts": "2026-10-26T09:00:01.428000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_loop",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 3,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 11,
+    "ts": "2026-10-26T09:00:01.628000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_script",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 12,
+    "ts": "2026-10-26T09:00:03.728000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_script",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "id": "prd_tote",
+            "title": "Larkspur Linen Tote",
+            "description": "A sturdy everyday tote in washed linen.",
+            "price": 38,
+            "text": "Meet the Larkspur Linen Tote. A sturdy everyday tote in washed linen. Yours for $38."
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "id": "prd_mug",
+            "title": "Fieldnote Ceramic Mug",
+            "description": "Hand-glazed stoneware, 350 ml.",
+            "price": 24,
+            "text": "Meet the Fieldnote Ceramic Mug. Hand-glazed stoneware, 350 ml. Yours for $24."
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "id": "prd_candle",
+            "title": "Meadow Soy Candle",
+            "description": "Wildflower scent, 40-hour burn.",
+            "price": 29,
+            "text": "Meet the Meadow Soy Candle. Wildflower scent, 40-hour burn. Yours for $29."
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 13,
+    "ts": "2026-10-26T09:00:03.828000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_script",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 2100,
+      "costUsd": 0.004
+    }
+  },
+  {
+    "seq": 14,
+    "ts": "2026-10-26T09:00:04.028000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_video",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 15,
+    "ts": "2026-10-26T09:00:10.828000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_video",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote"
+          },
+          "files": {
+            "video": {
+              "id": "file_v_prd_tote",
+              "mime": "video/mp4",
+              "bytes": 1200000,
+              "name": "prd_tote.mp4",
+              "previewUrl": "/media/prd_tote.mp4"
+            }
+          }
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug"
+          },
+          "files": {
+            "video": {
+              "id": "file_v_prd_mug",
+              "mime": "video/mp4",
+              "bytes": 1200000,
+              "name": "prd_mug.mp4",
+              "previewUrl": "/media/prd_mug.mp4"
+            }
+          }
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle"
+          },
+          "files": {
+            "video": {
+              "id": "file_v_prd_candle",
+              "mime": "video/mp4",
+              "bytes": 1200000,
+              "name": "prd_candle.mp4",
+              "previewUrl": "/media/prd_candle.mp4"
+            }
+          }
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 16,
+    "ts": "2026-10-26T09:00:10.928000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_video",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 6800,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 17,
+    "ts": "2026-10-26T09:00:11.128000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_voice",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 18,
+    "ts": "2026-10-26T09:00:13.028000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_voice",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote"
+          },
+          "files": {
+            "audio": {
+              "id": "file_a_prd_tote",
+              "mime": "audio/mpeg",
+              "bytes": 1200000,
+              "name": "prd_tote.mp3",
+              "previewUrl": "/media/prd_tote.mp3"
+            }
+          }
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug"
+          },
+          "files": {
+            "audio": {
+              "id": "file_a_prd_mug",
+              "mime": "audio/mpeg",
+              "bytes": 1200000,
+              "name": "prd_mug.mp3",
+              "previewUrl": "/media/prd_mug.mp3"
+            }
+          }
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle"
+          },
+          "files": {
+            "audio": {
+              "id": "file_a_prd_candle",
+              "mime": "audio/mpeg",
+              "bytes": 1200000,
+              "name": "prd_candle.mp3",
+              "previewUrl": "/media/prd_candle.mp3"
+            }
+          }
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 19,
+    "ts": "2026-10-26T09:00:13.128000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_voice",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 1900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 20,
+    "ts": "2026-10-26T09:00:13.328000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_merge",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 21,
+    "ts": "2026-10-26T09:00:13.428000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_merge",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 2400,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 22,
+    "ts": "2026-10-26T09:00:13.628000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_resize",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 23,
+    "ts": "2026-10-26T09:00:13.728000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_resize",
+    "type": "node.succeeded",
+    "data": {
+      "count": 9,
+      "ms": 3600,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 24,
+    "ts": "2026-10-26T09:00:13.928000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_captions",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 25,
+    "ts": "2026-10-26T09:00:14.028000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_captions",
+    "type": "node.succeeded",
+    "data": {
+      "count": 9,
+      "ms": 3100,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 26,
+    "ts": "2026-10-26T09:00:14.228000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_posts",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 27,
+    "ts": "2026-10-26T09:00:16.028000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_posts",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "post": "New this week: the Larkspur Linen Tote. A sturdy everyday tote in washed linen. #larkspur"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "post": "New this week: the Fieldnote Ceramic Mug. Hand-glazed stoneware, 350 ml. #larkspur"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "post": "New this week: the Meadow Soy Candle. Wildflower scent, 40-hour burn. #larkspur"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 28,
+    "ts": "2026-10-26T09:00:16.128000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_posts",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 1800,
+      "costUsd": 0.003
+    }
+  },
+  {
+    "seq": 29,
+    "ts": "2026-10-26T09:00:16.328000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_approve",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 30,
+    "ts": "2026-10-26T09:00:16.628000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_approve",
+    "type": "node.waiting",
+    "data": {
+      "approvalId": "apr_fa"
+    }
+  },
+  {
+    "seq": 31,
+    "ts": "2026-10-26T09:00:20.628000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_approve",
+    "type": "approval.decided",
+    "data": {
+      "approvalId": "apr_fa",
+      "decision": "approve",
+      "by": "Priya (Slack)"
+    }
+  },
+  {
+    "seq": 32,
+    "ts": "2026-10-26T09:00:20.728000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_approve",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 4300,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 33,
+    "ts": "2026-10-26T09:00:20.928000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_youtube",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 34,
+    "ts": "2026-10-26T09:00:21.828000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_youtube",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "status": "posted"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 35,
+    "ts": "2026-10-26T09:00:21.928000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_youtube",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 36,
+    "ts": "2026-10-26T09:00:22.128000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_bluesky",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 37,
+    "ts": "2026-10-26T09:00:23.028000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_bluesky",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "status": "posted"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 38,
+    "ts": "2026-10-26T09:00:23.128000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_bluesky",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 39,
+    "ts": "2026-10-26T09:00:23.328000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_discord",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 40,
+    "ts": "2026-10-26T09:00:24.228000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_discord",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "status": "posted"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 41,
+    "ts": "2026-10-26T09:00:24.328000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_discord",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 42,
+    "ts": "2026-10-26T09:00:24.528000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_instagram",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 43,
+    "ts": "2026-10-26T09:00:25.428000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_instagram",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "status": "dry-run"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "status": "dry-run"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "status": "dry-run"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 44,
+    "ts": "2026-10-26T09:00:25.528000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_instagram",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 45,
+    "ts": "2026-10-26T09:00:25.728000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_tiktok",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 46,
+    "ts": "2026-10-26T09:00:26.628000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_tiktok",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "status": "dry-run"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "status": "dry-run"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "status": "dry-run"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 47,
+    "ts": "2026-10-26T09:00:26.728000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_tiktok",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 48,
+    "ts": "2026-10-26T09:00:26.928000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_linkedin",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 49,
+    "ts": "2026-10-26T09:00:27.828000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_linkedin",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "status": "dry-run"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "status": "dry-run"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "status": "dry-run"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 50,
+    "ts": "2026-10-26T09:00:27.928000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_linkedin",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 51,
+    "ts": "2026-10-26T09:00:28.128000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_log",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 52,
+    "ts": "2026-10-26T09:00:29.028000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_log",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Fieldnote Ceramic Mug",
+            "status": "posted"
+          },
+          "files": {}
+        },
+        {
+          "json": {
+            "title": "Meadow Soy Candle",
+            "status": "posted"
+          },
+          "files": {}
+        }
+      ],
+      "total": 3
+    }
+  },
+  {
+    "seq": 53,
+    "ts": "2026-10-26T09:00:29.128000Z",
+    "runId": "rec_promos",
+    "nodeId": "n_log",
+    "type": "node.succeeded",
+    "data": {
+      "count": 3,
+      "ms": 900,
+      "costUsd": 0.0
+    }
+  },
+  {
+    "seq": 54,
+    "ts": "2026-10-26T09:00:29.428000Z",
+    "runId": "rec_promos",
+    "nodeId": null,
+    "type": "run.succeeded",
+    "data": {
+      "ms": 48200,
+      "costUsd": 0.011
+    }
+  }
+]

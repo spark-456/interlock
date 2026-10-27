@@ -7,8 +7,10 @@ use std::path::{Path as FsPath, PathBuf};
 use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use il_core::Flow;
 use il_core::dto::TemplateSummary;
+use il_core::events::{RunEvent, RunEventKind};
+use il_core::{Flow, Run, RunStatus};
+use serde_json::Value;
 
 use super::{ApiErr, ApiResult, Ws};
 use crate::wiring::AppState;
@@ -35,8 +37,61 @@ pub(super) async fn load_all(dir: &str) -> ApiResult<Vec<(String, Flow)>> {
     Ok(out)
 }
 
+/// Copies every template into a new demo workspace, with its recorded run when it has one (MK-3).
+pub(super) async fn seed(state: &AppState, workspace_id: &str) -> ApiResult<()> {
+    let dir = &state.config.server.templates_dir;
+    for (id, flow) in load_all(dir).await? {
+        let flow = instance(flow, workspace_id);
+        state.services.store.put_flow(&flow).await.map_err(ApiErr::internal)?;
+        if let Ok(bytes) = tokio::fs::read(recorded(dir, &id)).await {
+            import_run(state, &flow, &bytes).await?;
+        }
+    }
+    Ok(())
+}
+
+/// Stores a recorded run (its run events) as a finished replay run of `flow`, so the flow's
+/// history shows it and the run view replays it.
+async fn import_run(state: &AppState, flow: &Flow, bytes: &[u8]) -> ApiResult<()> {
+    let mut events: Vec<RunEvent> = serde_json::from_slice(bytes).map_err(ApiErr::internal)?;
+    let (Some(first), Some(last)) = (events.first(), events.last()) else { return Ok(()) };
+    let (status, cost_usd, error) = match &last.kind {
+        RunEventKind::RunSucceeded { cost_usd, .. } => (RunStatus::Succeeded, *cost_usd, None),
+        RunEventKind::RunFailed { error } => (RunStatus::Failed, 0.0, Some(error.clone())),
+        _ => (RunStatus::Succeeded, 0.0, None),
+    };
+    let trigger = match &first.kind {
+        RunEventKind::RunStarted { trigger, .. } => trigger.clone(),
+        _ => "replay".into(),
+    };
+    let run = Run {
+        id: il_sdk::id("run"),
+        flow_id: flow.id.clone(),
+        workspace_id: flow.workspace_id.clone(),
+        flow_version: flow.version,
+        status,
+        trigger,
+        started_at: first.ts,
+        finished_at: Some(last.ts),
+        cost_usd,
+        error,
+        replay: true,
+        state: Value::Null,
+    };
+    let store = &state.services.store;
+    store.put_run(&run).await.map_err(ApiErr::internal)?;
+    for event in &mut events {
+        event.run_id = run.id.clone();
+        if let RunEventKind::RunStarted { flow_id, .. } = &mut event.kind {
+            *flow_id = flow.id.clone();
+        }
+        store.append_run_event(event).await.map_err(ApiErr::internal)?;
+    }
+    Ok(())
+}
+
 /// A copy of `flow` for `workspace_id`, with a fresh id, not yet saved.
-pub(super) fn instance(mut flow: Flow, workspace_id: &str) -> Flow {
+fn instance(mut flow: Flow, workspace_id: &str) -> Flow {
     flow.id = il_sdk::id("flw");
     flow.workspace_id = workspace_id.into();
     flow.version = 0;
