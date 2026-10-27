@@ -16,7 +16,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 5 | W02 | Canvas editor + Ask diff view | P0 | T00 | done | claude-a | t/W02-editor | 2026-10-27 13:55 | [PR #8](https://github.com/spark-456/interlock/pull/8). Editor at /flows/[id]; the node panel (W03) mounts beside the canvas |
 | 6 | B01 | Store: SQLite, migrations, files, secrets | P0 | T00 | done | codex-1 | t/B01-store | 2026-10-27 13:48 | [PR #9](https://github.com/spark-456/interlock/pull/9) |
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
-| 8 | B06 | Nodes: logic & data | P0 | T00 | ready | | | | |
+| 8 | B06 | Nodes: logic & data | P0 | T00 | claimed | codex-1 | t/B06-logic-data | 2026-10-27 13:49 | |
 | 9 | B07 | Nodes: AI | P0 | T00 | ready | | | | |
 | 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | done | claude-a | t/B04-server | 2026-10-27 08:05 | Part 1, commit 9fcc8b3: all /api routes, SSE, demo sessions, files, CORS. Rest is in B04b |
 | 11 | W03 | Node panel, schema forms, previews | P0 | T00 | claimed | claude-a | t/W03-panel | 2026-10-27 14:40 | WIP pushed: lib/forms (schema, Field, SchemaForm, ExpressionInput, mapper), lib/previews (7 renderers + registry), panel/Preview, runState keeps items, api.connections/runStep + fixtures. Left: panel/NodePanel + CredentialPicker, mount in /flows/[id] replacing the selection bar, Run this step, vitest for forms/mapper/previews, e2e, MAPPING |
