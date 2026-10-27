@@ -1,13 +1,14 @@
 //! Core routes plus every registered `RouteFactory`. B04 adds the rest of PRD §8.5 here.
 
 use axum::extract::State;
-use axum::http::{StatusCode, Uri};
+use axum::http::{HeaderValue, Method, StatusCode, Uri, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use il_core::ApiError;
 use il_core::dto::{CatalogResponse, Health};
 use tower_http::compression::CompressionLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 use crate::assets;
@@ -19,13 +20,27 @@ pub fn router(state: AppState) -> Router {
     let mut app = Router::new()
         .route("/healthz", get(healthz))
         .route("/api/nodes", get(nodes))
+        .merge(crate::api::router())
         .route("/api/{*rest}", get(api_not_found).post(api_not_found).put(api_not_found).delete(api_not_found))
-        .with_state(state);
+        .with_state(state.clone());
     for factory in il_sdk::registry::route_factories() {
         tracing::info!(group = factory.name, "mounting route group");
         app = app.merge((factory.make)(&ctx));
     }
-    app.fallback(assets::serve).layer(CompressionLayer::new()).layer(TraceLayer::new_for_http())
+    app.fallback(assets::serve)
+        .layer(cors(&state.config.server.cors_origins))
+        .layer(CompressionLayer::new())
+        .layer(TraceLayer::new_for_http())
+}
+
+/// CORS: same-origin by default; listed origins may call with credentials (PRD §6 Security).
+fn cors(origins: &[String]) -> CorsLayer {
+    let allowed: Vec<HeaderValue> = origins.iter().filter_map(|o| o.parse().ok()).collect();
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(allowed))
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+        .allow_credentials(true)
 }
 
 async fn healthz() -> Json<Health> {

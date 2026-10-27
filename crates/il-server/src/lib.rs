@@ -1,5 +1,6 @@
 //! The Interlock server: the only crate that wires concrete implementations together.
 
+pub mod api;
 pub mod assets;
 pub mod config;
 pub mod routes;

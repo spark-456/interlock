@@ -21,8 +21,11 @@ il-architect.workspace = true
 il-publish.workspace = true
 
 anyhow.workspace = true
+chrono.workspace = true
+futures.workspace = true
+bytes.workspace = true
 async-trait.workspace = true
-axum = { workspace = true, features = ["tokio", "http1", "json", "query", "macros"] }
+axum = { workspace = true, features = ["tokio", "http1", "json", "query", "macros", "multipart"] }
 mime_guess.workspace = true
 rust-embed.workspace = true
 serde.workspace = true
