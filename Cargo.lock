@@ -1234,13 +1234,20 @@ name = "il-connectors"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "axum",
+ "base64 0.22.1",
+ "chrono",
  "il-core",
  "il-sdk",
  "inventory",
  "reqwest",
+ "serde",
  "serde_json",
  "serde_yaml",
  "tokio",
+ "tokio-util",
+ "tower",
+ "ulid",
  "url",
  "wiremock",
 ]

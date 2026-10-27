@@ -287,6 +287,10 @@ impl Store for SqliteStore {
         .await
     }
 
+    async fn put_credential(&self, workspace_id: &str, credential: &Credential) -> StoreResult<()> {
+        SqliteStore::put_credential(self, workspace_id, credential).await
+    }
+
     async fn kv_get(&self, key: &str) -> StoreResult<Option<Value>> {
         let key = key.to_owned();
         self.with_conn(move |c| get(c, "SELECT value FROM tr_poll_cursors WHERE key=?1", &key)).await

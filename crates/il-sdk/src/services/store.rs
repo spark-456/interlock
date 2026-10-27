@@ -99,6 +99,8 @@ pub trait Store: Send + Sync {
 
     // Credentials (decrypted on read).
     async fn credential(&self, workspace_id: &str, id: &str) -> StoreResult<Option<Credential>>;
+    /// Persists an encrypted credential or updates its token after refresh.
+    async fn put_credential(&self, workspace_id: &str, credential: &Credential) -> StoreResult<()>;
 
     // Small key/value state: poll cursors, trigger state, dedupe keys.
     async fn kv_get(&self, key: &str) -> StoreResult<Option<Value>>;

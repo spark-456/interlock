@@ -225,6 +225,7 @@ mod tests {
             workspace_id: "ws".into(),
             node_id: "n_hook".into(),
             settings: f.nodes[0].settings.clone(),
+            credential_ids: Default::default(),
             services: fakes.services(),
             runner: runner.clone(),
             cancel: CancellationToken::new(),

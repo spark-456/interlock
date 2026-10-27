@@ -137,9 +137,24 @@ pub struct TriggerCtx {
     pub workspace_id: String,
     pub node_id: String,
     pub settings: Value,
+    /// Credential bindings copied from the trigger node.
+    pub credential_ids: BTreeMap<String, String>,
     pub services: Services,
     pub runner: Arc<dyn FlowRunner>,
     pub cancel: CancellationToken,
+}
+
+impl TriggerCtx {
+    /// Reads the credential bound to a trigger.
+    pub async fn credential(&self, key: &str) -> Result<Credential, NodeError> {
+        let id = self.credential_ids.get(key).ok_or_else(|| NodeError::MissingCredential(key.into()))?;
+        self.services
+            .store
+            .credential(&self.workspace_id, id)
+            .await
+            .map_err(|e| NodeError::Failed(e.to_string()))?
+            .ok_or_else(|| NodeError::MissingCredential(key.into()))
+    }
 }
 
 /// Stops a running trigger when dropped or on `stop()`.
