@@ -2,7 +2,7 @@
 //!
 //! Requests an approval and routes its eventual decision.
 
-use il_core::Decision;
+use il_core::{ApprovalTimeout, Decision};
 use il_sdk::ctx::ApprovalSpec;
 use il_sdk::prelude::*;
 
@@ -117,6 +117,11 @@ impl NodeExecutor for HumanApproval {
             channels,
             target: ctx.settings["slackChannel"].as_str().map(str::to_owned),
             timeout_hours: ctx.settings["timeoutHours"].as_f64(),
+            on_timeout: match ctx.settings["onTimeout"].as_str() {
+                Some("approve") => ApprovalTimeout::Approve,
+                Some("reject") => ApprovalTimeout::Reject,
+                _ => ApprovalTimeout::KeepWaiting,
+            },
         };
         Ok(NodeOutput::waiting(ctx.request_approval(spec).await?))
     }
@@ -126,7 +131,7 @@ inventory::submit! { NodeFactory::new(|| Box::new(HumanApproval)) }
 
 #[cfg(test)]
 mod tests {
-    use il_core::{ApprovalDecision, Decision};
+    use il_core::{ApprovalDecision, ApprovalTimeout, Decision};
     use il_sdk::testkit::NodeHarness;
     use serde_json::json;
     #[test]
@@ -137,13 +142,14 @@ mod tests {
     #[tokio::test]
     async fn b08_approval_waits_with_configured_channel_and_timeout() {
         let harness = NodeHarness::new(super::HumanApproval)
-            .settings(json!({"title":"Approve post","channels":["inapp","slack"],"slackChannel":"#team","timeoutHours":2.0,"payload":"{{ item.draft }}"}))
+            .settings(json!({"title":"Approve post","channels":["inapp","slack"],"slackChannel":"#team","timeoutHours":2.0,"onTimeout":"reject","payload":"{{ item.draft }}"}))
             .input_json(vec![json!({"draft":"Hello"})]);
         assert!(harness.run().await.unwrap().waiting_for.is_some());
         let requests = harness.approvals.requested.lock().unwrap();
         assert_eq!(requests[0].payload, "Hello");
         assert_eq!(requests[0].target.as_deref(), Some("#team"));
         assert_eq!(requests[0].timeout_hours, Some(2.0));
+        assert_eq!(requests[0].on_timeout, ApprovalTimeout::Reject);
     }
 
     #[tokio::test]
