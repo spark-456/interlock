@@ -1,0 +1,300 @@
+{
+  "$defs": {
+    "BuildQuestion": {
+      "description": "A clarifying question from the architect (AR-2).",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "options"
+      ],
+      "type": "object"
+    },
+    "StageStatus": {
+      "description": "Status of a build stage.",
+      "enum": [
+        "pending",
+        "active",
+        "done",
+        "failed"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One event in a build (architect session) stream.",
+  "oneOf": [
+    {
+      "description": "`stage` is one of the architect stages (e.g. `understand`, `knowledge`, `tools`, `assemble`, `test`, `ready`).",
+      "properties": {
+        "data": {
+          "properties": {
+            "stage": {
+              "type": "string"
+            },
+            "status": {
+              "$ref": "#/$defs/StageStatus"
+            }
+          },
+          "required": [
+            "stage",
+            "status"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.log",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "questions": {
+              "items": {
+                "$ref": "#/$defs/BuildQuestion"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "questions"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.question",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "RFC 6902 JSON Patch against the flow being built; nodes and edges appear incrementally.",
+      "properties": {
+        "data": {
+          "properties": {
+            "jsonPatch": true
+          },
+          "required": [
+            "jsonPatch"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.flow_patch",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "app": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "app"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.connection_needed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "failed": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "passed": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "passed",
+            "failed"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.test_result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "description"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.fix",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "flowId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flowId"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.ready",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "error": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "error"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "build.failed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    }
+  ],
+  "properties": {
+    "buildId": {
+      "type": "string"
+    },
+    "nodeId": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "seq": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "ts": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "seq",
+    "ts",
+    "buildId"
+  ],
+  "title": "BuildEvent",
+  "type": "object"
+}

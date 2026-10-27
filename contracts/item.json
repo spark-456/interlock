@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "FileRef": {
+      "description": "A pointer to a file held by the `FileStore`.",
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "mime": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "previewUrl": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "mime",
+        "bytes",
+        "name"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The unit of data that flows between nodes. Each port carries `Vec<Item>`.",
+  "properties": {
+    "files": {
+      "additionalProperties": {
+        "$ref": "#/$defs/FileRef"
+      },
+      "default": {},
+      "type": "object"
+    },
+    "json": true
+  },
+  "required": [
+    "json"
+  ],
+  "title": "Item",
+  "type": "object"
+}

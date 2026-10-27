@@ -1,0 +1,10 @@
+[
+  {
+    "id": "run_fa",
+    "status": "succeeded",
+    "startedAt": "2026-10-26T09:00:00Z",
+    "ms": 48200,
+    "costUsd": 0.011,
+    "replay": true
+  }
+]

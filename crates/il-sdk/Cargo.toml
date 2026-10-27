@@ -1,0 +1,33 @@
+[package]
+name = "il-sdk"
+description = "Interlock plug-in SDK: executor traits, NodeCtx, service traits, registries, SSRF-safe HTTP, testkit."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+# In-memory fakes and NodeHarness. Enabled by dev-dependencies and by il-server's fake mode.
+testkit = []
+
+[dependencies]
+il-core.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+bytes.workspace = true
+chrono.workspace = true
+futures.workspace = true
+inventory.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+ulid.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

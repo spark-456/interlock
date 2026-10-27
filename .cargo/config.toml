@@ -1,0 +1,8 @@
+[alias]
+xtask = "run --quiet --package xtask --"
+
+[env]
+# Tests never need network or keys (AGENTS.md §1).
+IL_PROVIDERS = "fake"
+# ts-rs export tests write here; `cargo xtask gen-types` points it at web/src/lib/api/types.
+TS_RS_EXPORT_DIR = { value = "target/ts-rs", relative = true }

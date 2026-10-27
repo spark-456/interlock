@@ -1,0 +1,60 @@
+# Interlock configuration. Copy to config/interlock.toml (git-ignored).
+# Every module reads only its own section. Secrets NEVER go here: they come from env
+# (NEBIUS_API_KEY, TAVILY_API_KEY, IL_MASTER_KEY, GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_SECRET,
+# SLACK_CLIENT_SECRET, media provider keys). Env overrides: IL_HOST, IL_PORT, IL_CONFIG, IL_PROVIDERS.
+
+[server]
+host = "127.0.0.1"
+port = 8080
+# public_url = "https://interlock.example"   # used for OAuth callbacks, webhooks, widget URLs
+cors_origins = []
+
+[auth.github]
+client_id = ""          # secret: GITHUB_CLIENT_SECRET
+
+[models]
+# Nebius Token Factory, OpenAI-compatible. Key: NEBIUS_API_KEY.
+provider = "tokenfactory"
+base_url = "https://api.tokenfactory.nebius.com/v1/"
+# Role → model id. VERIFY these ids against `GET /v1/models` (the server logs them at startup).
+[models.roles]
+architect = "nvidia/Nemotron-3-Ultra"   # NVIDIA Nemotron 3 Ultra — goal → flow, Ask diffs
+agent = "nvidia/Nemotron-3-Super"       # NVIDIA Nemotron 3 Super — agents, writing
+fast = "nvidia/Nemotron-3-Nano"         # NVIDIA Nemotron 3 Nano — classify, extract, route
+embed = "Qwen/Qwen3-Embedding-8B"       # embeddings for knowledge search
+# USD per 1M tokens (input, output), for cost metering and caps.
+[models.prices]
+architect = [0.6, 1.8]
+agent = [0.3, 0.9]
+fast = [0.06, 0.24]
+embed = [0.01, 0.0]
+
+[providers.media]
+# `recorded` returns fixture media; it is the default in demo mode, test runs and tests.
+# Real adapters exist but are not live-tested; they switch on only when their key is set.
+video = "recorded"
+voice = "recorded"
+image = "recorded"
+
+[providers.transcription]
+provider = "tokenfactory"
+model = ""              # set to a speech-to-text model id if available; else fake in tests
+
+[tavily]
+base_url = "https://api.tavily.com"
+max_pages_per_source = 50   # key: TAVILY_API_KEY
+
+[caps]
+global_daily_usd = 25.0
+workspace_daily_usd = 5.0
+flow_daily_usd = 3.0
+run_usd = 1.0
+demo_run_usd = 0.10
+demo_models = ["fast", "agent"]   # Nano/Super only in demo
+demo_media = "replay"
+
+[storage]
+path = "data"           # SQLite db at data/interlock.db, files under data/files/
+
+[security]
+# master key comes ONLY from env: IL_MASTER_KEY (32 random bytes, base64)

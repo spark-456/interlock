@@ -1,0 +1,35 @@
+{
+  "$defs": {
+    "ApiErrorBody": {
+      "description": "Inner error object.",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "details": {
+          "default": null
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The body of every API error response.",
+  "properties": {
+    "error": {
+      "$ref": "#/$defs/ApiErrorBody"
+    }
+  },
+  "required": [
+    "error"
+  ],
+  "title": "ApiError",
+  "type": "object"
+}

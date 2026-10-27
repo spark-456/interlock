@@ -1,0 +1,12 @@
+/target/
+/data/
+config/interlock.toml
+node_modules/
+web/build/
+web/.svelte-kit/
+web/test-results/
+web/playwright-report/
+.env
+.env.*
+*.log
+.DS_Store

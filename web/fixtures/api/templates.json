@@ -1,0 +1,14 @@
+[
+  {
+    "id": "tpl_promos",
+    "name": "Weekly product promos",
+    "description": "Promo videos for new products, cut for every platform, posted after approval.",
+    "kind": "automation",
+    "apps": [
+      "shopify",
+      "slack",
+      "youtube"
+    ],
+    "hasRecordedRun": true
+  }
+]

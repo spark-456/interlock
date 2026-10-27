@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "Attachment": {
+      "description": "A file, link or audio clip attached to a build goal (AR-1).",
+      "properties": {
+        "fileId": {
+          "default": null,
+          "description": "Set for uploaded files and audio.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/AttachmentKind"
+        },
+        "name": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/AttachmentRole"
+        },
+        "url": {
+          "default": null,
+          "description": "Set for links.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "role"
+      ],
+      "type": "object"
+    },
+    "AttachmentKind": {
+      "description": "Attachment kind.",
+      "enum": [
+        "file",
+        "link",
+        "audio",
+        "api"
+      ],
+      "type": "string"
+    },
+    "AttachmentRole": {
+      "description": "Whether an attachment is reference knowledge or instructions for the assistant.",
+      "enum": [
+        "knowledge",
+        "instructions"
+      ],
+      "type": "string"
+    },
+    "FlowKind": {
+      "description": "Automation (background) or AI app (chat/API/MCP).",
+      "enum": [
+        "automation",
+        "app"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "`POST /api/builds`",
+  "properties": {
+    "attachments": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Attachment"
+      },
+      "type": "array"
+    },
+    "goal": {
+      "type": "string"
+    },
+    "hints": {
+      "default": [],
+      "description": "Optional app/API hints (`gmail`, `slack`, an OpenAPI URL…).",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FlowKind"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "goal"
+  ],
+  "title": "BuildRequest",
+  "type": "object"
+}

@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "ApprovalStatus": {
+      "description": "Approval lifecycle.",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "expired"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A pending or decided human approval.",
+  "properties": {
+    "channels": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "createdAt": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "decidedAt": {
+      "format": "date-time",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "decidedBy": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "flowId": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "nodeId": {
+      "type": "string"
+    },
+    "payload": {
+      "description": "Editable payload shown to the approver (e.g. post drafts)."
+    },
+    "runId": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ApprovalStatus"
+    },
+    "title": {
+      "type": "string"
+    },
+    "workspaceId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "workspaceId",
+    "flowId",
+    "runId",
+    "nodeId",
+    "title",
+    "message",
+    "payload",
+    "status",
+    "channels",
+    "createdAt"
+  ],
+  "title": "Approval",
+  "type": "object"
+}

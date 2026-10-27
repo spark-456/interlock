@@ -1,0 +1,29 @@
+[
+  {
+    "id": "flw_promos",
+    "name": "Weekly product promos",
+    "kind": "automation",
+    "version": 1,
+    "active": true,
+    "updatedAt": "2026-10-26T09:00:00Z",
+    "lastRun": {
+      "id": "run_fa",
+      "status": "succeeded",
+      "startedAt": "2026-10-26T09:00:00Z",
+      "ms": 48200,
+      "costUsd": 0.011,
+      "replay": true
+    },
+    "apps": [
+      "shopify",
+      "slack",
+      "youtube",
+      "bluesky",
+      "discord",
+      "instagram",
+      "tiktok",
+      "linkedin",
+      "sheets"
+    ]
+  }
+]

@@ -1,0 +1,1305 @@
+[
+  {
+    "seq": 1,
+    "ts": "2026-10-26T09:00:00.200000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "understand",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 2,
+    "ts": "2026-10-26T09:00:00.800000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Reading your request: weekly promos for the three newest products."
+    }
+  },
+  {
+    "seq": 3,
+    "ts": "2026-10-26T09:00:01.800000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Trigger: every Monday at 9:00 (Asia/Kolkata)."
+    }
+  },
+  {
+    "seq": 4,
+    "ts": "2026-10-26T09:00:02.400000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "understand",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 5,
+    "ts": "2026-10-26T09:00:03Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "assemble",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 6,
+    "ts": "2026-10-26T09:00:03.400000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/groups",
+          "value": [
+            {
+              "id": "g_find",
+              "label": "Find new products"
+            },
+            {
+              "id": "g_make",
+              "label": "Make the videos"
+            },
+            {
+              "id": "g_cut",
+              "label": "Cut and caption"
+            },
+            {
+              "id": "g_post",
+              "label": "Approve and post"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "seq": 7,
+    "ts": "2026-10-26T09:00:04.100000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_schedule",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_schedule",
+            "type": "trigger.schedule",
+            "typeVersion": 1,
+            "name": "Every Monday 9:00",
+            "position": {
+              "x": 0,
+              "y": 200
+            },
+            "group": "g_find",
+            "settings": {
+              "cron": "0 9 * * MON",
+              "timezone": "Asia/Kolkata"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 8,
+    "ts": "2026-10-26T09:00:04.800000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_products",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_products",
+            "type": "app.shopify.get_products",
+            "typeVersion": 1,
+            "name": "Three newest products",
+            "position": {
+              "x": 304,
+              "y": 200
+            },
+            "group": "g_find",
+            "settings": {
+              "store": "sandbox",
+              "sort": "newest",
+              "limit": 3
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 9,
+    "ts": "2026-10-26T09:00:04.950000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_schedule_products",
+            "from": {
+              "node": "n_schedule",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_products",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 10,
+    "ts": "2026-10-26T09:00:05.150000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_products",
+    "type": "build.connection_needed",
+    "data": {
+      "app": "shopify"
+    }
+  },
+  {
+    "seq": 11,
+    "ts": "2026-10-26T09:00:05.450000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Using the sandbox store until you connect Shopify."
+    }
+  },
+  {
+    "seq": 12,
+    "ts": "2026-10-26T09:00:06.150000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_loop",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_loop",
+            "type": "logic.loop",
+            "typeVersion": 1,
+            "name": "Each product",
+            "position": {
+              "x": 608,
+              "y": 200
+            },
+            "group": "g_find",
+            "settings": {
+              "field": "{{ item.products }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 13,
+    "ts": "2026-10-26T09:00:06.300000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_products_loop",
+            "from": {
+              "node": "n_products",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_loop",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 14,
+    "ts": "2026-10-26T09:00:07Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_script",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_script",
+            "type": "ai.write",
+            "typeVersion": 1,
+            "name": "Write video script",
+            "position": {
+              "x": 912,
+              "y": 0
+            },
+            "group": "g_make",
+            "settings": {
+              "instructions": "Write a 20-second upbeat promo script for this product. End with the price.",
+              "input": "{{ item.title }}: {{ item.description }} (${{ item.price }})",
+              "tone": "upbeat",
+              "length": "short"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 15,
+    "ts": "2026-10-26T09:00:07.150000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_loop_script",
+            "from": {
+              "node": "n_loop",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_script",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 16,
+    "ts": "2026-10-26T09:00:07.850000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_video",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_video",
+            "type": "ai.generate_video",
+            "typeVersion": 1,
+            "name": "Generate promo video",
+            "position": {
+              "x": 1216,
+              "y": 0
+            },
+            "group": "g_make",
+            "settings": {
+              "prompt": "{{ item.text }}",
+              "durationSec": 20,
+              "aspect": "16:9"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 17,
+    "ts": "2026-10-26T09:00:08Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_script_video",
+            "from": {
+              "node": "n_script",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_video",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 18,
+    "ts": "2026-10-26T09:00:08.700000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_voice",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_voice",
+            "type": "ai.generate_voice",
+            "typeVersion": 1,
+            "name": "Generate voiceover",
+            "position": {
+              "x": 1216,
+              "y": 400
+            },
+            "group": "g_make",
+            "settings": {
+              "text": "{{ nodes.n_script.json.text }}",
+              "voice": "warm"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 19,
+    "ts": "2026-10-26T09:00:08.850000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_script_voice",
+            "from": {
+              "node": "n_script",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_voice",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 20,
+    "ts": "2026-10-26T09:00:09.550000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_merge",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_merge",
+            "type": "media.merge_av",
+            "typeVersion": 1,
+            "name": "Add voiceover",
+            "position": {
+              "x": 1520,
+              "y": 200
+            },
+            "group": "g_make",
+            "settings": {
+              "video": "{{ item.files.video }}",
+              "audio": "{{ item.files.audio }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 21,
+    "ts": "2026-10-26T09:00:09.700000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_video_merge",
+            "from": {
+              "node": "n_video",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_merge",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 22,
+    "ts": "2026-10-26T09:00:09.850000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_voice_merge",
+            "from": {
+              "node": "n_voice",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_merge",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 23,
+    "ts": "2026-10-26T09:00:10.550000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_resize",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_resize",
+            "type": "media.resize",
+            "typeVersion": 1,
+            "name": "Cut for each platform",
+            "position": {
+              "x": 1824,
+              "y": 200
+            },
+            "group": "g_cut",
+            "settings": {
+              "video": "{{ item.files.video }}",
+              "aspects": [
+                "9:16",
+                "1:1",
+                "16:9"
+              ]
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 24,
+    "ts": "2026-10-26T09:00:10.700000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_merge_resize",
+            "from": {
+              "node": "n_merge",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_resize",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 25,
+    "ts": "2026-10-26T09:00:11.400000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_captions",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_captions",
+            "type": "media.captions",
+            "typeVersion": 1,
+            "name": "Add captions",
+            "position": {
+              "x": 1824,
+              "y": 400
+            },
+            "group": "g_cut",
+            "settings": {
+              "video": "{{ item.files.video }}",
+              "text": "{{ nodes.n_script.json.text }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 26,
+    "ts": "2026-10-26T09:00:11.550000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_resize_captions",
+            "from": {
+              "node": "n_resize",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_captions",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 27,
+    "ts": "2026-10-26T09:00:12.250000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_posts",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_posts",
+            "type": "ai.write",
+            "typeVersion": 1,
+            "name": "Write post text",
+            "position": {
+              "x": 1824,
+              "y": 0
+            },
+            "group": "g_post",
+            "settings": {
+              "instructions": "Write a short post for Reels, TikTok, Shorts and LinkedIn. Friendly, no hashtags spam, max two hashtags.",
+              "input": "{{ item.title }}",
+              "tone": "friendly",
+              "length": "short",
+              "outputField": "post"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 28,
+    "ts": "2026-10-26T09:00:12.400000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_captions_posts",
+            "from": {
+              "node": "n_captions",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_posts",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 29,
+    "ts": "2026-10-26T09:00:13.100000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_approve",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_approve",
+            "type": "human.approval",
+            "typeVersion": 1,
+            "name": "Approve in Slack",
+            "position": {
+              "x": 1824,
+              "y": 200
+            },
+            "group": "g_post",
+            "settings": {
+              "title": "Approve this week's promo posts",
+              "payload": "{{ item }}",
+              "channels": [
+                "inapp",
+                "slack"
+              ],
+              "slackChannel": "#marketing"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 30,
+    "ts": "2026-10-26T09:00:13.250000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_posts_approve",
+            "from": {
+              "node": "n_posts",
+              "port": "out"
+            },
+            "to": {
+              "node": "n_approve",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 31,
+    "ts": "2026-10-26T09:00:13.450000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_approve",
+    "type": "build.connection_needed",
+    "data": {
+      "app": "slack"
+    }
+  },
+  {
+    "seq": 32,
+    "ts": "2026-10-26T09:00:14.150000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_youtube",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_youtube",
+            "type": "app.youtube.upload",
+            "typeVersion": 1,
+            "name": "YouTube Shorts (private)",
+            "position": {
+              "x": 2128,
+              "y": 0
+            },
+            "group": "g_post",
+            "settings": {
+              "video": "{{ item.files.clip_9x16 }}",
+              "title": "{{ item.title }}",
+              "privacy": "private"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 33,
+    "ts": "2026-10-26T09:00:14.300000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_approve_youtube",
+            "from": {
+              "node": "n_approve",
+              "port": "approved"
+            },
+            "to": {
+              "node": "n_youtube",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 34,
+    "ts": "2026-10-26T09:00:15Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_bluesky",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_bluesky",
+            "type": "app.bluesky.post",
+            "typeVersion": 1,
+            "name": "Bluesky",
+            "position": {
+              "x": 2128,
+              "y": 200
+            },
+            "group": "g_post",
+            "settings": {
+              "text": "{{ item.post }}",
+              "media": "{{ item.files.clip_1x1 }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 35,
+    "ts": "2026-10-26T09:00:15.150000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_approve_bluesky",
+            "from": {
+              "node": "n_approve",
+              "port": "approved"
+            },
+            "to": {
+              "node": "n_bluesky",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 36,
+    "ts": "2026-10-26T09:00:15.850000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_discord",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_discord",
+            "type": "app.discord.send",
+            "typeVersion": 1,
+            "name": "Discord",
+            "position": {
+              "x": 2128,
+              "y": 400
+            },
+            "group": "g_post",
+            "settings": {
+              "content": "{{ item.post }}",
+              "attachments": "{{ item.files.clip_16x9 }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 37,
+    "ts": "2026-10-26T09:00:16Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_approve_discord",
+            "from": {
+              "node": "n_approve",
+              "port": "approved"
+            },
+            "to": {
+              "node": "n_discord",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 38,
+    "ts": "2026-10-26T09:00:16.700000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_instagram",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_instagram",
+            "type": "app.instagram.post_reel",
+            "typeVersion": 1,
+            "name": "Instagram Reels (dry-run)",
+            "position": {
+              "x": 2128,
+              "y": 600
+            },
+            "group": "g_post",
+            "settings": {
+              "video": "{{ item.files.clip_9x16 }}",
+              "caption": "{{ item.post }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 39,
+    "ts": "2026-10-26T09:00:16.850000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_approve_instagram",
+            "from": {
+              "node": "n_approve",
+              "port": "approved"
+            },
+            "to": {
+              "node": "n_instagram",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 40,
+    "ts": "2026-10-26T09:00:17.150000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Instagram, TikTok and LinkedIn run as dry-runs until those platforms approve posting."
+    }
+  },
+  {
+    "seq": 41,
+    "ts": "2026-10-26T09:00:17.850000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_tiktok",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_tiktok",
+            "type": "app.tiktok.post",
+            "typeVersion": 1,
+            "name": "TikTok (dry-run)",
+            "position": {
+              "x": 2128,
+              "y": 800
+            },
+            "group": "g_post",
+            "settings": {
+              "video": "{{ item.files.clip_9x16 }}",
+              "caption": "{{ item.post }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 42,
+    "ts": "2026-10-26T09:00:18Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_approve_tiktok",
+            "from": {
+              "node": "n_approve",
+              "port": "approved"
+            },
+            "to": {
+              "node": "n_tiktok",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 43,
+    "ts": "2026-10-26T09:00:18.700000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_linkedin",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_linkedin",
+            "type": "app.linkedin.post",
+            "typeVersion": 1,
+            "name": "LinkedIn (dry-run)",
+            "position": {
+              "x": 2128,
+              "y": 1000
+            },
+            "group": "g_post",
+            "settings": {
+              "text": "{{ item.post }}",
+              "media": "{{ item.files.clip_16x9 }}"
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 44,
+    "ts": "2026-10-26T09:00:18.850000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_approve_linkedin",
+            "from": {
+              "node": "n_approve",
+              "port": "approved"
+            },
+            "to": {
+              "node": "n_linkedin",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 45,
+    "ts": "2026-10-26T09:00:19.550000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_log",
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/nodes/-",
+          "value": {
+            "id": "n_log",
+            "type": "app.sheets.append_row",
+            "typeVersion": 1,
+            "name": "Log in Google Sheets",
+            "position": {
+              "x": 2128,
+              "y": 1200
+            },
+            "group": "g_post",
+            "settings": {
+              "spreadsheetId": "1LarkspurPromoLog",
+              "sheet": "Log",
+              "values": {
+                "Product": "{{ item.title }}",
+                "Status": "posted"
+              }
+            },
+            "credentials": {},
+            "disabled": false,
+            "notes": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 46,
+    "ts": "2026-10-26T09:00:19.700000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.flow_patch",
+    "data": {
+      "jsonPatch": [
+        {
+          "op": "add",
+          "path": "/edges/-",
+          "value": {
+            "id": "e_approve_log",
+            "from": {
+              "node": "n_approve",
+              "port": "approved"
+            },
+            "to": {
+              "node": "n_log",
+              "port": "in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "seq": 47,
+    "ts": "2026-10-26T09:00:20.300000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "assemble",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 48,
+    "ts": "2026-10-26T09:00:20.900000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "test",
+      "status": "active"
+    }
+  },
+  {
+    "seq": 49,
+    "ts": "2026-10-26T09:00:22.100000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.log",
+    "data": {
+      "text": "Test run with the sandbox store: 3 products."
+    }
+  },
+  {
+    "seq": 50,
+    "ts": "2026-10-26T09:00:25.100000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.test_result",
+    "data": {
+      "passed": 16,
+      "failed": 2
+    }
+  },
+  {
+    "seq": 51,
+    "ts": "2026-10-26T09:00:26.600000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_captions",
+    "type": "build.fix",
+    "data": {
+      "description": "Captions used the wrong field; mapped them to the video script."
+    }
+  },
+  {
+    "seq": 52,
+    "ts": "2026-10-26T09:00:27.600000Z",
+    "buildId": "bld_fa",
+    "nodeId": "n_posts",
+    "type": "build.fix",
+    "data": {
+      "description": "The LinkedIn post was over 3,000 characters; shortened the instructions."
+    }
+  },
+  {
+    "seq": 53,
+    "ts": "2026-10-26T09:00:29.600000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.test_result",
+    "data": {
+      "passed": 18,
+      "failed": 0
+    }
+  },
+  {
+    "seq": 54,
+    "ts": "2026-10-26T09:00:30.200000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.stage",
+    "data": {
+      "stage": "test",
+      "status": "done"
+    }
+  },
+  {
+    "seq": 55,
+    "ts": "2026-10-26T09:00:30.700000Z",
+    "buildId": "bld_fa",
+    "nodeId": null,
+    "type": "build.ready",
+    "data": {
+      "flowId": "flw_promos"
+    }
+  }
+]

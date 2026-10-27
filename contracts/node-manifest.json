@@ -1,0 +1,251 @@
+{
+  "$defs": {
+    "Category": {
+      "description": "Palette category.",
+      "enum": [
+        "trigger",
+        "ai",
+        "knowledge",
+        "media",
+        "logic",
+        "data",
+        "app",
+        "human",
+        "output"
+      ],
+      "type": "string"
+    },
+    "CostHint": {
+      "description": "Rough cost per run of the node.",
+      "enum": [
+        "free",
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    },
+    "CredentialKind": {
+      "description": "How a credential is obtained.",
+      "enum": [
+        "oAuth2",
+        "apiKey",
+        "botToken",
+        "appPassword",
+        "webhook"
+      ],
+      "type": "string"
+    },
+    "CredentialSpec": {
+      "description": "A credential the node needs.",
+      "properties": {
+        "app": {
+          "description": "Connection app (`google`, `slack`, `bluesky`, `openapi`…).",
+          "type": "string"
+        },
+        "key": {
+          "description": "Key used in `Node.credentials` and `ctx.credential(key)`.",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/CredentialKind"
+        },
+        "label": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "scopes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "app",
+        "kind",
+        "label",
+        "scopes",
+        "optional"
+      ],
+      "type": "object"
+    },
+    "ExecMode": {
+      "description": "Whether the engine calls the node once per item or once with all items.",
+      "enum": [
+        "perItem",
+        "batch"
+      ],
+      "type": "string"
+    },
+    "NodeExample": {
+      "description": "A short example the architect sees.",
+      "properties": {
+        "settings": true,
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "settings"
+      ],
+      "type": "object"
+    },
+    "NodeStatus": {
+      "description": "Implementation status.",
+      "oneOf": [
+        {
+          "enum": [
+            "ready",
+            "experimental"
+          ],
+          "type": "string"
+        },
+        {
+          "const": "dryRun",
+          "description": "Validates and previews but never posts (needs platform approval).",
+          "type": "string"
+        },
+        {
+          "const": "stub",
+          "description": "Manifest only (T00); the executor returns `NotImplemented`. Usable in templates and the architect.",
+          "type": "string"
+        }
+      ]
+    },
+    "PortSpec": {
+      "description": "An input or output port.",
+      "properties": {
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
+    "SideEffect": {
+      "description": "Whether running the node changes anything outside Interlock.",
+      "enum": [
+        "none",
+        "external"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Everything Interlock knows about a node type without running it.",
+  "properties": {
+    "app": {
+      "description": "Logo slot key for app nodes (`gmail`, `slack`…).",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "category": {
+      "$ref": "#/$defs/Category"
+    },
+    "costHint": {
+      "$ref": "#/$defs/CostHint"
+    },
+    "credentials": {
+      "items": {
+        "$ref": "#/$defs/CredentialSpec"
+      },
+      "type": "array"
+    },
+    "description": {
+      "description": "One or two sentences; also shown to the architect.",
+      "type": "string"
+    },
+    "dynamicOutputs": {
+      "description": "Settings key whose entries (each with a `name`) become extra output ports, e.g. Switch `cases`.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "examples": {
+      "items": {
+        "$ref": "#/$defs/NodeExample"
+      },
+      "type": "array"
+    },
+    "execMode": {
+      "$ref": "#/$defs/ExecMode"
+    },
+    "icon": {
+      "description": "Icon key (web icon set).",
+      "type": "string"
+    },
+    "inputs": {
+      "items": {
+        "$ref": "#/$defs/PortSpec"
+      },
+      "type": "array"
+    },
+    "outputs": {
+      "items": {
+        "$ref": "#/$defs/PortSpec"
+      },
+      "type": "array"
+    },
+    "settingsSchema": {
+      "description": "JSON Schema for settings. `x-widget` hints: expression, credential, file, longtext, select, model-role."
+    },
+    "sideEffect": {
+      "$ref": "#/$defs/SideEffect"
+    },
+    "status": {
+      "$ref": "#/$defs/NodeStatus"
+    },
+    "title": {
+      "type": "string"
+    },
+    "trigger": {
+      "description": "True for nodes that start runs (they have no inputs).",
+      "type": "boolean"
+    },
+    "typeId": {
+      "description": "Dotted type id, e.g. `ai.write`, `app.gmail.reply`.",
+      "type": "string"
+    },
+    "version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "typeId",
+    "version",
+    "category",
+    "title",
+    "description",
+    "icon",
+    "trigger",
+    "inputs",
+    "outputs",
+    "execMode",
+    "settingsSchema",
+    "credentials",
+    "sideEffect",
+    "status",
+    "costHint",
+    "examples"
+  ],
+  "title": "NodeManifest",
+  "type": "object"
+}

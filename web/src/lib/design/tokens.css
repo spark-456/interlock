@@ -1,0 +1,60 @@
+/* Interlock design tokens (T00).
+   TODO(W01/design): reconcile with docs/DESIGN-BRIEF.md and design/interlock/tokens/tokens.css.
+   No hex values outside src/lib/design/ (AGENTS.md §5.10). */
+:root {
+  /* Colour */
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #F2F4F7;
+  --border: #E4E7EC;
+  --border-strong: #D0D5DD;
+  --text: #101828;
+  --text-2: #475467;
+  --text-3: #667085;
+  --primary: #0B7A72;
+  --primary-hover: #096660;
+  --primary-soft: #E7F5F3;
+  --success: #079455;
+  --warning: #DC6803;
+  --error: #D92D20;
+  --info: #1570EF;
+
+  /* Node category tiles: tile background / icon colour. App nodes: white tile + 1px border. */
+  --cat-trigger-tile: #FEF6EE;   --cat-trigger-icon: #C4320A;
+  --cat-ai-tile: #E7F5F3;        --cat-ai-icon: #0B7A72;
+  --cat-knowledge-tile: #F4F3FF; --cat-knowledge-icon: #6938EF;
+  --cat-media-tile: #FDF2FA;     --cat-media-icon: #C11574;
+  --cat-logic-tile: #F2F4F7;     --cat-logic-icon: #344054;
+  --cat-data-tile: #EFF8FF;      --cat-data-icon: #1570EF;
+  --cat-human-tile: #FFF1F3;     --cat-human-icon: #C01048;
+  --cat-output-tile: #EEF4FF;    --cat-output-icon: #3538CD;
+  --cat-app-tile: #FFFFFF;       --cat-app-icon: #344054;
+
+  /* Type */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --t-display: 800 56px/60px var(--font-sans);
+  --t-h1: 700 32px/40px var(--font-sans);
+  --t-h2: 700 24px/32px var(--font-sans);
+  --t-h3: 600 18px/26px var(--font-sans);
+  --t-body: 400 15px/24px var(--font-sans);
+  --t-small: 500 13px/20px var(--font-sans);
+  --t-caption: 500 12px/16px var(--font-sans);
+  --t-code: 400 13px/20px var(--font-mono);
+
+  /* Radius */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-full: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .05);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .04);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, .10);
+
+  /* Spacing */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-14: 56px; --s-20: 80px;
+}

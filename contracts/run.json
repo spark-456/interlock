@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "RunStatus": {
+      "description": "Lifecycle of a run.",
+      "enum": [
+        "queued",
+        "running",
+        "waiting",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "capReached"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One execution of a flow.",
+  "properties": {
+    "costUsd": {
+      "format": "double",
+      "type": "number"
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "finishedAt": {
+      "format": "date-time",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "flowId": {
+      "type": "string"
+    },
+    "flowVersion": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "replay": {
+      "default": false,
+      "description": "True when this run is a replay of a recorded run (EN-8).",
+      "type": "boolean"
+    },
+    "startedAt": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "state": {
+      "default": null,
+      "description": "Engine checkpoint used to resume after restart. Opaque to everyone but the engine."
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus"
+    },
+    "trigger": {
+      "description": "Trigger type id, or `test`, `replay`, `api`.",
+      "type": "string"
+    },
+    "workspaceId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "flowId",
+    "workspaceId",
+    "flowVersion",
+    "status",
+    "trigger",
+    "startedAt",
+    "costUsd"
+  ],
+  "title": "Run",
+  "type": "object"
+}

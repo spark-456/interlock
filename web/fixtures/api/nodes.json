@@ -1,0 +1,4213 @@
+{
+  "nodes": [
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "medium",
+      "credentials": [],
+      "description": "An assistant that answers using knowledge bases and tools in a loop, returning the answer, sources and activity.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "instructions": "You are Larkspur's support assistant. Answer from the help center; cite sources.",
+            "knowledgeBases": [
+              "kb_help_center"
+            ],
+            "tools": [
+              "get_invoice"
+            ]
+          },
+          "title": "Support agent"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "bot",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "input": {
+            "default": "{{ item.message }}",
+            "title": "Input",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "knowledgeBases": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Knowledge",
+            "type": "array"
+          },
+          "maxSteps": {
+            "default": 8,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Max steps",
+            "type": "integer"
+          },
+          "model": {
+            "default": "agent",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          },
+          "tools": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "instructions"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Agent",
+      "trigger": false,
+      "typeId": "ai.agent",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Sorts each item into one of your labels; each label becomes an output.",
+      "dynamicOutputs": "labels",
+      "examples": [
+        {
+          "settings": {
+            "input": "{{ item.subject }}\n{{ item.body }}",
+            "labels": [
+              {
+                "name": "question"
+              },
+              {
+                "name": "billing"
+              },
+              {
+                "name": "complaint"
+              },
+              {
+                "name": "spam"
+              }
+            ]
+          },
+          "title": "Support email type"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "tag",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [],
+      "settingsSchema": {
+        "properties": {
+          "input": {
+            "title": "Input",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "labels": {
+            "items": {
+              "properties": {
+                "description": {
+                  "title": "Description",
+                  "type": "string"
+                },
+                "name": {
+                  "title": "Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "title": "Label",
+              "type": "object"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "model": {
+            "default": "fast",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          }
+        },
+        "required": [
+          "input",
+          "labels"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Classify",
+      "trigger": false,
+      "typeId": "ai.classify",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Answers a question about each item and routes it: yes/no, or one of your labels (router).",
+      "dynamicOutputs": "labels",
+      "examples": [
+        {
+          "settings": {
+            "input": "{{ item.message }}",
+            "mode": "yesno",
+            "question": "Is this message about an invoice, payment or refund?"
+          },
+          "title": "Is it about billing?"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "split",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "yes"
+        },
+        {
+          "label": null,
+          "name": "no"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "input": {
+            "default": "{{ item }}",
+            "title": "Input",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "labels": {
+            "default": [],
+            "items": {
+              "properties": {
+                "description": {
+                  "title": "Description",
+                  "type": "string"
+                },
+                "name": {
+                  "title": "Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "title": "Label",
+              "type": "object"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "mode": {
+            "default": "yesno",
+            "enum": [
+              "yesno",
+              "labels"
+            ],
+            "title": "Mode",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "model": {
+            "default": "fast",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Decide",
+      "trigger": false,
+      "typeId": "ai.decide",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Describes an image or answers a question about it.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "image": "{{ item.files.image }}",
+            "prompt": "Write short alt text."
+          },
+          "title": "Alt text"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "eye",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "image": {
+            "default": "{{ item.files.image }}",
+            "title": "Image",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "model": {
+            "default": "agent",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          },
+          "prompt": {
+            "default": "Describe this image.",
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Describe image",
+      "trigger": false,
+      "typeId": "ai.describe_image",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Pulls structured fields out of text as JSON.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "fields": [
+              {
+                "name": "orderNumber",
+                "type": "string"
+              },
+              {
+                "name": "refundRequested",
+                "type": "boolean"
+              }
+            ],
+            "input": "{{ item.body }}"
+          },
+          "title": "Order details"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "extract",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "fields": {
+            "items": {
+              "properties": {
+                "description": {
+                  "title": "Description",
+                  "type": "string"
+                },
+                "name": {
+                  "title": "Name",
+                  "type": "string"
+                },
+                "type": {
+                  "default": "string",
+                  "enum": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "date",
+                    "list"
+                  ],
+                  "title": "Type",
+                  "type": "string",
+                  "x-widget": "select"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "title": "Field",
+              "type": "object"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "input": {
+            "title": "Input",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "model": {
+            "default": "fast",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          }
+        },
+        "required": [
+          "input",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Extract fields",
+      "trigger": false,
+      "typeId": "ai.extract",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "medium",
+      "credentials": [],
+      "description": "Generates an image from a prompt. Uses the recorded provider in demo mode and tests.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "prompt": "A ceramic mug on a linen table, soft morning light",
+            "size": "1024x1024"
+          },
+          "title": "Product hero"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "image",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "prompt": {
+            "title": "Prompt",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "size": {
+            "default": "1024x1024",
+            "enum": [
+              "1024x1024",
+              "1024x1792",
+              "1792x1024"
+            ],
+            "title": "Size",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "style": {
+            "title": "Style",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Generate image",
+      "trigger": false,
+      "typeId": "ai.generate_image",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "high",
+      "credentials": [],
+      "description": "Generates a short video from a script or prompt. Uses the recorded provider in demo mode and tests.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "aspect": "16:9",
+            "durationSec": 20,
+            "prompt": "{{ item.text }}"
+          },
+          "title": "Promo clip"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "film",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "aspect": {
+            "default": "16:9",
+            "enum": [
+              "16:9",
+              "9:16",
+              "1:1"
+            ],
+            "title": "Aspect",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "durationSec": {
+            "default": 20,
+            "maximum": 60,
+            "minimum": 4,
+            "title": "Duration (s)",
+            "type": "integer"
+          },
+          "prompt": {
+            "default": "{{ item.text }}",
+            "title": "Script or prompt",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Generate video",
+      "trigger": false,
+      "typeId": "ai.generate_video",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "medium",
+      "credentials": [],
+      "description": "Reads text aloud as a voiceover. Uses the recorded provider in demo mode and tests.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "text": "{{ item.text }}",
+            "voice": "warm"
+          },
+          "title": "Voiceover"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "voice",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "speed": {
+            "default": 1.0,
+            "maximum": 2.0,
+            "minimum": 0.5,
+            "title": "Speed",
+            "type": "number"
+          },
+          "text": {
+            "default": "{{ item.text }}",
+            "title": "Text",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "voice": {
+            "default": "warm",
+            "title": "Voice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Generate voice",
+      "trigger": false,
+      "typeId": "ai.generate_voice",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Summarises text into a paragraph or bullet points.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "format": "bullets",
+            "input": "{{ item.body }}"
+          },
+          "title": "Summarise an email"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "summary",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "format": {
+            "default": "bullets",
+            "enum": [
+              "paragraph",
+              "bullets"
+            ],
+            "title": "Format",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "input": {
+            "title": "Input",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "length": {
+            "default": "short",
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ],
+            "title": "Length",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "model": {
+            "default": "fast",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Summarise",
+      "trigger": false,
+      "typeId": "ai.summarise",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Turns speech into text, optionally marked as knowledge or instructions.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "audio": "{{ item.files.audio }}",
+            "markAs": "instructions"
+          },
+          "title": "Voice memo"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "mic",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "audio": {
+            "default": "{{ item.files.audio }}",
+            "title": "Audio",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "language": {
+            "description": "Leave empty to detect.",
+            "title": "Language",
+            "type": "string"
+          },
+          "markAs": {
+            "default": "none",
+            "enum": [
+              "none",
+              "knowledge",
+              "instructions"
+            ],
+            "title": "Use as",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "required": [
+          "audio"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Transcribe audio",
+      "trigger": false,
+      "typeId": "ai.transcribe",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Translates text into another language, keeping formatting.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "input": "{{ item.text }}",
+            "targetLanguage": "Spanish"
+          },
+          "title": "To Spanish"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "translate",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "input": {
+            "title": "Input",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "model": {
+            "default": "fast",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          },
+          "preserveFormatting": {
+            "default": true,
+            "title": "Keep formatting",
+            "type": "boolean"
+          },
+          "targetLanguage": {
+            "title": "Target language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input",
+          "targetLanguage"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Translate",
+      "trigger": false,
+      "typeId": "ai.translate",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Writes text from instructions and input: scripts, replies, posts, summaries in a given tone.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "input": "{{ item.title }}: {{ item.description }}",
+            "instructions": "Write a 20-second upbeat promo script for this product.",
+            "length": "short",
+            "tone": "upbeat"
+          },
+          "title": "Promo video script"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "pen",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "input": {
+            "default": "{{ item }}",
+            "title": "Input",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "length": {
+            "default": "medium",
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ],
+            "title": "Length",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "model": {
+            "default": "agent",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          },
+          "outputField": {
+            "default": "text",
+            "title": "Output field",
+            "type": "string"
+          },
+          "tone": {
+            "default": "friendly",
+            "enum": [
+              "neutral",
+              "friendly",
+              "upbeat",
+              "formal"
+            ],
+            "title": "Tone",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "required": [
+          "instructions"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Write",
+      "trigger": false,
+      "typeId": "ai.write",
+      "version": 1
+    },
+    {
+      "app": "bluesky",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "bluesky",
+          "key": "bluesky",
+          "kind": "appPassword",
+          "label": "Bluesky app password",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Posts text with an optional image or video to Bluesky.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "media": "{{ item.files.clip_1x1 }}",
+            "text": "{{ item.post }}"
+          },
+          "title": "Promo post"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "send",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "altText": {
+            "title": "Alt text",
+            "type": "string"
+          },
+          "media": {
+            "title": "Media",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "text": {
+            "title": "Post",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Post (Bluesky)",
+      "trigger": false,
+      "typeId": "app.bluesky.post",
+      "version": 1
+    },
+    {
+      "app": "discord",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "discord",
+          "key": "discord",
+          "kind": "webhook",
+          "label": "Discord webhook",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Posts a message with optional attachments to a Discord channel via webhook.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "attachments": "{{ item.files.clip_16x9 }}",
+            "content": "{{ item.post }}"
+          },
+          "title": "Post clip"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "message",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "attachments": {
+            "description": "File references to attach.",
+            "title": "Attachments",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "content": {
+            "title": "Message",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Send message (Discord)",
+      "trigger": false,
+      "typeId": "app.discord.send",
+      "version": 1
+    },
+    {
+      "app": "gmail",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/gmail.modify"
+          ]
+        }
+      ],
+      "description": "Adds or removes labels on an email.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "addLabels": [
+              "SPAM"
+            ],
+            "messageId": "{{ item.messageId }}"
+          },
+          "title": "Mark spam"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "tag",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "addLabels": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Add labels",
+            "type": "array"
+          },
+          "messageId": {
+            "default": "{{ item.messageId }}",
+            "title": "Message",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "removeLabels": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Remove labels",
+            "type": "array"
+          }
+        },
+        "required": [
+          "messageId"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Label email (Gmail)",
+      "trigger": false,
+      "typeId": "app.gmail.label",
+      "version": 1
+    },
+    {
+      "app": "gmail",
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/gmail.modify"
+          ]
+        }
+      ],
+      "description": "Starts the flow for each new email matching a label or search.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "label": "INBOX",
+            "query": "to:support@larkspur.example"
+          },
+          "title": "Support inbox"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "mail",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "label": {
+            "default": "INBOX",
+            "title": "Label",
+            "type": "string"
+          },
+          "pollMinutes": {
+            "default": 1,
+            "maximum": 60,
+            "minimum": 1,
+            "title": "Check every (min)",
+            "type": "integer"
+          },
+          "query": {
+            "description": "Gmail search, e.g. `to:support@larkspur.example`.",
+            "title": "Search",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "New email (Gmail)",
+      "trigger": true,
+      "typeId": "app.gmail.new_email",
+      "version": 1
+    },
+    {
+      "app": "gmail",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/gmail.modify"
+          ]
+        }
+      ],
+      "description": "Replies in the original email thread.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "body": "{{ item.reply }}",
+            "threadId": "{{ item.threadId }}"
+          },
+          "title": "Send draft"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "mail",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "body": {
+            "title": "Reply",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "cc": {
+            "title": "Cc",
+            "type": "string"
+          },
+          "threadId": {
+            "default": "{{ item.threadId }}",
+            "title": "Thread",
+            "type": "string",
+            "x-widget": "expression"
+          }
+        },
+        "required": [
+          "threadId",
+          "body"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Reply (Gmail)",
+      "trigger": false,
+      "typeId": "app.gmail.reply",
+      "version": 1
+    },
+    {
+      "app": "gmail",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/gmail.modify"
+          ]
+        }
+      ],
+      "description": "Sends a new email. Recipients come from settings, not from item data, unless you map them.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "body": "{{ item.text }}",
+            "subject": "Weekly promos",
+            "to": "team@larkspur.example"
+          },
+          "title": "Weekly report"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "mail",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "body"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Send email (Gmail)",
+      "trigger": false,
+      "typeId": "app.gmail.send",
+      "version": 1
+    },
+    {
+      "app": "instagram",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "instagram",
+          "key": "instagram",
+          "kind": "oAuth2",
+          "label": "Instagram account",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Prepares a post reel post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "video": "{{ item.files.clip_9x16 }}"
+          },
+          "title": "Preview"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "send",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "caption": {
+            "title": "Caption",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "coverAtSec": {
+            "default": 1.0,
+            "minimum": 0.0,
+            "title": "Cover at (s)",
+            "type": "number"
+          },
+          "video": {
+            "default": "{{ item.files.clip_9x16 }}",
+            "title": "Video (9:16)",
+            "type": "string",
+            "x-widget": "file"
+          }
+        },
+        "required": [
+          "video"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "dryRun",
+      "title": "Post reel (Instagram)",
+      "trigger": false,
+      "typeId": "app.instagram.post_reel",
+      "version": 1
+    },
+    {
+      "app": "linkedin",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "linkedin",
+          "key": "linkedin",
+          "kind": "oAuth2",
+          "label": "LinkedIn account",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "text": "{{ item.post }}"
+          },
+          "title": "Preview"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "send",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "media": {
+            "title": "Media",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "text": {
+            "title": "Post",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "visibility": {
+            "default": "public",
+            "enum": [
+              "public",
+              "connections"
+            ],
+            "title": "Visibility",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "dryRun",
+      "title": "Post (LinkedIn)",
+      "trigger": false,
+      "typeId": "app.linkedin.post",
+      "version": 1
+    },
+    {
+      "app": "sheets",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/spreadsheets"
+          ]
+        }
+      ],
+      "description": "Adds a row to a sheet, mapping columns to values.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "sheet": "Log",
+            "spreadsheetId": "1AbC",
+            "values": {
+              "Product": "{{ item.title }}",
+              "Status": "posted"
+            }
+          },
+          "title": "Log post"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "table",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "sheet": {
+            "default": "Sheet1",
+            "title": "Sheet",
+            "type": "string"
+          },
+          "spreadsheetId": {
+            "title": "Spreadsheet",
+            "type": "string"
+          },
+          "values": {
+            "description": "Column name → value expression.",
+            "title": "Columns",
+            "type": "object"
+          }
+        },
+        "required": [
+          "spreadsheetId",
+          "values"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Append row (Google Sheets)",
+      "trigger": false,
+      "typeId": "app.sheets.append_row",
+      "version": 1
+    },
+    {
+      "app": "shopify",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "shopify",
+          "key": "shopify",
+          "kind": "apiKey",
+          "label": "Shopify Admin API token",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Lists products from the sandbox store (or a real store with a token), newest first.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "limit": 3,
+            "sort": "newest",
+            "store": "sandbox"
+          },
+          "title": "Three newest"
+        }
+      ],
+      "execMode": "batch",
+      "icon": "shop",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "limit": {
+            "default": 3,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "How many",
+            "type": "integer"
+          },
+          "sort": {
+            "default": "newest",
+            "enum": [
+              "newest",
+              "bestSelling"
+            ],
+            "title": "Sort",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "store": {
+            "default": "sandbox",
+            "enum": [
+              "sandbox",
+              "real"
+            ],
+            "title": "Store",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Get products (Shopify)",
+      "trigger": false,
+      "typeId": "app.shopify.get_products",
+      "version": 1
+    },
+    {
+      "app": "shopify",
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "shopify",
+          "key": "shopify",
+          "kind": "apiKey",
+          "label": "Shopify Admin API token",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Starts the flow when a product is added to the store.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "store": "sandbox"
+          },
+          "title": "Sandbox store"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "shop",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "pollMinutes": {
+            "default": 5,
+            "maximum": 60,
+            "minimum": 1,
+            "title": "Check every (min)",
+            "type": "integer"
+          },
+          "store": {
+            "default": "sandbox",
+            "enum": [
+              "sandbox",
+              "real"
+            ],
+            "title": "Store",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "New product (Shopify)",
+      "trigger": true,
+      "typeId": "app.shopify.new_product",
+      "version": 1
+    },
+    {
+      "app": "slack",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "slack",
+          "key": "slack",
+          "kind": "oAuth2",
+          "label": "Slack workspace",
+          "optional": false,
+          "scopes": [
+            "chat:write"
+          ]
+        }
+      ],
+      "description": "Posts an approval card with Approve/Reject buttons and waits for a decision.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "channel": "#support",
+            "payload": "{{ item }}",
+            "title": "Send this refund reply?"
+          },
+          "title": "Refund approval"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "check-circle",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "approved"
+        },
+        {
+          "label": null,
+          "name": "rejected"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "channel": {
+            "title": "Channel",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "payload": {
+            "default": "{{ item }}",
+            "title": "Payload",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "title"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Approval (Slack)",
+      "trigger": false,
+      "typeId": "app.slack.approval",
+      "version": 1
+    },
+    {
+      "app": "slack",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "slack",
+          "key": "slack",
+          "kind": "oAuth2",
+          "label": "Slack workspace",
+          "optional": false,
+          "scopes": [
+            "chat:write"
+          ]
+        }
+      ],
+      "description": "Posts a message to a Slack channel.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "channel": "#marketing",
+            "text": "New promos are ready."
+          },
+          "title": "Notify"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "message",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "channel": {
+            "title": "Channel",
+            "type": "string"
+          },
+          "text": {
+            "title": "Message",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "channel",
+          "text"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Send message (Slack)",
+      "trigger": false,
+      "typeId": "app.slack.send",
+      "version": 1
+    },
+    {
+      "app": "telegram",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "telegram",
+          "key": "telegram",
+          "kind": "botToken",
+          "label": "Telegram bot token",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Sends a message or media to a Telegram chat via your bot.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "chatId": "@larkspur",
+            "text": "{{ item.post }}"
+          },
+          "title": "Notify channel"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "send",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "chatId": {
+            "title": "Chat id",
+            "type": "string"
+          },
+          "media": {
+            "title": "Media",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "text": {
+            "title": "Message",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "chatId",
+          "text"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Send message (Telegram)",
+      "trigger": false,
+      "typeId": "app.telegram.send",
+      "version": 1
+    },
+    {
+      "app": "tiktok",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "tiktok",
+          "key": "tiktok",
+          "kind": "oAuth2",
+          "label": "TikTok account",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Prepares a post video post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "video": "{{ item.files.clip_9x16 }}"
+          },
+          "title": "Preview"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "send",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "caption": {
+            "title": "Caption",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "privacy": {
+            "default": "public",
+            "enum": [
+              "public",
+              "friends",
+              "private"
+            ],
+            "title": "Privacy",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "video": {
+            "default": "{{ item.files.clip_9x16 }}",
+            "title": "Video (9:16)",
+            "type": "string",
+            "x-widget": "file"
+          }
+        },
+        "required": [
+          "video"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "dryRun",
+      "title": "Post video (TikTok)",
+      "trigger": false,
+      "typeId": "app.tiktok.post",
+      "version": 1
+    },
+    {
+      "app": "x",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "x",
+          "key": "x",
+          "kind": "oAuth2",
+          "label": "X account",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "text": "{{ item.post }}"
+          },
+          "title": "Preview"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "send",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "media": {
+            "title": "Media",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "text": {
+            "title": "Post",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "dryRun",
+      "title": "Post (X)",
+      "trigger": false,
+      "typeId": "app.x.post",
+      "version": 1
+    },
+    {
+      "app": "youtube",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/youtube.upload"
+          ]
+        }
+      ],
+      "description": "Uploads a video to YouTube (private by default).",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "privacy": "private",
+            "title": "{{ item.title }}",
+            "video": "{{ item.files.clip_16x9 }}"
+          },
+          "title": "Private upload"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "video",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "privacy": {
+            "default": "private",
+            "enum": [
+              "private",
+              "unlisted"
+            ],
+            "title": "Privacy",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "video": {
+            "default": "{{ item.files.video }}",
+            "title": "Video",
+            "type": "string",
+            "x-widget": "file"
+          }
+        },
+        "required": [
+          "video",
+          "title"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Upload video (YouTube)",
+      "trigger": false,
+      "typeId": "app.youtube.upload",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "data",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "http",
+          "key": "auth",
+          "kind": "apiKey",
+          "label": "API key or token",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Calls any URL (public addresses only) and returns JSON, text or a file.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "method": "GET",
+            "url": "https://api.larkspur.example/v1/status"
+          },
+          "title": "Get JSON"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "globe",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "headers": {
+            "title": "Headers",
+            "type": "object"
+          },
+          "method": {
+            "default": "GET",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ],
+            "title": "Method",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "query": {
+            "title": "Query",
+            "type": "object"
+          },
+          "responseType": {
+            "default": "json",
+            "enum": [
+              "json",
+              "text",
+              "binary"
+            ],
+            "title": "Response",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "timeoutSec": {
+            "default": 30,
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Timeout (s)",
+            "type": "integer"
+          },
+          "url": {
+            "title": "URL",
+            "type": "string",
+            "x-widget": "expression"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "HTTP request",
+      "trigger": false,
+      "typeId": "data.http",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "data",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "openapi",
+          "key": "api",
+          "kind": "apiKey",
+          "label": "API key",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Calls an operation from an OpenAPI spec (URL or file); risky operations are skipped unless allowed.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "operationId": "getInvoice",
+            "params": {
+              "invoiceId": "{{ item.invoiceId }}"
+            },
+            "spec": "https://api.larkspur.example/openapi.json"
+          },
+          "title": "Get invoice"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "api",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "allowRisky": {
+            "default": false,
+            "title": "Allow destructive operations",
+            "type": "boolean"
+          },
+          "operationId": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "params": {
+            "description": "Parameter → value expression.",
+            "title": "Parameters",
+            "type": "object"
+          },
+          "spec": {
+            "description": "URL or file id.",
+            "title": "OpenAPI spec",
+            "type": "string"
+          }
+        },
+        "required": [
+          "spec",
+          "operationId"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Use any API",
+      "trigger": false,
+      "typeId": "data.openapi",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "data",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Extracts text and sections from PDF, DOCX, Markdown, TXT, CSV or HTML.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "file": "{{ item.files.document }}",
+            "format": "auto"
+          },
+          "title": "Read a PDF"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "file-text",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "file": {
+            "default": "{{ item.files.document }}",
+            "title": "File",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "format": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "pdf",
+              "docx",
+              "md",
+              "txt",
+              "csv",
+              "html"
+            ],
+            "title": "Format",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Parse document",
+      "trigger": false,
+      "typeId": "data.parse_document",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "data",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Adds or changes fields on each item.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "fields": [
+              {
+                "name": "source",
+                "value": "shopify"
+              }
+            ]
+          },
+          "title": "Tag source"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "edit",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "fields": {
+            "items": {
+              "properties": {
+                "name": {
+                  "title": "Name",
+                  "type": "string"
+                },
+                "value": {
+                  "title": "Value",
+                  "type": "string",
+                  "x-widget": "expression"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "title": "Field",
+              "type": "object"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "keepExisting": {
+            "default": true,
+            "title": "Keep other fields",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "fields"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Set fields",
+      "trigger": false,
+      "typeId": "data.set_fields",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "data",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Renders a text, Markdown, HTML or JSON template for each item.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "format": "text",
+            "template": "{{ item.title }} posted to {{ item.platform }}"
+          },
+          "title": "Log row"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "template",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "format": {
+            "default": "text",
+            "enum": [
+              "text",
+              "markdown",
+              "html",
+              "json"
+            ],
+            "title": "Format",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "outputField": {
+            "default": "text",
+            "title": "Output field",
+            "type": "string"
+          },
+          "template": {
+            "title": "Template",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "template"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Template",
+      "trigger": false,
+      "typeId": "data.template",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "human",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "slack",
+          "key": "slack",
+          "kind": "oAuth2",
+          "label": "Slack workspace",
+          "optional": true,
+          "scopes": [
+            "chat:write"
+          ]
+        }
+      ],
+      "description": "Pauses until a person approves or rejects (in the app, optionally Slack). The payload can be edited before approving.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "channels": [
+              "inapp",
+              "slack"
+            ],
+            "payload": "{{ item }}",
+            "slackChannel": "#marketing",
+            "title": "Approve this week's promo posts"
+          },
+          "title": "Approve posts"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "check-circle",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "approved"
+        },
+        {
+          "label": null,
+          "name": "rejected"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "channels": {
+            "default": [
+              "inapp"
+            ],
+            "items": {
+              "enum": [
+                "inapp",
+                "slack"
+              ],
+              "type": "string"
+            },
+            "title": "Ask in",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "onTimeout": {
+            "default": "keepWaiting",
+            "enum": [
+              "reject",
+              "approve",
+              "keepWaiting"
+            ],
+            "title": "On timeout",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "payload": {
+            "default": "{{ item }}",
+            "title": "Payload",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "slackChannel": {
+            "title": "Slack channel",
+            "type": "string"
+          },
+          "timeoutHours": {
+            "default": 48,
+            "minimum": 0.1,
+            "title": "Timeout (hours)",
+            "type": "number"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Approval",
+      "trigger": false,
+      "typeId": "human.approval",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "human",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Pauses and asks a person for missing information, then continues with the answers.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "fields": [
+              {
+                "label": "Order number",
+                "name": "orderNumber"
+              }
+            ],
+            "question": "Which order is this about?"
+          },
+          "title": "Missing order number"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "help",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "channels": {
+            "default": [
+              "inapp"
+            ],
+            "items": {
+              "enum": [
+                "inapp",
+                "slack"
+              ],
+              "type": "string"
+            },
+            "title": "Ask in",
+            "type": "array"
+          },
+          "fields": {
+            "default": [],
+            "items": {
+              "properties": {
+                "label": {
+                  "title": "Label",
+                  "type": "string"
+                },
+                "name": {
+                  "title": "Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "title": "Field",
+              "type": "object"
+            },
+            "title": "Answer fields",
+            "type": "array"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string",
+            "x-widget": "longtext"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Ask a question",
+      "trigger": false,
+      "typeId": "human.ask",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "knowledge",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Adds text or a file from each item to a knowledge base.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "content": "{{ item.answer }}",
+            "knowledgeBase": "kb_help_center",
+            "title": "{{ item.subject }}"
+          },
+          "title": "Save answer"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "book-plus",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "knowledgeBase": {
+            "title": "Knowledge base",
+            "type": "string"
+          },
+          "markAs": {
+            "default": "knowledge",
+            "enum": [
+              "knowledge",
+              "instructions"
+            ],
+            "title": "Use as",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string",
+            "x-widget": "expression"
+          }
+        },
+        "required": [
+          "knowledgeBase",
+          "content"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Add to knowledge",
+      "trigger": false,
+      "typeId": "knowledge.add",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "knowledge",
+      "costHint": "low",
+      "credentials": [],
+      "description": "A searchable collection of documents, websites and transcripts. Connect it to an Agent or Search knowledge.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "name": "Larkspur help center",
+            "sources": [
+              {
+                "kind": "url",
+                "value": "https://help.larkspur.example"
+              }
+            ]
+          },
+          "title": "Help center"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "book",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "kb"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "crawlLimit": {
+            "default": 50,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Pages per website",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sources": {
+            "default": [],
+            "items": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "file",
+                    "url",
+                    "text"
+                  ],
+                  "title": "Kind",
+                  "type": "string",
+                  "x-widget": "select"
+                },
+                "role": {
+                  "default": "knowledge",
+                  "enum": [
+                    "knowledge",
+                    "instructions"
+                  ],
+                  "title": "Use as",
+                  "type": "string",
+                  "x-widget": "select"
+                },
+                "value": {
+                  "title": "Value",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "value"
+              ],
+              "title": "Source",
+              "type": "object"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Knowledge base",
+      "trigger": false,
+      "typeId": "knowledge.base",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "knowledge",
+      "costHint": "low",
+      "credentials": [],
+      "description": "Finds the most relevant passages for a query, with sources.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "knowledgeBase": "kb_help_center",
+            "query": "{{ item.body }}",
+            "topK": 5
+          },
+          "title": "Find policy"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "search",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "knowledgeBase": {
+            "title": "Knowledge base",
+            "type": "string"
+          },
+          "minScore": {
+            "default": 0.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Minimum score",
+            "type": "number"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "topK": {
+            "default": 5,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "knowledgeBase",
+          "query"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Search knowledge",
+      "trigger": false,
+      "typeId": "knowledge.search",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "logic",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Sends each item to `true` or `false` based on a condition.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "condition": "{{ item.confidence > 0.8 and item.label not in ['billing', 'complaint'] }}"
+          },
+          "title": "Confident answer"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "branch",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "true"
+        },
+        {
+          "label": null,
+          "name": "false"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "condition": {
+            "description": "An expression, e.g. `{{ item.confidence > 0.8 }}`.",
+            "title": "Condition",
+            "type": "string",
+            "x-widget": "expression"
+          }
+        },
+        "required": [
+          "condition"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "If",
+      "trigger": false,
+      "typeId": "logic.if",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "logic",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Splits a list field into separate items so following steps run once per item.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "field": "{{ item.products }}"
+          },
+          "title": "Each product"
+        }
+      ],
+      "execMode": "batch",
+      "icon": "repeat",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "field": {
+            "description": "The list to split, e.g. `{{ item.products }}`.",
+            "title": "List",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "keepParent": {
+            "default": false,
+            "title": "Keep parent fields",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Loop over items",
+      "trigger": false,
+      "typeId": "logic.loop",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "logic",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Combines items from two branches: append, join by key, or wait for all.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "mode": "append"
+          },
+          "title": "Append both"
+        }
+      ],
+      "execMode": "batch",
+      "icon": "merge",
+      "inputs": [
+        {
+          "label": null,
+          "name": "a"
+        },
+        {
+          "label": null,
+          "name": "b"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "mode": {
+            "default": "append",
+            "enum": [
+              "append",
+              "byKey",
+              "waitAll"
+            ],
+            "title": "Mode",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Merge",
+      "trigger": false,
+      "typeId": "logic.merge",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "logic",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Ends this branch, as success or with an error message.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "reason": "Spam",
+            "status": "success"
+          },
+          "title": "Ignore spam"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "stop",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [],
+      "settingsSchema": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "status": {
+            "default": "success",
+            "enum": [
+              "success",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Stop",
+      "trigger": false,
+      "typeId": "logic.stop",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "logic",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Routes each item to the first case whose value matches; others go to `default`.",
+      "dynamicOutputs": "cases",
+      "examples": [
+        {
+          "settings": {
+            "cases": [
+              {
+                "equals": "question",
+                "name": "question"
+              },
+              {
+                "equals": "spam",
+                "name": "spam"
+              }
+            ],
+            "value": "{{ item.label }}"
+          },
+          "title": "By label"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "switch",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "default"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "cases": {
+            "items": {
+              "properties": {
+                "equals": {
+                  "title": "Equals",
+                  "type": "string"
+                },
+                "name": {
+                  "title": "Output name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "equals"
+              ],
+              "title": "Case",
+              "type": "object"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string",
+            "x-widget": "expression"
+          }
+        },
+        "required": [
+          "value",
+          "cases"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Switch",
+      "trigger": false,
+      "typeId": "logic.switch",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "logic",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Pauses for a duration or until a time.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "mode": "duration",
+            "seconds": 60
+          },
+          "title": "One minute"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "timer",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "mode": {
+            "default": "duration",
+            "enum": [
+              "duration",
+              "until"
+            ],
+            "title": "Mode",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "seconds": {
+            "default": 60,
+            "minimum": 1,
+            "title": "Seconds",
+            "type": "integer"
+          },
+          "until": {
+            "title": "Until",
+            "type": "string",
+            "x-widget": "expression"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Wait",
+      "trigger": false,
+      "typeId": "logic.wait",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "media",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Burns captions into a video from text or SRT.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "text": "{{ item.script }}",
+            "video": "{{ item.files.video }}"
+          },
+          "title": "Burn script"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "captions",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "position": {
+            "default": "bottom",
+            "enum": [
+              "bottom",
+              "center",
+              "top"
+            ],
+            "title": "Position",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "style": {
+            "default": "bold",
+            "enum": [
+              "clean",
+              "bold"
+            ],
+            "title": "Style",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "text": {
+            "title": "Captions (text or SRT)",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "video": {
+            "default": "{{ item.files.video }}",
+            "title": "Video",
+            "type": "string",
+            "x-widget": "file"
+          }
+        },
+        "required": [
+          "video",
+          "text"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Add captions",
+      "trigger": false,
+      "typeId": "media.captions",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "media",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Cuts a video into short clips (highlights or even segments).",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "count": 3,
+            "durationSec": 15,
+            "video": "{{ item.files.video }}"
+          },
+          "title": "Three 15 s clips"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "scissors",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "count": {
+            "default": 3,
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Clips",
+            "type": "integer"
+          },
+          "durationSec": {
+            "default": 15,
+            "maximum": 90,
+            "minimum": 3,
+            "title": "Clip length (s)",
+            "type": "integer"
+          },
+          "strategy": {
+            "default": "even",
+            "enum": [
+              "highlights",
+              "even"
+            ],
+            "title": "Strategy",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "video": {
+            "default": "{{ item.files.video }}",
+            "title": "Video",
+            "type": "string",
+            "x-widget": "file"
+          }
+        },
+        "required": [
+          "video"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Cut clips",
+      "trigger": false,
+      "typeId": "media.cut_clips",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "media",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Puts a voiceover or music track onto a video.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "audio": "{{ item.files.audio }}",
+            "video": "{{ item.files.video }}"
+          },
+          "title": "Add voiceover"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "merge",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "audio": {
+            "default": "{{ item.files.audio }}",
+            "title": "Audio",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "mode": {
+            "default": "replace",
+            "enum": [
+              "replace",
+              "mix"
+            ],
+            "title": "Mode",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "video": {
+            "default": "{{ item.files.video }}",
+            "title": "Video",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "volume": {
+            "default": 1.0,
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Audio volume",
+            "type": "number"
+          }
+        },
+        "required": [
+          "video",
+          "audio"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Merge audio and video",
+      "trigger": false,
+      "typeId": "media.merge_av",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "media",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Makes 9:16, 1:1 and 16:9 versions with smart crop or padding.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "aspects": [
+              "9:16",
+              "1:1",
+              "16:9"
+            ],
+            "video": "{{ item.files.video }}"
+          },
+          "title": "All platforms"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "crop",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "aspects": {
+            "default": [
+              "9:16",
+              "1:1",
+              "16:9"
+            ],
+            "items": {
+              "enum": [
+                "9:16",
+                "1:1",
+                "16:9"
+              ],
+              "type": "string"
+            },
+            "title": "Aspects",
+            "type": "array"
+          },
+          "fit": {
+            "default": "crop",
+            "enum": [
+              "crop",
+              "pad"
+            ],
+            "title": "Fit",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "video": {
+            "default": "{{ item.files.video }}",
+            "title": "Video",
+            "type": "string",
+            "x-widget": "file"
+          }
+        },
+        "required": [
+          "video"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Resize for platform",
+      "trigger": false,
+      "typeId": "media.resize",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "media",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Grabs a frame from a video as an image.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "atSec": 2,
+            "video": "{{ item.files.video }}"
+          },
+          "title": "Cover frame"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "frame",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "atSec": {
+            "default": 1.0,
+            "minimum": 0.0,
+            "title": "At (s)",
+            "type": "number"
+          },
+          "video": {
+            "default": "{{ item.files.video }}",
+            "title": "Video",
+            "type": "string",
+            "x-widget": "file"
+          },
+          "width": {
+            "default": 1280,
+            "maximum": 3840,
+            "minimum": 64,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "video"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Thumbnail",
+      "trigger": false,
+      "typeId": "media.thumbnail",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "output",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Sends a short notification in the app or to a channel set in settings.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "channel": "inapp",
+            "message": "{{ items | length }} posts went out.",
+            "title": "Promos posted"
+          },
+          "title": "Tell the team"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "bell",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "channel": {
+            "default": "inapp",
+            "enum": [
+              "inapp",
+              "email",
+              "slack",
+              "discord",
+              "telegram"
+            ],
+            "title": "Channel",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "target": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "stub",
+      "title": "Send notification",
+      "trigger": false,
+      "typeId": "output.notify",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "output",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Sends the answer back to the chat, API or MCP caller (streaming when possible).",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "body": "{{ item.answer }}",
+            "includeSources": true
+          },
+          "title": "Answer with sources"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "reply",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [],
+      "settingsSchema": {
+        "properties": {
+          "body": {
+            "default": "{{ item.answer }}",
+            "title": "Answer",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "format": {
+            "default": "text",
+            "enum": [
+              "text",
+              "json"
+            ],
+            "title": "Format",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "includeSources": {
+            "default": true,
+            "title": "Include sources",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Respond",
+      "trigger": false,
+      "typeId": "output.respond",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Starts the flow from the OpenAI-compatible API or a REST call. Pair with Respond.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "description": "Answers support questions."
+          },
+          "title": "Answer a question"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "code",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "inputSchema": {
+            "description": "JSON Schema of the request body.",
+            "title": "Input schema",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "API call",
+      "trigger": true,
+      "typeId": "trigger.api_call",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Starts the flow for each chat message (playground, widget, chat page). Pair with Respond.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "suggestedQuestions": [
+              "Where is my order?"
+            ],
+            "welcomeMessage": "Hi, I'm the Larkspur assistant. How can I help?"
+          },
+          "title": "Support chat"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "chat",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "suggestedQuestions": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggested questions",
+            "type": "array"
+          },
+          "welcomeMessage": {
+            "title": "Welcome message",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Chat message",
+      "trigger": true,
+      "typeId": "trigger.chat",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Starts the flow when you press Run or Test. Optional sample items are used for test runs.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "sampleItems": [
+              {
+                "title": "Larkspur Tote"
+              }
+            ]
+          },
+          "title": "Run by hand"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "hand",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "sampleItems": {
+            "default": [],
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample items",
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Manual",
+      "trigger": true,
+      "typeId": "trigger.manual",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Exposes the flow as an MCP tool; each call starts a run. Pair with Respond.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "toolDescription": "Ask the Larkspur support assistant.",
+            "toolName": "ask_larkspur"
+          },
+          "title": "Ask support"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "plug",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "inputSchema": {
+            "title": "Input schema",
+            "type": "object"
+          },
+          "toolDescription": {
+            "title": "Tool description",
+            "type": "string"
+          },
+          "toolName": {
+            "title": "Tool name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "toolName"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "MCP call",
+      "trigger": true,
+      "typeId": "trigger.mcp_call",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Starts the flow on a cron schedule in a timezone, e.g. every Monday at 9:00.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "cron": "0 9 * * MON",
+            "timezone": "Asia/Kolkata"
+          },
+          "title": "Every Monday 9:00"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "clock",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "cron": {
+            "description": "Five-field cron, e.g. `0 9 * * MON`.",
+            "title": "Cron",
+            "type": "string"
+          },
+          "timezone": {
+            "default": "UTC",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cron"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Schedule",
+      "trigger": true,
+      "typeId": "trigger.schedule",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [],
+      "description": "Starts the flow when an HTTP request hits the flow's secret webhook URL.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "method": "POST",
+            "respond": "immediately"
+          },
+          "title": "Receive a POST"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "webhook",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "method": {
+            "default": "POST",
+            "enum": [
+              "POST",
+              "GET",
+              "PUT"
+            ],
+            "title": "Method",
+            "type": "string",
+            "x-widget": "select"
+          },
+          "respond": {
+            "default": "immediately",
+            "enum": [
+              "immediately",
+              "lastNode"
+            ],
+            "title": "Respond",
+            "type": "string",
+            "x-widget": "select"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "stub",
+      "title": "Webhook",
+      "trigger": true,
+      "typeId": "trigger.webhook",
+      "version": 1
+    }
+  ]
+}

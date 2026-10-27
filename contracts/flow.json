@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "Edge": {
+      "description": "A connection from one node's output port to another node's input port.",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/PortRef"
+        },
+        "id": {
+          "type": "string"
+        },
+        "to": {
+          "$ref": "#/$defs/PortRef"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "FlowKind": {
+      "description": "Automation (background) or AI app (chat/API/MCP).",
+      "enum": [
+        "automation",
+        "app"
+      ],
+      "type": "string"
+    },
+    "FlowMeta": {
+      "description": "Provenance of a flow.",
+      "properties": {
+        "createdBy": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "goal": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "FlowSettings": {
+      "description": "Flow-level settings.",
+      "properties": {
+        "spendCapUsdPerRun": {
+          "default": null,
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "timezone": {
+          "default": "UTC",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Group": {
+      "description": "A labelled group of nodes on the canvas.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
+      "type": "object"
+    },
+    "Node": {
+      "description": "One step on the canvas.",
+      "properties": {
+        "credentials": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "description": "`{ \"<credKey>\": \"cred_…\" }`",
+          "type": "object"
+        },
+        "disabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "group": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/Position",
+          "default": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "settings": {
+          "default": {}
+        },
+        "type": {
+          "type": "string"
+        },
+        "typeVersion": {
+          "default": 1,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name"
+      ],
+      "type": "object"
+    },
+    "PortRef": {
+      "description": "A node + port pair.",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "node",
+        "port"
+      ],
+      "type": "object"
+    },
+    "Position": {
+      "description": "Canvas position in world coordinates.",
+      "properties": {
+        "x": {
+          "format": "double",
+          "type": "number"
+        },
+        "y": {
+          "format": "double",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A flow: nodes, edges and groups on one canvas.",
+  "properties": {
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/Edge"
+      },
+      "type": "array"
+    },
+    "groups": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Group"
+      },
+      "type": "array"
+    },
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/FlowKind"
+    },
+    "meta": {
+      "$ref": "#/$defs/FlowMeta",
+      "default": {
+        "createdBy": null,
+        "goal": null
+      }
+    },
+    "name": {
+      "type": "string"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/Node"
+      },
+      "type": "array"
+    },
+    "settings": {
+      "$ref": "#/$defs/FlowSettings",
+      "default": {
+        "spendCapUsdPerRun": null,
+        "timezone": "UTC"
+      }
+    },
+    "version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "workspaceId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "workspaceId",
+    "version",
+    "name",
+    "kind",
+    "nodes",
+    "edges"
+  ],
+  "title": "Flow",
+  "type": "object"
+}

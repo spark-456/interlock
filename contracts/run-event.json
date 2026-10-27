@@ -1,0 +1,433 @@
+{
+  "$defs": {
+    "Decision": {
+      "description": "Approve or reject.",
+      "enum": [
+        "approve",
+        "reject"
+      ],
+      "type": "string"
+    },
+    "FileRef": {
+      "description": "A pointer to a file held by the `FileStore`.",
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "mime": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "previewUrl": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "mime",
+        "bytes",
+        "name"
+      ],
+      "type": "object"
+    },
+    "Item": {
+      "description": "The unit of data that flows between nodes. Each port carries `Vec<Item>`.",
+      "properties": {
+        "files": {
+          "additionalProperties": {
+            "$ref": "#/$defs/FileRef"
+          },
+          "default": {},
+          "type": "object"
+        },
+        "json": true
+      },
+      "required": [
+        "json"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One event in a run stream.",
+  "oneOf": [
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "flowId": {
+              "type": "string"
+            },
+            "trigger": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flowId",
+            "trigger"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "run.started",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "type": {
+          "const": "node.started",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "pct": {
+              "format": "float",
+              "type": "number"
+            }
+          },
+          "required": [
+            "pct",
+            "message"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "node.progress",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Preview of output items (max 3) on a port.",
+      "properties": {
+        "data": {
+          "properties": {
+            "items": {
+              "items": {
+                "$ref": "#/$defs/Item"
+              },
+              "type": "array"
+            },
+            "port": {
+              "type": "string"
+            },
+            "total": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "port",
+            "items",
+            "total"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "node.items",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "costUsd": {
+              "format": "double",
+              "type": "number"
+            },
+            "count": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "count",
+            "ms",
+            "costUsd"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "node.succeeded",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "error": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "error",
+            "retryable"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "node.failed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "approvalId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "approvalId"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "node.waiting",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "approvalId": {
+              "type": "string"
+            },
+            "by": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "decision": {
+              "$ref": "#/$defs/Decision"
+            }
+          },
+          "required": [
+            "approvalId",
+            "decision"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "approval.decided",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "cap": {
+              "type": "string"
+            },
+            "limitUsd": {
+              "format": "double",
+              "type": "number"
+            },
+            "spentUsd": {
+              "format": "double",
+              "type": "number"
+            }
+          },
+          "required": [
+            "cap",
+            "limitUsd",
+            "spentUsd"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "run.cap_reached",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "costUsd": {
+              "format": "double",
+              "type": "number"
+            },
+            "ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "ms",
+            "costUsd"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "run.succeeded",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "properties": {
+            "error": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "error"
+          ],
+          "type": "object"
+        },
+        "type": {
+          "const": "run.failed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    },
+    {
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "type": {
+          "const": "run.cancelled",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ],
+      "type": "object"
+    }
+  ],
+  "properties": {
+    "nodeId": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "runId": {
+      "type": "string"
+    },
+    "seq": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "ts": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "seq",
+    "ts",
+    "runId"
+  ],
+  "title": "RunEvent",
+  "type": "object"
+}
