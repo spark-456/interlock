@@ -41,9 +41,10 @@ export async function loadFixture<T>(keys: string[]): Promise<T | undefined> {
   return undefined;
 }
 
-/** Serves a request from fixtures, with a small delay so loading states are visible. */
-export async function fixtureRequest<T>(method: string, path: string, _body?: unknown): Promise<T> {
-  const data = await loadFixture<T>(fixtureKeys(method, path));
+/** Serves a request from fixtures, with a small delay so loading states are visible. A PUT with
+ * no fixture echoes its body, as a save would return the saved resource. */
+export async function fixtureRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const data = (await loadFixture<T>(fixtureKeys(method, path))) ?? (method === 'PUT' ? (structuredClone(body) as T) : undefined);
   await new Promise((r) => setTimeout(r, 60));
   if (data === undefined) {
     throw new ApiRequestError(404, 'fixture_missing', `No fixture for ${method} ${path}.`);

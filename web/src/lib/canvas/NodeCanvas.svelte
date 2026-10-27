@@ -1,7 +1,8 @@
 <script lang="ts">
   // NodeCanvas: Svelte Flow does drag, pan and zoom; we supply the design's NodeCard, edges,
-  // column labels, toolbar, minimap and 20 px dot grid. Positions the user drags are kept when
-  // new data arrives (live builds and runs).
+  // column labels, toolbar, minimap and 20 px dot grid. Read-only screens keep positions the user
+  // drags when new data arrives (live builds); in the editor the flow owns positions, and drags,
+  // connections, deletions and palette drops are reported to the page.
   import {
     Background,
     BackgroundVariant,
@@ -9,17 +10,21 @@
     Panel,
     SvelteFlow,
     ViewportPortal,
+    type Connection,
     type Edge,
-    type Node
+    type Node,
+    type Viewport
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/base.css';
   import { untrack } from 'svelte';
-  import CanvasToolbar from './CanvasToolbar.svelte';
+  import CanvasToolbar, { type EditTools } from './CanvasToolbar.svelte';
   import FlowEdge from './FlowEdge.svelte';
+  import Focus from './Focus.svelte';
   import NodeCard from './NodeCard.svelte';
   import { toneVars } from './categories';
   import { MAX_ZOOM, MIN_ZOOM, NODE_WIDTH, nodeHeight, type ColumnLabel } from './geometry';
   import type { CardView, EdgeView } from './types';
+  import { PALETTE_MIME } from './palette';
 
   type CardNode = Node<{ card: CardView }, 'card'>;
   type FlowEdgeT = Edge<{ view: EdgeView }, 'flow'>;
@@ -29,13 +34,29 @@
     edges: edgeViews,
     labels = [],
     selected = $bindable<string | null>(null),
-    onlist
+    onlist,
+    focus = [],
+    editable = false,
+    edit,
+    onmove,
+    onconnect,
+    ondelete,
+    ondropnode
   }: {
     cards: CardView[];
     edges: EdgeView[];
     labels?: ColumnLabel[];
     selected?: string | null;
     onlist?: () => void;
+    /** Nodes to bring into view when this list changes. */
+    focus?: string[];
+    editable?: boolean;
+    edit?: EditTools;
+    onmove?: (moves: Record<string, { x: number; y: number }>) => void;
+    onconnect?: (c: Connection) => void;
+    ondelete?: (nodeIds: string[], edgeIds: string[]) => void;
+    /** A palette item dropped on the canvas, at its flow position. */
+    ondropnode?: (typeId: string, at: { x: number; y: number }) => void;
   } = $props();
 
   const nodeTypes = { card: NodeCard };
@@ -44,6 +65,8 @@
   let nodes = $state.raw<CardNode[]>([]);
   let edges = $state.raw<FlowEdgeT[]>([]);
   let minimap = $state(true);
+  let viewport = $state<Viewport>({ x: 24, y: 132, zoom: 0.8 });
+  let el: HTMLDivElement;
 
   // Merge incoming views into Svelte Flow nodes, keeping positions the user dragged.
   $effect(() => {
@@ -55,11 +78,13 @@
       return {
         id: card.id,
         type: 'card',
-        position: prev?.position ?? { ...card.position },
+        position: editable ? { ...card.position } : (prev?.position ?? { ...card.position }),
         data: { card },
         width: NODE_WIDTH,
         height: nodeHeight(card.stats.length),
-        selected: prev?.selected ?? false
+        selected: prev?.selected ?? false,
+        draggable: card.diff !== 'removed',
+        deletable: editable && !card.diff
       };
     });
   });
@@ -73,7 +98,8 @@
       sourceHandle: view.vertical ? 'bottom' : null,
       targetHandle: view.vertical ? 'top' : null,
       data: { view },
-      selectable: false
+      selectable: editable && !view.diff,
+      deletable: editable && !view.diff
     }));
   });
 
@@ -82,18 +108,41 @@
     if (n.id === selected) return 'var(--primary)';
     return card?.status === 'waiting' ? 'var(--border)' : 'var(--minimap-node)';
   };
+
+  function drop(e: DragEvent) {
+    const typeId = e.dataTransfer?.getData(PALETTE_MIME);
+    if (!typeId || !ondropnode) return;
+    e.preventDefault();
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left - viewport.x) / viewport.zoom - NODE_WIDTH / 2;
+    const y = (e.clientY - r.top - viewport.y) / viewport.zoom - nodeHeight(0) / 2;
+    ondropnode(typeId, { x: Math.round(x), y: Math.round(y) });
+  }
 </script>
 
-<div class="canvas" data-testid="node-canvas">
+<div
+  class="canvas"
+  data-testid="node-canvas"
+  role="application"
+  bind:this={el}
+  ondragover={(e) => editable && e.dataTransfer?.types.includes(PALETTE_MIME) && e.preventDefault()}
+  ondrop={drop}
+>
   <SvelteFlow
     bind:nodes
     bind:edges
+    bind:viewport
     {nodeTypes}
     {edgeTypes}
-    initialViewport={{ x: 24, y: 132, zoom: 0.8 }}
+    fitView={editable}
+    fitViewOptions={{ padding: 0.08, minZoom: 0.6 }}
     minZoom={MIN_ZOOM}
     maxZoom={MAX_ZOOM}
-    nodesConnectable={false}
+    nodesConnectable={editable}
+    deleteKey={editable ? ['Delete', 'Backspace'] : null}
+    onnodedragstop={({ nodes: moved }) => onmove?.(Object.fromEntries(moved.map((n) => [n.id, n.position])))}
+    onconnect={(c) => onconnect?.(c)}
+    ondelete={({ nodes: gone, edges: cut }) => ondelete?.(gone.map((n) => n.id), cut.map((e) => e.id))}
     zoomOnScroll={false}
     panOnScroll={true}
     zoomOnPinch={true}
@@ -109,7 +158,8 @@
         </div>
       {/each}
     </ViewportPortal>
-    <Panel position="bottom-left"><CanvasToolbar bind:minimap {onlist} /></Panel>
+    <Focus ids={focus} />
+    <Panel position="bottom-left"><CanvasToolbar bind:minimap {onlist} {edit} /></Panel>
     {#if minimap}
       <MiniMap
         width={180}

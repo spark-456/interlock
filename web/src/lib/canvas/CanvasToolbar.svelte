@@ -1,10 +1,21 @@
+<script lang="ts" module>
+  export interface EditTools {
+    onundo: () => void;
+    onredo: () => void;
+    ontidy: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+  }
+</script>
+
 <script lang="ts">
-  // Canvas toolbar (bottom-left): zoom −, %, +, fit, minimap toggle, list view.
+  // Canvas toolbar (bottom-left): zoom −, %, +, fit, minimap toggle, list view; when editing also
+  // undo, redo and tidy.
   import { useSvelteFlow, useViewport } from '@xyflow/svelte';
   import IconButton from '$lib/design/IconButton.svelte';
   import { MAX_ZOOM, MIN_ZOOM } from './geometry';
 
-  let { minimap = $bindable(true), onlist }: { minimap?: boolean; onlist?: () => void } = $props();
+  let { minimap = $bindable(true), onlist, edit }: { minimap?: boolean; onlist?: () => void; edit?: EditTools } = $props();
   const flow = useSvelteFlow();
   const viewport = useViewport();
   const pct = $derived(Math.round(viewport.current.zoom * 100));
@@ -18,6 +29,12 @@
   <IconButton icon="fit" label="Fit to screen" onclick={() => flow.fitView({ padding: 0.06, duration: 200 })} />
   <IconButton icon="minimap" label="Toggle minimap" pressed={minimap} onclick={() => (minimap = !minimap)} />
   {#if onlist}<IconButton icon="list" label="List view" onclick={onlist} />{/if}
+  {#if edit}
+    <span class="sep" aria-hidden="true"></span>
+    <IconButton icon="undo" label="Undo" disabled={!edit.canUndo} onclick={edit.onundo} />
+    <IconButton icon="redo" label="Redo" disabled={!edit.canRedo} onclick={edit.onredo} />
+    <IconButton icon="tidy" label="Tidy layout" onclick={edit.ontidy} />
+  {/if}
 </div>
 
 <style>

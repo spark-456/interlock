@@ -1,0 +1,56 @@
+{
+  "summary": "+1 step, 1 changed, 1 removed",
+  "jsonPatch": [
+    {
+      "op": "add",
+      "path": "/nodes/-",
+      "value": {
+        "id": "n_telegram",
+        "type": "app.telegram.send",
+        "typeVersion": 1,
+        "name": "Telegram",
+        "position": {
+          "x": 3040,
+          "y": 900
+        },
+        "group": "g_post",
+        "settings": {
+          "chatId": "@larkspur_deals",
+          "text": "{{ item.post }}",
+          "media": "{{ item.files.clip_9x16 }}"
+        },
+        "credentials": {},
+        "disabled": false,
+        "notes": null
+      }
+    },
+    {
+      "op": "add",
+      "path": "/edges/-",
+      "value": {
+        "id": "e_approve_telegram",
+        "from": {
+          "node": "n_approve",
+          "port": "approved"
+        },
+        "to": {
+          "node": "n_telegram",
+          "port": "in"
+        }
+      }
+    },
+    {
+      "op": "replace",
+      "path": "/nodes/10/settings/onTimeout",
+      "value": "reject"
+    },
+    {
+      "op": "remove",
+      "path": "/edges/15"
+    },
+    {
+      "op": "remove",
+      "path": "/nodes/15"
+    }
+  ]
+}
