@@ -61,7 +61,10 @@ pub fn build_state(config: Config) -> AppState {
     if let Ok(http) = il_sdk::SafeHttp::new() {
         services.http = http;
     }
-    tracing::info!(providers = %config.providers, "services wired (in-memory fakes until B01/B02 land)");
+    if config.providers != "fake" {
+        wire_models(&mut services, &config);
+    }
+    tracing::info!(providers = %config.providers, "services wired (in-memory store until B01 lands)");
     let mut engine_config: il_engine::EngineConfig = config.section("engine").unwrap_or_default();
     engine_config.caps = config.section("caps").unwrap_or_default();
     let engine = il_engine::Engine::new(services.clone(), il_engine::NodeLookup::default(), engine_config);
@@ -72,6 +75,23 @@ pub fn build_state(config: Config) -> AppState {
         il_engine::NodeLookup::default(),
     ));
     AppState { config: Arc::new(config), services, runner, architect: Arc::new(NotWired), engine, triggers }
+}
+
+/// The real model gateway, with its model check run in the background. Keeps the fake (and says so)
+/// when the gateway can't start, e.g. without `NEBIUS_API_KEY`, so the UI still serves.
+fn wire_models(services: &mut Services, config: &Config) {
+    let models = config.raw.get("models").cloned().unwrap_or_default();
+    match il_ai::Gateway::from_config(&models, false) {
+        Ok(gateway) => {
+            let gateway = Arc::new(gateway);
+            if let Ok(rt) = tokio::runtime::Handle::try_current() {
+                let g = gateway.clone();
+                rt.spawn(async move { g.check().await });
+            }
+            services.models = gateway;
+        }
+        Err(e) => tracing::error!(error = %e, "model gateway not started; model calls use the offline fake"),
+    }
 }
 
 /// Placeholder until the architect (A01) is wired. (The runner is the engine.)

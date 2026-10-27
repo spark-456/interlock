@@ -153,6 +153,9 @@ pub enum ModelError {
     Unavailable(String),
     #[error("rate limited")]
     RateLimited,
+    /// The model can't do what was asked natively (tools, JSON schema); the gateway falls back.
+    #[error("not supported by the model: {0}")]
+    Unsupported(String),
     #[error("invalid model output: {0}")]
     InvalidOutput(String),
     #[error("spend cap reached")]
@@ -189,4 +192,8 @@ pub trait ModelProvider: Send + Sync {
     async fn embed(&self, model: &str, texts: &[String]) -> Result<Vec<Vec<f32>>, ModelError>;
     /// Model ids the provider reports (startup check).
     async fn list_models(&self) -> Result<Vec<String>, ModelError>;
+    /// Speech to text with an explicit model id.
+    async fn transcribe(&self, _model: &str, _file: &FileRef, _bytes: &[u8]) -> Result<Transcript, ModelError> {
+        Err(ModelError::Unsupported(format!("{} has no transcription", self.name())))
+    }
 }
