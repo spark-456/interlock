@@ -1,7 +1,6 @@
 //! `app.tiktok.post` — Post video (TikTok).
 //!
-//! T00 stub: the manifest is real (palette, settings form, architect catalog); `execute`
-//! returns `NotImplemented` until task C03 implements it.
+//! Validates a video and returns a dry-run preview.
 
 use il_sdk::prelude::*;
 
@@ -14,7 +13,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "app.tiktok.post",
         Category::App,
         "Post video (TikTok)",
-        "Prepares a post video post. Dry-run: validates and previews the post; needs platform approval to post.",
+        "Previews a TikTok video; needs platform approval to post.",
     )
     .icon("send")
     .app("tiktok")
@@ -68,8 +67,19 @@ impl NodeExecutor for AppTiktokPost {
         &MANIFEST
     }
 
-    async fn execute(&self, _ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
-        Err(NodeError::NotImplemented(MANIFEST.type_id.clone()))
+    async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
+        let file = super::media(ctx, &input, "video", "clip_9x16", true)
+            .await?
+            .ok_or_else(|| NodeError::Failed("video is required".into()))?;
+        if !matches!(file.mime.as_str(), "video/mp4" | "video/webm" | "video/quicktime") {
+            return Err(NodeError::Failed("TikTok video must be MP4, WebM or MOV".into()));
+        }
+        let caption = ctx.settings["caption"].as_str().unwrap_or("");
+        if caption.encode_utf16().count() > 2200 {
+            return Err(NodeError::Failed("TikTok caption exceeds 2200 UTF-16 characters".into()));
+        }
+        let privacy = ctx.settings["privacy"].as_str().unwrap_or("public");
+        Ok(super::preview(input, "tiktok", caption, Some(file), json!({"privacy":privacy})))
     }
 }
 

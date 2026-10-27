@@ -1523,7 +1523,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post reel post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews an Instagram reel; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -1593,7 +1593,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews a LinkedIn post; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -1800,7 +1800,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Get products (Shopify)",
       "trigger": false,
       "typeId": "app.shopify.get_products",
@@ -1862,7 +1862,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "New product (Shopify)",
       "trigger": true,
       "typeId": "app.shopify.new_product",
@@ -2098,7 +2098,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post video post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews a TikTok video; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -2173,7 +2173,7 @@
           "scopes": []
         }
       ],
-      "description": "Prepares a post post. Dry-run: validates and previews the post; needs platform approval to post.",
+      "description": "Previews an X post; needs platform approval to post.",
       "dynamicOutputs": null,
       "examples": [
         {

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "sandbox-003",
+    "title": "Arc Table Lamp",
+    "description": "A warm, dimmable desk lamp with a brushed brass arc.",
+    "price": "89.00",
+    "currency": "USD",
+    "createdAt": "2026-10-21T10:00:00Z",
+    "salesCount": 74,
+    "imageKey": "arc-lamp"
+  },
+  {
+    "id": "sandbox-002",
+    "title": "Field Notes Planner",
+    "description": "An undated daily planner with recycled paper and a linen cover.",
+    "price": "32.00",
+    "currency": "USD",
+    "createdAt": "2026-10-17T10:00:00Z",
+    "salesCount": 132,
+    "imageKey": "field-notes"
+  },
+  {
+    "id": "sandbox-001",
+    "title": "Meridian Mug",
+    "description": "A glazed stoneware mug made for slow mornings.",
+    "price": "26.00",
+    "currency": "USD",
+    "createdAt": "2026-10-12T10:00:00Z",
+    "salesCount": 96,
+    "imageKey": "meridian-mug"
+  }
+]
