@@ -19,7 +19,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 8 | B06 | Nodes: logic & data | P0 | T00 | claimed | codex-1 | t/B06-logic-data | 2026-10-27 13:49 | |
 | 9 | B07 | Nodes: AI | P0 | T00 | ready | | | | |
 | 10 | B04 | Server, API, SSE, auth, demo sessions | P0 | T00 | done | claude-a | t/B04-server | 2026-10-27 08:05 | Part 1, commit 9fcc8b3: all /api routes, SSE, demo sessions, files, CORS. Rest is in B04b |
-| 11 | W03 | Node panel, schema forms, previews | P0 | T00 | claimed | claude-a | t/W03-panel | 2026-10-27 14:40 | WIP pushed: lib/forms (schema, Field, SchemaForm, ExpressionInput, mapper), lib/previews (7 renderers + registry), panel/Preview, runState keeps items, api.connections/runStep + fixtures. Left: panel/NodePanel + CredentialPicker, mount in /flows/[id] replacing the selection bar, Run this step, vitest for forms/mapper/previews, e2e, MAPPING |
+| 11 | W03 | Node panel, schema forms, previews | P0 | T00 | review | claude-a | t/W03-panel | 2026-10-27 19:45 | PR https://github.com/spark-456/interlock/pull/10 |
 | 12 | B05 | Triggers & scheduler | P0 | T00 | done | claude-a | t/B05-triggers | 2026-10-27 07:30 | Commit 0b96b2b. App triggers use `il_sdk::poll` |
 | 13 | W04 | Create & Building screens | P0 | T00 | ready | | | 2026-10-27 06:10 | Building (`/new/[id]/building`) is done (design PR). Still to do: Create (`/new`, design S2) and wiring Building to live `POST /api/builds` |
 | 14 | K01 | Knowledge: ingest, Tavily, hybrid search | P0 | T00 | ready | | | | |
