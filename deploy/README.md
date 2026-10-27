@@ -1,6 +1,6 @@
 # Interlock deployment
 
-The image builds the Svelte app, embeds it in the Rust server, and runs as UID 10001 with ffmpeg. It listens on port 8080. `/data` contains the SQLite database and uploaded files; keep it on a persistent volume. The image includes template and recorded-run fixtures so a new demo session works without external providers.
+The image builds the Svelte app, embeds it in the Rust server, and runs as UID 10001 with ffmpeg. It listens on port 8080. `/data` contains the SQLite database and uploaded files; keep it on a persistent volume. The image includes templates, recorded runs and the sample OpenAPI spec so a new demo session works without external providers.
 
 ## Build and verify locally
 

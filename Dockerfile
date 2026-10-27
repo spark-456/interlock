@@ -21,6 +21,7 @@ COPY --from=rust /src/target/release/il-server /usr/local/bin/il-server
 COPY config/interlock.example.toml /etc/interlock/interlock.toml
 COPY fixtures/templates /fixtures/templates
 COPY fixtures/recorded /fixtures/recorded
+COPY fixtures/apis /fixtures/apis
 WORKDIR /
 USER interlock
 VOLUME /data
