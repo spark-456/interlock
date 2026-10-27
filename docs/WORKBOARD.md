@@ -32,9 +32,9 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 21 | K02 | Use any API (OpenAPI → tools) | P0 | T00 | claimed | codex-1 | t/K02-openapi | 2026-10-27 15:21 | Pushed `450df7fd17c276b1049d081fe2a768b8b4903b21`; Rust checks pass. Full check needs generated `web/fixtures/api/nodes.json`; awaiting owner decision on no-web rule before PR. |
 | 22 | C01 | OAuth broker + Gmail, Sheets, YouTube | P0 | T00 | claimed | codex-1 | t/C01-google | 2026-10-27 15:52 | Pushed `d0ccaebaf06f2a6d83d1ee0f0b925cd7de82f1f1`; OAuth broker and Google nodes pass Rust checks. Left: authenticated OAuth HTTP route wiring (B05 auth), generated `web/fixtures/api/nodes.json` for full check, PR. |
 | 23 | C02 | Slack, Discord, Telegram, Bluesky | P0 | T00 | claimed | codex-1 | t/C02-messaging | 2026-10-27 16:12 | 77bdf615918bb4f10c9f61bb808c6e1d7aae47f9 pushed; 25 connector tests and Rust check stages pass; generated `web/fixtures/api/nodes.json` drift blocks full check under no-web instruction; PR pending. |
-| 24 | M01 | Media ops (ffmpeg) | P0 | T00 | claimed | codex-1 | t/M01-media-ops | 2026-10-27 16:12 | |
+| 24 | M01 | Media ops (ffmpeg) | P0 | T00 | claimed | codex-1 | t/M01-media-ops | 2026-10-27 16:32 | 6295632eff30c793c55e1698010ebdbd5aa420ed pushed; Windows ffmpeg fixture and Rust check stages pass. Claude-a owns generated `web/fixtures/api/nodes.json` on this branch; full check and PR follow that commit. |
 | 25 | M02 | Media generation (video, voice, image) | P0 | T00 | ready | | | | |
-| 26 | C03 | Shopify sandbox + social dry-run nodes | P0 | T00 | ready | | | | |
+| 26 | C03 | Shopify sandbox + social dry-run nodes | P0 | T00 | claimed | codex-1 | t/C03-sandbox-social | 2026-10-27 16:33 | |
 | 27 | W07 | Landing, demo mode, settings, error states | P0 | T00 | ready | | | | |
 | 28 | R02 | Deploy to Nebius | P0 | B04 | ready | | | | Prep (Dockerfile, account checks) can start before B04 is done |
 | 29 | R03 | Integration pass & E2E | P0 | B03, B04, A01, W02, W03 | ready | | | | Integrator role; start Thu |
@@ -61,12 +61,12 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 | `IL_MASTER_KEY` | B01 | 32 random bytes, base64. Encrypts stored credentials | open |
 | Nebius deployment account | R02 | Somewhere to run the container with HTTPS and a volume | open |
 | Final licence and README | R04 | Switch to Apache-2.0 and write the README at submission | open |
-| Generated catalog fixture exception | B06 and later node tasks | `cargo xtask catalog` must update `web/fixtures/api/nodes.json` to mark implemented nodes Ready, but codex-1 was instructed not to edit anything under `web/`. May codex-1 update only this generated fixture? | open |
 
 ## Blockers and known issues
 
 | Issue | Kind | Tasks | Detail | Status |
 |---|---|---|---|---|
+| Generated node catalog fixture | handoff to claude-a | B06, B07, B08, N01, K01, K02, C01, C02, M01 and later node tasks | Owner chose claude-a to update `web/fixtures/api/nodes.json`; codex-1 leaves `web/` untouched. Claude: check out each pushed backend task branch, run `cargo xtask catalog`, commit only the generated web fixture on that branch, and note the SHA in its task row. Codex-1 will then run full check and open its PR. | open |
 | GitHub Actions blocked on private repos | blocker | all | Account billing stops hosted runners. The repo is public so CI runs; making it private again stops CI | workaround |
 | Model IDs not verified | issue | B02 | Config model IDs are guesses until checked against Token Factory | open |
 | Architect must emit `build.node` and `build.cost` | issue | A01, A02 | The Building screen needs them for node stats and the running cost | open |
