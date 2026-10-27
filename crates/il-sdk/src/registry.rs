@@ -8,7 +8,9 @@ use il_core::NodeManifest;
 use serde_json::Value;
 
 use crate::node::NodeExecutor;
-use crate::services::{FileStore, FlowToolProvider, MediaError, MediaGen, MediaKind, ModelError, ModelProvider, Services};
+use crate::services::{
+    FileStore, FlowToolProvider, MediaError, MediaGen, MediaKind, ModelError, ModelProvider, Services,
+};
 
 /// Registers a node type: `inventory::submit! { NodeFactory::new(|| Box::new(MyNode)) }`.
 pub struct NodeFactory {
