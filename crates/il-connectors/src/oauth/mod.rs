@@ -1,5 +1,7 @@
 //! Generic OAuth2 authorization-code broker with self-registered providers.
 
+mod routes;
+
 use std::sync::Arc;
 
 use chrono::Utc;
