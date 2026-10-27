@@ -43,6 +43,34 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | ready | | | | New node in `il-nodes/src/ai/guardrails.rs`: rules list, pass/blocked outputs, hand-off rule. Used by F-C; the design's "Safety rules" node |
 | 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | ready | | | | Follow-up of B04 part 1 (see its commit message) |
 
+## Waiting on the owner
+
+Things only the owner can do (accounts, keys, money, decisions). Agents add a row when they need one and set Status `done` when it lands. The progress tracker reads this table.
+
+| Item | Needed by | Detail | Status |
+|---|---|---|---|
+| Nebius Token Factory API key | B02, A01, R03 | Set `NEBIUS_API_KEY`. Check the model IDs in `config/interlock.example.toml` against `GET /v1/models` | open |
+| Tavily API key | K01 | Set `TAVILY_API_KEY` | open |
+| GitHub OAuth app | B04b | Client ID and secret; local callback `http://127.0.0.1:8080/api/auth/github/callback` | open |
+| Google OAuth app (testing mode) | C01 | Gmail, Sheets and YouTube scopes; add yourself as a test user | open |
+| Slack app | C02 | Bot token and an interactivity URL | open |
+| Discord webhook | C02 | One webhook URL for a test channel | open |
+| Telegram bot token | C02 | Create a bot with BotFather | open |
+| Bluesky app password | C02 | Settings → App passwords | open |
+| `IL_MASTER_KEY` | B01 | 32 random bytes, base64. Encrypts stored credentials | open |
+| Nebius deployment account | R02 | Somewhere to run the container with HTTPS and a volume | open |
+| Final licence and README | R04 | Switch to Apache-2.0 and write the README at submission | open |
+
+## Blockers and known issues
+
+| Issue | Kind | Tasks | Detail | Status |
+|---|---|---|---|---|
+| GitHub Actions blocked on private repos | blocker | all | Account billing stops hosted runners. The repo is public so CI runs; making it private again stops CI | workaround |
+| Model IDs not verified | issue | B02 | Config model IDs are guesses until checked against Token Factory | open |
+| Architect must emit `build.node` and `build.cost` | issue | A01, A02 | The Building screen needs them for node stats and the running cost | open |
+| No `ai.guardrails` node | issue | N01 | The F-C flow and the design's "Safety rules" node need it | open |
+| `corepack enable` needs admin | note | — | pnpm 10.14 works through the existing shims | open |
+
 ### Contract log (breaking changes only)
 
 | Date (UTC) | PR | Change | Who must rebase |
