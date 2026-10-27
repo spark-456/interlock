@@ -8,8 +8,13 @@ use crate::node::ValidationIssue;
 
 /// Default settings validation used by `NodeExecutor::validate`.
 pub fn default_schema_validate(manifest: &NodeManifest, settings: &Value) -> Result<(), Vec<ValidationIssue>> {
+    validate_json(&manifest.settings_schema, settings)
+}
+
+/// Checks any JSON value against the same schema subset (used for model JSON output).
+pub fn validate_json(schema: &Value, value: &Value) -> Result<(), Vec<ValidationIssue>> {
     let mut issues = Vec::new();
-    check(&manifest.settings_schema, settings, "", &mut issues);
+    check(schema, value, "", &mut issues);
     if issues.is_empty() { Ok(()) } else { Err(issues) }
 }
 
