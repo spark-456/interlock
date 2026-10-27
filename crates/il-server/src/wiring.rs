@@ -2,9 +2,11 @@
 
 use std::sync::Arc;
 
+use async_trait::async_trait;
+use il_core::Flow;
 use il_sdk::Services;
 use il_sdk::registry::RouteCtx;
-use il_sdk::services::{ArchitectService, FlowRunner, SystemClock};
+use il_sdk::services::{AgentTool, ArchitectService, FlowRunner, FlowToolProvider, SystemClock, ToolError};
 use il_sdk::testkit::FakeServices;
 use il_store::db::SqliteStore;
 use il_store::files::DiskFileStore;
@@ -26,6 +28,20 @@ pub struct AppState {
     pub(crate) github_secret: Option<String>,
 }
 
+struct PublishedFlowTools {
+    services: Services,
+}
+
+#[async_trait]
+impl FlowToolProvider for PublishedFlowTools {
+    async fn for_flow(&self, workspace_id: &str, flow: &Flow) -> Result<Vec<Arc<dyn AgentTool>>, ToolError> {
+        if flow.workspace_id != workspace_id {
+            return Err(ToolError::Failed("flow not found".into()));
+        }
+        il_connectors::openapi::tool::for_flow(flow, &self.services).await
+    }
+}
+
 impl AppState {
     /// Context handed to registered route factories.
     pub fn route_ctx(&self) -> RouteCtx {
@@ -33,6 +49,7 @@ impl AppState {
             services: self.services.clone(),
             runner: self.runner.clone(),
             architect: self.architect.clone(),
+            flow_tools: Arc::new(PublishedFlowTools { services: self.services.clone() }),
             config: self.config.raw.clone(),
         }
     }
@@ -149,5 +166,33 @@ fn wire_models(services: &mut Services, config: &Config) {
             services.models = gateway;
         }
         Err(e) => tracing::error!(error = %e, "model gateway not started; model calls use the offline fake"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use il_core::Flow;
+    use il_sdk::services::{FileStore, FlowToolProvider};
+    use il_sdk::testkit::FakeServices;
+    use serde_json::json;
+
+    use super::PublishedFlowTools;
+
+    #[tokio::test]
+    async fn p01_published_flow_tools_include_selected_openapi_operations_only_for_owner() {
+        let fakes = FakeServices::default();
+        let spec = json!({"openapi":"3.1.0","servers":[{"url":"https://api.example.com"}],
+            "paths":{"/invoices/{id}":{"get":{"operationId":"getInvoice","parameters":[
+                {"name":"id","in":"path","required":true,"schema":{"type":"string"}}]}}}});
+        let file = fakes.files.put("invoices.json", "application/json", spec.to_string().into()).await.unwrap();
+        let flow: Flow = serde_json::from_value(json!({"id":"flow_1","workspaceId":"ws_a","version":1,
+        "name":"Billing","kind":"app","edges":[],"nodes":[
+            {"id":"get","type":"data.openapi","name":"Get invoice",
+                "settings":{"spec":file.id,"operationId":"getInvoice"}}
+        ]}))
+        .unwrap();
+        let provider = PublishedFlowTools { services: fakes.services() };
+        assert_eq!(provider.for_flow("ws_a", &flow).await.unwrap()[0].name(), "getInvoice");
+        assert!(provider.for_flow("ws_other", &flow).await.is_err());
     }
 }

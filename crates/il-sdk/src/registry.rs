@@ -8,7 +8,7 @@ use il_core::NodeManifest;
 use serde_json::Value;
 
 use crate::node::NodeExecutor;
-use crate::services::{MediaError, MediaGen, MediaKind, ModelError, ModelProvider, Services};
+use crate::services::{FlowToolProvider, MediaError, MediaGen, MediaKind, ModelError, ModelProvider, Services};
 
 /// Registers a node type: `inventory::submit! { NodeFactory::new(|| Box::new(MyNode)) }`.
 pub struct NodeFactory {
@@ -46,6 +46,8 @@ pub struct RouteCtx {
     pub services: Services,
     pub runner: Arc<dyn crate::services::FlowRunner>,
     pub architect: Arc<dyn crate::services::ArchitectService>,
+    /// Tools resolved for a published flow and authenticated workspace.
+    pub flow_tools: Arc<dyn FlowToolProvider>,
     /// The whole config file as JSON; each module reads its own section.
     pub config: Value,
 }

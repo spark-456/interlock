@@ -7,7 +7,9 @@ const config = {
   kit: {
     // SPA: the Rust server embeds `build/` and falls back to index.html for client routes.
     adapter: adapter({ fallback: 'index.html', strict: false }),
-    alias: { $fixtures: 'fixtures' }
+    alias: { $fixtures: 'fixtures' },
+    // Type-check the standalone widget too.
+    typescript: { config: (tsconfig) => void tsconfig.include.push('../widget/**/*.ts') }
   }
 };
 

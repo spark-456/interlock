@@ -9,3 +9,19 @@ publish.workspace = true
 [dependencies]
 il-core.workspace = true
 il-sdk.workspace = true
+axum = { workspace = true, features = ["json"] }
+chrono.workspace = true
+futures.workspace = true
+inventory.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+thiserror.workspace = true
+tower.workspace = true
+ulid.workspace = true
+rmcp = { version = "3.8.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
+
+[dev-dependencies]
+async-trait.workspace = true
+il-sdk = { workspace = true, features = ["testkit"] }
+tokio.workspace = true

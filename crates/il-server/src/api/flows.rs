@@ -2,6 +2,7 @@
 
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
+use axum::http::header;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use il_core::dto::{AskDiff, AskRequest, FlowSummary, RunCreated, RunSummary, TestRunRequest};
@@ -17,6 +18,7 @@ pub fn routes() -> Router<AppState> {
         .route("/api/flows", get(list).post(create))
         .route("/api/flows/{id}", get(read).put(update).delete(remove))
         .route("/api/flows/{id}/versions", get(versions))
+        .route("/api/flows/{id}/guide", get(guide))
         .route("/api/flows/{id}/activate", post(activate))
         .route("/api/flows/{id}/deactivate", post(deactivate))
         .route("/api/flows/{id}/test", post(test))
@@ -95,6 +97,17 @@ async fn read(State(state): State<AppState>, ws: Ws, Path(id): Path<String>) -> 
     Ok(Json(owned(&state, &ws, &id).await?))
 }
 
+async fn guide(
+    State(state): State<AppState>,
+    ws: Ws,
+    Path(id): Path<String>,
+) -> ApiResult<([(header::HeaderName, &'static str); 1], String)> {
+    let flow = owned(&state, &ws, &id).await?;
+    let fallback = format!("http://{}:{}", state.config.server.host, state.config.server.port);
+    let base = state.config.server.public_url.as_deref().unwrap_or(&fallback);
+    Ok(([(header::CONTENT_TYPE, "text/markdown; charset=utf-8")], il_publish::guide::generate(&flow, base)))
+}
+
 async fn update(
     State(state): State<AppState>,
     ws: Ws,
@@ -168,4 +181,47 @@ async fn ask(
 
 async fn run_node() -> ApiErr {
     ApiErr::not_implemented("W03 / ED-7 (run a single step)")
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::body::{Body, to_bytes};
+    use axum::http::{Request, StatusCode, header};
+    use il_core::Flow;
+    use tower::ServiceExt;
+
+    use crate::{Config, build_state, routes};
+
+    #[tokio::test]
+    async fn p01_guide_route_returns_markdown_only_for_owned_flow() {
+        let state = build_state(
+            Config::from_value(serde_json::json!({
+                "server": {"public_url": "https://interlock.example"}
+            }))
+            .unwrap(),
+        );
+        let own: Flow = serde_json::from_value(serde_json::json!({
+            "id":"flw_own","workspaceId":"ws_local","version":0,"name":"Support Agent",
+            "kind":"app","nodes":[],"edges":[]
+        }))
+        .unwrap();
+        let other: Flow = serde_json::from_value(serde_json::json!({
+            "id":"flw_other","workspaceId":"ws_other","version":0,"name":"Private Agent",
+            "kind":"app","nodes":[],"edges":[]
+        }))
+        .unwrap();
+        state.services.store.put_flow(&own).await.unwrap();
+        state.services.store.put_flow(&other).await.unwrap();
+        let app = routes::router(state);
+        let response =
+            app.clone().oneshot(Request::get("/api/flows/flw_own/guide").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "text/markdown; charset=utf-8");
+        let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let guide = String::from_utf8(body.to_vec()).unwrap();
+        assert!(guide.contains("https://interlock.example/v1/chat/completions"));
+        let response =
+            app.oneshot(Request::get("/api/flows/flw_other/guide").body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
 }

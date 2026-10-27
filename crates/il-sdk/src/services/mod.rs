@@ -23,7 +23,7 @@ pub use models::{ModelError, ModelGateway, ModelProvider, ModelRole};
 pub use notifier::{Notification, Notifier, NotifyError};
 pub use runner::{FlowRunner, RunnerError, StartRun};
 pub use store::{Credential, Store, StoreError};
-pub use tools::{AgentTool, ToolError};
+pub use tools::{AgentTool, FlowToolProvider, NoFlowTools, ToolError};
 
 use crate::http::SafeHttp;
 
