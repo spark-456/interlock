@@ -13,7 +13,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 2 | B03 | Engine: executor, events, approvals, caps | P0 | T00 | done | claude-a | t/B03-engine | 2026-10-27 06:50 | Commit ab75ed1. Engine wired into il-server as the FlowRunner |
 | 3 | B02 | Model gateway (Token Factory + fake) | P0 | T00 | done | claude-a | t/B02-gateway | 2026-10-27 12:25 | [PR #6](https://github.com/spark-456/interlock/pull/6). Live smoke test `cargo run -p il-ai --example ping` waits on NEBIUS_API_KEY |
 | 4 | W01 | Design system & app shell | P0 | T00 | done | claude-a | t/W01-design-foundation | 2026-10-27 06:10 | Design v3 foundation merged (tokens, fonts, base components, shell, canvas foundation, Building). Remaining components moved to W01b. Commit 44aa61e |
-| 5 | W02 | Canvas editor + Ask diff view | P0 | T00 | review | claude-a | t/W02-editor | 2026-10-27 13:40 | Canvas foundation (NodeCard, edges, toolbar, minimap) lands in the design PR; build the editor on it |
+| 5 | W02 | Canvas editor + Ask diff view | P0 | T00 | done | claude-a | t/W02-editor | 2026-10-27 13:55 | [PR #8](https://github.com/spark-456/interlock/pull/8). Editor at /flows/[id]; the node panel (W03) mounts beside the canvas |
 | 6 | B01 | Store: SQLite, migrations, files, secrets | P0 | T00 | claimed | codex-1 | t/B01-store | 2026-10-27 13:22 | |
 | 7 | A01 | Architect: goal → flow | P0 | T00 | ready | | | | |
 | 8 | B06 | Nodes: logic & data | P0 | T00 | ready | | | | |
