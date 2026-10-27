@@ -1,0 +1,164 @@
+{
+ "name": "Larkspur support agent",
+ "kind": "app",
+ "notes": [
+  "Billing questions go to an agent that can look up invoices; everything else is answered from the help center."
+ ],
+ "groups": [
+  {
+   "id": "g_chat",
+   "label": "Chat"
+  },
+  {
+   "id": "g_route",
+   "label": "Understand"
+  },
+  {
+   "id": "g_agents",
+   "label": "Agents"
+  },
+  {
+   "id": "g_safety",
+   "label": "Safety"
+  },
+  {
+   "id": "g_answer",
+   "label": "Answer"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "n_chat",
+   "type": "trigger.chat",
+   "name": "Support chat",
+   "group": "g_chat",
+   "settings": {
+    "welcomeMessage": "Hi, I'm the Larkspur assistant. How can I help?",
+    "suggestedQuestions": [
+     "Where is my order?",
+     "How do refunds work?"
+    ]
+   }
+  },
+  {
+   "id": "n_kb",
+   "type": "knowledge.base",
+   "name": "Help center and policies",
+   "group": "g_chat",
+   "settings": {
+    "name": "Larkspur help center",
+    "sources": [
+     {
+      "kind": "url",
+      "value": "https://help.larkspur.example"
+     }
+    ]
+   }
+  },
+  {
+   "id": "n_route",
+   "type": "ai.decide",
+   "name": "About billing?",
+   "group": "g_route",
+   "settings": {
+    "mode": "yesno",
+    "question": "Is this message about an invoice, payment or refund?",
+    "input": "{{ item.message }}"
+   }
+  },
+  {
+   "id": "n_billing",
+   "type": "ai.agent",
+   "name": "Billing agent",
+   "group": "g_agents",
+   "settings": {
+    "instructions": "You are Larkspur's billing assistant. Look up the customer's invoice before discussing it, quote refund windows from the newest policy, and never promise a refund above $100.",
+    "input": "{{ nodes.n_chat.json.message }}",
+    "knowledgeBases": [
+     "n_kb"
+    ],
+    "tools": [
+     "getInvoice"
+    ]
+   }
+  },
+  {
+   "id": "n_support",
+   "type": "ai.agent",
+   "name": "Support agent",
+   "group": "g_agents",
+   "settings": {
+    "instructions": "You are Larkspur's support assistant. Answer only from the help center and cite the article for every policy you quote. If you can't help, say a person will follow up.",
+    "input": "{{ nodes.n_chat.json.message }}",
+    "knowledgeBases": [
+     "n_kb"
+    ]
+   }
+  },
+  {
+   "id": "n_guard",
+   "type": "ai.decide",
+   "name": "Safe to send?",
+   "group": "g_safety",
+   "settings": {
+    "mode": "yesno",
+    "question": "Does this answer stay within Larkspur's policies and avoid sharing any other customer's data?",
+    "input": "{{ item.answer }}"
+   }
+  },
+  {
+   "id": "n_respond",
+   "type": "output.respond",
+   "name": "Answer with sources",
+   "group": "g_answer",
+   "settings": {
+    "body": "{{ item.answer }}",
+    "includeSources": true
+   }
+  },
+  {
+   "id": "n_handoff",
+   "type": "output.respond",
+   "name": "Hand off to a person",
+   "group": "g_answer",
+   "settings": {
+    "body": "I'll pass this to our team; support@larkspur.example will follow up shortly.",
+    "includeSources": false
+   }
+  }
+ ],
+ "edges": [
+  {
+   "from": "n_chat",
+   "to": "n_route"
+  },
+  {
+   "from": "n_route",
+   "fromPort": "yes",
+   "to": "n_billing"
+  },
+  {
+   "from": "n_route",
+   "fromPort": "no",
+   "to": "n_support"
+  },
+  {
+   "from": "n_billing",
+   "to": "n_guard"
+  },
+  {
+   "from": "n_support",
+   "to": "n_guard"
+  },
+  {
+   "from": "n_guard",
+   "fromPort": "yes",
+   "to": "n_respond"
+  },
+  {
+   "from": "n_guard",
+   "fromPort": "no",
+   "to": "n_handoff"
+  }
+ ]
+}

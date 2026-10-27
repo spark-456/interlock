@@ -9,3 +9,12 @@ publish.workspace = true
 [dependencies]
 il-core.workspace = true
 il-sdk.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+il-sdk = { workspace = true, features = ["testkit"] }

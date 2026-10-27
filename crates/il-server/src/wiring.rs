@@ -1,14 +1,10 @@
-//! Wires concrete implementations into `Services`. Until B01/B02/B03/A01 land, fake services
-//! from `il_sdk::testkit` stand in and the runner/architect report "not wired yet".
+//! Wires concrete implementations into `Services`. Until B01 is wired, fake services from
+//! `il_sdk::testkit` stand in.
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use il_core::Flow;
-use il_core::dto::{AskDiff, BuildAnswers, BuildRequest};
 use il_sdk::Services;
 use il_sdk::registry::RouteCtx;
-use il_sdk::services::architect::ArchitectError;
 use il_sdk::services::{ArchitectService, FlowRunner, SystemClock};
 use il_sdk::testkit::FakeServices;
 
@@ -74,7 +70,9 @@ pub fn build_state(config: Config) -> AppState {
         runner.clone(),
         il_engine::NodeLookup::default(),
     ));
-    AppState { config: Arc::new(config), services, runner, architect: Arc::new(NotWired), engine, triggers }
+    let architect =
+        Arc::new(il_architect::Architect::new(services.clone(), il_architect::catalog::Catalog::registered()));
+    AppState { config: Arc::new(config), services, runner, architect, engine, triggers }
 }
 
 /// The real model gateway, with its model check run in the background. Keeps the fake (and says so)
@@ -91,23 +89,5 @@ fn wire_models(services: &mut Services, config: &Config) {
             services.models = gateway;
         }
         Err(e) => tracing::error!(error = %e, "model gateway not started; model calls use the offline fake"),
-    }
-}
-
-/// Placeholder until the architect (A01) is wired. (The runner is the engine.)
-struct NotWired;
-
-const ARCHITECT: &str = "the architect is not wired yet (task A01)";
-
-#[async_trait]
-impl ArchitectService for NotWired {
-    async fn start_build(&self, _ws: &str, _req: BuildRequest) -> Result<String, ArchitectError> {
-        Err(ArchitectError::Failed(ARCHITECT.into()))
-    }
-    async fn answer(&self, _build_id: &str, _answers: BuildAnswers) -> Result<(), ArchitectError> {
-        Err(ArchitectError::Failed(ARCHITECT.into()))
-    }
-    async fn ask(&self, _flow: &Flow, _message: &str) -> Result<AskDiff, ArchitectError> {
-        Err(ArchitectError::Failed(ARCHITECT.into()))
     }
 }

@@ -185,9 +185,10 @@ async fn approvals_builds_and_stubs_use_the_error_shape() {
     let (s, err, _) = call(&app, "POST", "/api/builds", Some(json!({ "goal": " " })), None).await;
     assert_eq!(s, StatusCode::BAD_REQUEST);
     assert_eq!(err["error"]["code"], "bad_request");
-    let (s, err, _) = call(&app, "POST", "/api/builds", Some(json!({ "goal": "Reply to support emails" })), None).await;
-    assert_eq!(s, StatusCode::BAD_GATEWAY, "the architect is not wired yet");
-    assert_eq!(err["error"]["code"], "architect_failed");
+    let (s, created, _) =
+        call(&app, "POST", "/api/builds", Some(json!({ "goal": "Reply to support emails" })), None).await;
+    assert_eq!(s, StatusCode::ACCEPTED);
+    assert!(created["buildId"].as_str().unwrap().starts_with("bld_"));
 
     let (s, err, _) = call(&app, "POST", "/api/templates/tpl_x/use", None, None).await;
     assert_eq!(s, StatusCode::NOT_IMPLEMENTED);
