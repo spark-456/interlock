@@ -213,6 +213,86 @@ async fn approvals_pause_persist_and_resume_after_restart() {
 }
 
 #[tokio::test]
+async fn b03b_expiry_approves_after_restart_and_rejects_late_manual_decision() {
+    let fakes = il_sdk::testkit::FakeServices::default();
+    let svc = fakes.services();
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("a", "test.approve", json!({"timeoutHours": 2.0, "onTimeout": "approve"})),
+            ("yes", "test.double", json!({})),
+        ],
+        &[("t", "out", "a", "in"), ("a", "approved", "yes", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let run_id = {
+        let (engine, _) = engine_with(svc.clone(), config());
+        let id = engine.start(start(items(&[3]))).await.unwrap();
+        assert_eq!(engine.wait(&id).await, RunStatus::Waiting);
+        id
+    };
+    let approval = fakes.store.list_approvals("ws_t", true).await.unwrap().pop().unwrap();
+    assert_eq!(approval.on_timeout, Some(il_core::ApprovalTimeout::Approve));
+    assert_eq!(approval.expires_at, Some(approval.created_at + chrono::Duration::hours(2)));
+    fakes.clock.advance(std::time::Duration::from_secs(2 * 3600));
+    let (restarted, _) = engine_with(svc, config());
+    let late = ApprovalDecision { decision: Decision::Reject, payload: None, comment: None };
+    assert!(restarted.decide(&approval.id, late, Some("late".into())).await.is_err());
+    assert_eq!(restarted.expire_due_approvals().await.unwrap(), 1);
+    assert_eq!(restarted.wait(&run_id).await, RunStatus::Succeeded);
+    let decided = fakes.store.get_approval(&approval.id).await.unwrap().unwrap();
+    assert_eq!(decided.status, ApprovalStatus::Approved);
+    assert_eq!(decided.decided_by.as_deref(), Some("timeout"));
+    let run = fakes.store.get_run(&run_id).await.unwrap().unwrap();
+    assert_eq!(outputs(&run, "yes", "out"), [json!({"n":6})]);
+    assert_eq!(restarted.expire_due_approvals().await.unwrap(), 0);
+}
+
+#[tokio::test]
+async fn b03b_reject_and_keep_waiting_timeout_policies() {
+    for (policy, expected_port) in [("reject", "rejected"), ("keepWaiting", "approved")] {
+        let fakes = il_sdk::testkit::FakeServices::default();
+        let svc = fakes.services();
+        let f = flow(
+            &[
+                ("t", "test.trigger", json!({})),
+                ("a", "test.approve", json!({"timeoutHours": 1.0, "onTimeout": policy})),
+                ("yes", "test.double", json!({})),
+                ("no", "test.text", json!({"text":"no"})),
+            ],
+            &[("t", "out", "a", "in"), ("a", "approved", "yes", "in"), ("a", "rejected", "no", "in")],
+        );
+        fakes.store.put_flow(&f).await.unwrap();
+        let (engine, _) = engine_with(svc, config());
+        let id = engine.start(start(items(&[1]))).await.unwrap();
+        assert_eq!(engine.wait(&id).await, RunStatus::Waiting);
+        let approval = fakes.store.list_approvals("ws_t", true).await.unwrap().pop().unwrap();
+        fakes.clock.advance(std::time::Duration::from_secs(3600));
+        let expired = engine.expire_due_approvals().await.unwrap();
+        if policy == "keepWaiting" {
+            assert_eq!(expired, 0);
+            let manual = ApprovalDecision { decision: Decision::Approve, payload: None, comment: None };
+            engine.decide(&approval.id, manual, Some("human".into())).await.unwrap();
+        } else {
+            assert_eq!(expired, 1);
+            assert!(
+                engine
+                    .decide(
+                        &approval.id,
+                        ApprovalDecision { decision: Decision::Approve, payload: None, comment: None },
+                        None
+                    )
+                    .await
+                    .is_err()
+            );
+        }
+        assert_eq!(engine.wait(&id).await, RunStatus::Succeeded);
+        let run = fakes.store.get_run(&id).await.unwrap().unwrap();
+        assert_eq!(outputs(&run, if expected_port == "approved" { "yes" } else { "no" }, "out").len(), 1);
+    }
+}
+
+#[tokio::test]
 async fn spend_cap_pauses_the_run() {
     let (fakes, svc) = services();
     let (engine, _) = engine_with(svc, config());

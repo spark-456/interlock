@@ -21,7 +21,7 @@ pub use manifest::{
     Category, CostHint, CredentialKind, CredentialSpec, ExecMode, NodeExample, NodeManifest, NodeStatus, PortSpec,
     SideEffect,
 };
-pub use run::{Approval, ApprovalDecision, ApprovalStatus, Decision, NodeRun, Run, RunStatus};
+pub use run::{Approval, ApprovalDecision, ApprovalStatus, ApprovalTimeout, Decision, NodeRun, Run, RunStatus};
 
 /// Shared JSON value type used across contracts.
 pub type Json = serde_json::Value;

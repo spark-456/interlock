@@ -87,6 +87,10 @@ pub struct Approval {
     pub status: ApprovalStatus,
     pub channels: Vec<String>,
     pub created_at: DateTime<Utc>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub on_timeout: Option<ApprovalTimeout>,
     pub decided_at: Option<DateTime<Utc>>,
     pub decided_by: Option<String>,
 }
@@ -100,6 +104,16 @@ pub enum ApprovalStatus {
     Approved,
     Rejected,
     Expired,
+}
+
+/// Action to take when an approval deadline passes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ApprovalTimeout {
+    Approve,
+    Reject,
+    KeepWaiting,
 }
 
 /// Approve or reject.

@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Mutex;
 
 use async_trait::async_trait;
-use il_core::{Approval, ApprovalStatus, BuildEvent, Flow, NodeRun, Run, RunEvent};
+use il_core::{Approval, ApprovalStatus, ApprovalTimeout, BuildEvent, Flow, NodeRun, Run, RunEvent};
 use serde_json::Value;
 
 use crate::services::store::{Credential, SpendEntry, SpendScope, Store, StoreError, StoreResult};
@@ -182,6 +182,28 @@ impl Store for MemoryStore {
             .collect();
         out.sort_by_key(|a| std::cmp::Reverse(a.created_at));
         Ok(out)
+    }
+    async fn due_approvals(&self, now: chrono::DateTime<chrono::Utc>) -> StoreResult<Vec<Approval>> {
+        Ok(self
+            .lock()?
+            .approvals
+            .values()
+            .filter(|approval| {
+                approval.status == ApprovalStatus::Pending
+                    && approval.expires_at.is_some_and(|deadline| deadline <= now)
+                    && !matches!(approval.on_timeout, None | Some(ApprovalTimeout::KeepWaiting))
+            })
+            .cloned()
+            .collect())
+    }
+    async fn transition_approval(&self, approval: &Approval) -> StoreResult<bool> {
+        let mut inner = self.lock()?;
+        let Some(current) = inner.approvals.get(&approval.id) else { return Ok(false) };
+        if current.status != ApprovalStatus::Pending {
+            return Ok(false);
+        }
+        inner.approvals.insert(approval.id.clone(), approval.clone());
+        Ok(true)
     }
     async fn credential(&self, _workspace_id: &str, id: &str) -> StoreResult<Option<Credential>> {
         Ok(self.lock()?.credentials.get(id).cloned())

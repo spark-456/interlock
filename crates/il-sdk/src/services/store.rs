@@ -92,6 +92,10 @@ pub trait Store: Send + Sync {
     async fn put_approval(&self, approval: &Approval) -> StoreResult<()>;
     async fn get_approval(&self, id: &str) -> StoreResult<Option<Approval>>;
     async fn list_approvals(&self, workspace_id: &str, pending_only: bool) -> StoreResult<Vec<Approval>>;
+    /// Pending approvals whose deadline has passed and whose policy takes a decision.
+    async fn due_approvals(&self, now: DateTime<Utc>) -> StoreResult<Vec<Approval>>;
+    /// Atomically changes a pending approval to its decided state.
+    async fn transition_approval(&self, approval: &Approval) -> StoreResult<bool>;
 
     // Credentials (decrypted on read).
     async fn credential(&self, workspace_id: &str, id: &str) -> StoreResult<Option<Credential>>;
