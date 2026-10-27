@@ -17,17 +17,21 @@
     api.me().then((m) => (me = m)).catch(() => (me = null));
   });
 
+  // The offline banner follows the browser's connection state.
+  let online = $state(typeof navigator === 'undefined' || navigator.onLine);
+
   const user = $derived(me?.user?.name ?? (me?.demo ? 'Demo visitor' : 'Guest'));
   const plan = $derived(me?.demo ? 'Demo workspace' : 'Free plan');
 </script>
 
-{#if page.route.id === '/'}
-  <!-- The landing page brings its own header and footer. -->
+{#if page.route.id === '/' || page.route.id === '/demo'}
+  <!-- The landing and demo pages bring their own header. -->
   {@render children()}
 {:else}
 <div class="app">
   <Sidebar collapsed={isCanvasRoute(page.route.id)} path={page.url.pathname} {user} {plan} />
   <div class="content">
+    {#if !online}<Banner kind="offline">You're offline. Saving, builds and runs work again once you reconnect.</Banner>{/if}
     {#if me?.demo}<Banner kind="demo">You're in the demo. Builds use recorded media and small limits.</Banner>{/if}
     <main>{@render children()}</main>
     <TabBar path={page.url.pathname} />
@@ -35,6 +39,7 @@
 </div>
 {/if}
 <Toast />
+<svelte:window ononline={() => (online = true)} onoffline={() => (online = false)} />
 
 <style>
   .app { display: flex; min-height: 100vh; }

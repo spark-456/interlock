@@ -1,6 +1,6 @@
 // Typed endpoints (PRD §8.5). Add endpoints here as screens need them; types are generated.
 
-import { get, post, put, upload } from './client';
+import { del, get, post, put, upload } from './client';
 import type {
   Approval,
   ApprovalDecision,
@@ -38,6 +38,10 @@ export const api = {
   deactivate: (flowId: string) => post<void>(`/api/flows/${flowId}/deactivate`, {}),
   /** The integration guide (INTERLOCK.md) for a published AI app. */
   guide: (flowId: string) => get<{ markdown: string }>(`/api/flows/${flowId}/guide`),
+  /** Starts an anonymous demo workspace (sets the session cookie). */
+  demoSession: () => post<Me>('/api/demo/session', {}),
+  keys: () => get<{ id: string; name: string; revoked: boolean; lastUsedAt: string | null }[]>('/api/keys'),
+  revokeKey: (id: string) => del<void>(`/api/keys/${id}`),
   /** Creates an API key; the full key is in this response only. */
   createKey: (name: string) => post<{ id: string; key: string }>('/api/keys', { name }),
   testRun: (flowId: string, items: JsonValue[] = []) => post<RunCreated>(`/api/flows/${flowId}/test`, { items }),
