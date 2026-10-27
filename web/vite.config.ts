@@ -11,7 +11,7 @@ export default defineConfig({
     proxy: process.env.VITE_FIXTURES === '1' ? undefined : Object.fromEntries(proxied.map((p) => [p, backend]))
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'widget/**/*.test.ts'],
     environment: 'node'
   }
 });
