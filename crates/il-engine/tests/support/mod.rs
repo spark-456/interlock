@@ -21,7 +21,7 @@ pub struct Fake {
     pub max_concurrent: Arc<AtomicUsize>,
 }
 
-fn m(id: &str) -> NodeManifest {
+pub fn m(id: &str) -> NodeManifest {
     NodeManifest::new(id, Category::Data, id, "test node")
 }
 

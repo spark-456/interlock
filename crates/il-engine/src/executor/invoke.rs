@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use il_core::expr::{Scope, render_value};
 use il_core::{ApprovalDecision, ExecMode, Item, Node, RunEventKind};
 use il_sdk::ctx::{NodeCtx, ProgressSink, RunInfo};
-use il_sdk::{NodeError, NodeExecutor, NodeInput, NodeOutput};
+use il_sdk::{NodeError, NodeExecutor, NodeInput, NodeOutput, Services};
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
@@ -30,8 +30,10 @@ pub(crate) struct Resume {
 }
 
 /// Runs one node over its input (all items, or the resumed item).
+#[allow(clippy::too_many_arguments)]
 pub(crate) async fn run_node(
     inner: Arc<Inner>,
+    services: Services,
     base: RunInfo,
     node: Node,
     input: Ports,
@@ -92,7 +94,9 @@ pub(crate) async fn run_node(
             Err(e) => return CallResult::Failed { error: e.to_string(), retryable: false, input: main },
         };
         let info = RunInfo { node_id: node.id.clone(), node_name: node.name.clone(), item_index: idx, ..base.clone() };
-        match call_with_retry(&inner, exec.as_ref(), info, &node, settings, node_input, &cancel, decision).await {
+        match call_with_retry(&inner, &services, exec.as_ref(), info, &node, settings, node_input, &cancel, decision)
+            .await
+        {
             Ok(out) => {
                 partial.cost_usd += out.cost_usd;
                 match out.waiting_for {
@@ -118,6 +122,7 @@ pub(crate) async fn run_node(
 #[allow(clippy::too_many_arguments)]
 async fn call_with_retry(
     inner: &Arc<Inner>,
+    services: &Services,
     exec: &dyn NodeExecutor,
     info: RunInfo,
     node: &Node,
@@ -132,7 +137,7 @@ async fn call_with_retry(
         let mut ctx = NodeCtx {
             settings: settings.clone(),
             run: RunInfo { attempt, ..info.clone() },
-            services: inner.services.clone(),
+            services: services.clone(),
             credential_ids: node.credentials.clone(),
             cancel: cancel.clone(),
             progress: Arc::new(BusProgress { inner: inner.clone() }),

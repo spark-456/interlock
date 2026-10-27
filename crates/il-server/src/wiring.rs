@@ -96,6 +96,7 @@ fn finish_state(config: Config, mut services: Services) -> AppState {
         services.http = http;
     }
     wire_models(&mut services, &config);
+    services.flow_tools = Arc::new(PublishedFlowTools { services: services.clone() });
     services.notifier =
         Arc::new(il_connectors::slack::MessagingNotifier::new(services.clone(), services.notifier.clone()));
     match il_media::r#gen::from_config(&config.raw, services.files.clone(), config.providers == "fake") {
