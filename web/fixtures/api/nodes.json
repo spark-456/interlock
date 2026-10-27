@@ -2245,6 +2245,23 @@
       ],
       "settingsSchema": {
         "properties": {
+          "apiKeyHeader": {
+            "default": "x-api-key",
+            "title": "API key header",
+            "type": "string"
+          },
+          "authType": {
+            "default": "bearer",
+            "enum": [
+              "none",
+              "bearer",
+              "basic",
+              "apiKey"
+            ],
+            "title": "Authentication",
+            "type": "string",
+            "x-widget": "select"
+          },
           "body": {
             "title": "Body",
             "type": "string",
@@ -2301,7 +2318,7 @@
         "type": "object"
       },
       "sideEffect": "external",
-      "status": "stub",
+      "status": "ready",
       "title": "HTTP request",
       "trigger": false,
       "typeId": "data.http",
@@ -2444,7 +2461,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Parse document",
       "trigger": false,
       "typeId": "data.parse_document",
@@ -2520,7 +2537,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Set fields",
       "trigger": false,
       "typeId": "data.set_fields",
@@ -2587,7 +2604,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Template",
       "trigger": false,
       "typeId": "data.template",
@@ -3083,7 +3100,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "If",
       "trigger": false,
       "typeId": "logic.if",
@@ -3104,7 +3121,7 @@
           "title": "Each product"
         }
       ],
-      "execMode": "batch",
+      "execMode": "perItem",
       "icon": "repeat",
       "inputs": [
         {
@@ -3138,7 +3155,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Loop over items",
       "trigger": false,
       "typeId": "logic.loop",
@@ -3198,7 +3215,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Merge",
       "trigger": false,
       "typeId": "logic.merge",
@@ -3249,7 +3266,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Stop",
       "trigger": false,
       "typeId": "logic.stop",
@@ -3331,7 +3348,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Switch",
       "trigger": false,
       "typeId": "logic.switch",
@@ -3394,7 +3411,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Wait",
       "trigger": false,
       "typeId": "logic.wait",
