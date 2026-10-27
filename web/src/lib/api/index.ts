@@ -7,8 +7,10 @@ import type {
   BuildEvent,
   BuildRequest,
   CatalogResponse,
+  ConnectionSummary,
   Flow,
   FlowSummary,
+  JsonValue,
   Me,
   RunCreated,
   RunEvent,
@@ -29,6 +31,9 @@ export const api = {
   saveFlow: (flow: Flow) => put<Flow>(`/api/flows/${flow.id}`, flow),
   ask: (flowId: string, message: string) => post<AskDiff>(`/api/flows/${flowId}/ask`, { message }),
   testRun: (flowId: string) => post<RunCreated>(`/api/flows/${flowId}/test`, { items: [] }),
+  runStep: (flowId: string, nodeId: string, items: JsonValue[]) =>
+    post<RunCreated>(`/api/flows/${flowId}/nodes/${nodeId}/run`, { items }),
+  connections: () => get<ConnectionSummary[]>('/api/connections'),
   runs: (flowId: string) => get<RunSummary[]>(`/api/flows/${flowId}/runs`),
   templates: () => get<TemplateSummary[]>('/api/templates'),
   startBuild: (req: BuildRequest) => post<BuildCreated>('/api/builds', req)

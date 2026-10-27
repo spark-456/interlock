@@ -1,0 +1,66 @@
+[
+  {
+    "seq": 1,
+    "ts": "2026-10-27T10:00:00.000000Z",
+    "runId": "run_step_script",
+    "nodeId": null,
+    "type": "run.started",
+    "data": {
+      "flowId": "flw_promos",
+      "trigger": "step"
+    }
+  },
+  {
+    "seq": 2,
+    "ts": "2026-10-27T10:00:00.100000Z",
+    "runId": "run_step_script",
+    "nodeId": "n_script",
+    "type": "node.started",
+    "data": {}
+  },
+  {
+    "seq": 3,
+    "ts": "2026-10-27T10:00:01.400000Z",
+    "runId": "run_step_script",
+    "nodeId": "n_script",
+    "type": "node.items",
+    "data": {
+      "port": "out",
+      "total": 1,
+      "items": [
+        {
+          "json": {
+            "title": "Larkspur Linen Tote",
+            "description": "A sturdy everyday tote in washed linen.",
+            "price": 38,
+            "text": "Meet the Larkspur Linen Tote: washed linen, built for every day. Yours for $38."
+          },
+          "files": {}
+        }
+      ]
+    }
+  },
+  {
+    "seq": 4,
+    "ts": "2026-10-27T10:00:01.420000Z",
+    "runId": "run_step_script",
+    "nodeId": "n_script",
+    "type": "node.succeeded",
+    "data": {
+      "count": 1,
+      "ms": 1300,
+      "costUsd": 0.0004
+    }
+  },
+  {
+    "seq": 5,
+    "ts": "2026-10-27T10:00:01.450000Z",
+    "runId": "run_step_script",
+    "nodeId": null,
+    "type": "run.succeeded",
+    "data": {
+      "ms": 1450,
+      "costUsd": 0.0004
+    }
+  }
+]
