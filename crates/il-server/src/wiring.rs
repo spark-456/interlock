@@ -4,13 +4,12 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use il_core::Flow;
 use il_core::dto::{AskDiff, BuildAnswers, BuildRequest};
-use il_core::{ApprovalDecision, Flow};
 use il_sdk::Services;
 use il_sdk::registry::RouteCtx;
 use il_sdk::services::architect::ArchitectError;
-use il_sdk::services::runner::InvokeOutcome;
-use il_sdk::services::{ArchitectService, FlowRunner, RunnerError, StartRun, SystemClock};
+use il_sdk::services::{ArchitectService, FlowRunner, SystemClock};
 use il_sdk::testkit::FakeServices;
 
 use crate::Config;
@@ -22,6 +21,8 @@ pub struct AppState {
     pub services: Services,
     pub runner: Arc<dyn FlowRunner>,
     pub architect: Arc<dyn ArchitectService>,
+    /// The engine itself (event bus for SSE, waits, recovery).
+    pub engine: il_engine::Engine,
 }
 
 impl AppState {
@@ -58,34 +59,23 @@ pub fn build_state(config: Config) -> AppState {
     if let Ok(http) = il_sdk::SafeHttp::new() {
         services.http = http;
     }
-    tracing::info!(providers = %config.providers, "services wired (T00: in-memory fakes until B01/B02 land)");
-    AppState { config: Arc::new(config), services, runner: Arc::new(NotWired), architect: Arc::new(NotWired) }
+    tracing::info!(providers = %config.providers, "services wired (in-memory fakes until B01/B02 land)");
+    let mut engine_config: il_engine::EngineConfig = config.section("engine").unwrap_or_default();
+    engine_config.caps = config.section("caps").unwrap_or_default();
+    let engine = il_engine::Engine::new(services.clone(), il_engine::NodeLookup::default(), engine_config);
+    AppState {
+        config: Arc::new(config),
+        services,
+        runner: Arc::new(engine.clone()),
+        architect: Arc::new(NotWired),
+        engine,
+    }
 }
 
-/// Placeholder until the engine (B03) and architect (A01) are wired.
+/// Placeholder until the architect (A01) is wired. (The runner is the engine.)
 struct NotWired;
 
-const ENGINE: &str = "the engine is not wired yet (task B03)";
 const ARCHITECT: &str = "the architect is not wired yet (task A01)";
-
-#[async_trait]
-impl FlowRunner for NotWired {
-    async fn start(&self, _req: StartRun) -> Result<String, RunnerError> {
-        Err(RunnerError::Other(ENGINE.into()))
-    }
-    async fn invoke(&self, _req: StartRun) -> Result<InvokeOutcome, RunnerError> {
-        Err(RunnerError::Other(ENGINE.into()))
-    }
-    async fn decide(&self, _id: &str, _d: ApprovalDecision, _by: Option<String>) -> Result<(), RunnerError> {
-        Err(RunnerError::Other(ENGINE.into()))
-    }
-    async fn cancel(&self, _run_id: &str) -> Result<(), RunnerError> {
-        Err(RunnerError::Other(ENGINE.into()))
-    }
-    async fn replay(&self, _id: &str) -> Result<String, RunnerError> {
-        Err(RunnerError::Other(ENGINE.into()))
-    }
-}
 
 #[async_trait]
 impl ArchitectService for NotWired {

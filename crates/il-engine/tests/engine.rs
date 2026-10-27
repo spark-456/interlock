@@ -1,0 +1,289 @@
+//! Engine behaviour with fake nodes: graph execution, retries, timeouts, cancellation,
+//! approvals (including across a restart), caps, invoke and replay.
+
+mod support;
+
+use il_core::{ApprovalDecision, ApprovalStatus, Decision, Run, RunEventKind, RunStatus};
+use il_engine::Engine;
+use il_sdk::services::{FlowRunner, StartRun, Store};
+use serde_json::json;
+use support::*;
+
+fn start(items: Vec<il_core::Item>) -> StartRun {
+    StartRun { flow_id: "flw_t".into(), version: None, trigger: "manual".into(), items, trigger_node: None }
+}
+
+async fn run_to_end(engine: &Engine, store: &dyn Store, items: Vec<il_core::Item>) -> (Run, Vec<il_core::RunEvent>) {
+    let id = engine.start(start(items)).await.unwrap();
+    engine.wait(&id).await;
+    let run = store.get_run(&id).await.unwrap().unwrap();
+    let events = store.run_events(&id, 0).await.unwrap();
+    (run, events)
+}
+
+fn outputs(run: &Run, node: &str, port: &str) -> Vec<serde_json::Value> {
+    run.state["outputs"][node][port]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|i| i["json"].clone())
+        .collect()
+}
+
+#[tokio::test]
+async fn linear_per_item_flow_renders_expressions_and_orders_events() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("d", "test.double", json!({})),
+            ("x", "test.text", json!({ "text": "n={{ item.n }} of {{ items | length }}, first={{ nodes.t.json.n }}" })),
+        ],
+        &[("t", "out", "d", "in"), ("d", "out", "x", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, events) = run_to_end(&engine, fakes.store.as_ref(), items(&[1, 2, 3])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    let texts: Vec<_> = outputs(&run, "x", "out").iter().map(|j| j["text"].clone()).collect();
+    assert_eq!(texts, [json!("n=2 of 3, first=1"), json!("n=4 of 3, first=1"), json!("n=6 of 3, first=1")]);
+    let seqs: Vec<u64> = events.iter().map(|e| e.seq).collect();
+    assert_eq!(seqs, (1..=seqs.len() as u64).collect::<Vec<_>>(), "seq is dense and ordered");
+    assert!(matches!(events.first().unwrap().kind, RunEventKind::RunStarted { .. }));
+    assert!(matches!(events.last().unwrap().kind, RunEventKind::RunSucceeded { .. }));
+    let node_runs = fakes.store.node_runs(&run.id).await.unwrap();
+    assert_eq!(node_runs.len(), 2, "d and x recorded");
+}
+
+#[tokio::test]
+async fn branches_skip_untaken_paths_and_merge_waits_for_all() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("b", "test.branch", json!({})),
+            ("e", "test.double", json!({})),
+            ("o", "test.double", json!({})),
+            ("m", "test.collect", json!({})),
+        ],
+        &[
+            ("t", "out", "b", "in"),
+            ("b", "even", "e", "in"),
+            ("b", "odd", "o", "in"),
+            ("e", "out", "m", "a"),
+            ("o", "out", "m", "b"),
+        ],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1, 2, 3, 4])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(outputs(&run, "m", "out"), [json!({ "sum": 20, "count": 4 })]);
+
+    // Only even numbers: the odd branch is skipped, the merge still runs with what arrived.
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[2, 4])).await;
+    assert_eq!(run.state["skipped"], json!(["o"]));
+    assert_eq!(outputs(&run, "m", "out"), [json!({ "sum": 12, "count": 2 })]);
+}
+
+#[tokio::test]
+async fn parallel_branches_respect_the_concurrency_limit() {
+    let (fakes, svc) = services();
+    let (engine, slow) = engine_with(svc, il_engine::EngineConfig { max_parallel: 2, ..config() });
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("s1", "test.slow", json!({ "ms": 80 })),
+            ("s2", "test.slow", json!({ "ms": 80 })),
+            ("s3", "test.slow", json!({ "ms": 80 })),
+        ],
+        &[("t", "out", "s1", "in"), ("t", "out", "s2", "in"), ("t", "out", "s3", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(slow.max_concurrent.load(std::sync::atomic::Ordering::SeqCst), 2);
+}
+
+#[tokio::test]
+async fn retries_retryable_errors_then_fails() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let ok = flow(
+        &[("t", "test.trigger", json!({})), ("f", "test.flaky", json!({ "failures": 2 }))],
+        &[("t", "out", "f", "in")],
+    );
+    fakes.store.put_flow(&ok).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::Succeeded, "2 failures fit in 2 retries");
+
+    let bad = flow(
+        &[("t", "test.trigger", json!({})), ("f", "test.flaky", json!({ "failures": 3 }))],
+        &[("t", "out", "f", "in")],
+    );
+    fakes.store.put_flow(&bad).await.unwrap();
+    let (run, events) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::Failed);
+    assert!(events.iter().any(|e| matches!(&e.kind, RunEventKind::NodeFailed { retryable: true, .. })));
+    assert!(matches!(events.last().unwrap().kind, RunEventKind::RunFailed { .. }));
+}
+
+#[tokio::test]
+async fn node_timeout_fails_the_run() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, il_engine::EngineConfig { retries: 0, node_timeout_ms: 30, ..config() });
+    let f =
+        flow(&[("t", "test.trigger", json!({})), ("s", "test.slow", json!({ "ms": 500 }))], &[("t", "out", "s", "in")]);
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::Failed);
+    assert_eq!(run.error.as_deref(), Some("timed out"));
+}
+
+#[tokio::test]
+async fn cancel_stops_a_running_flow() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[("t", "test.trigger", json!({})), ("s", "test.slow", json!({ "ms": 1500 }))],
+        &[("t", "out", "s", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let id = engine.start(start(items(&[1]))).await.unwrap();
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    engine.cancel(&id).await.unwrap();
+    assert_eq!(engine.wait(&id).await, RunStatus::Cancelled);
+    let events = fakes.store.run_events(&id, 0).await.unwrap();
+    assert!(matches!(events.last().unwrap().kind, RunEventKind::RunCancelled {}));
+}
+
+#[tokio::test]
+async fn approvals_pause_persist_and_resume_after_restart() {
+    let (fakes, svc) = services();
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("a", "test.approve", json!({})),
+            ("yes", "test.double", json!({})),
+            ("no", "test.text", json!({ "text": "rejected" })),
+        ],
+        &[("t", "out", "a", "in"), ("a", "approved", "yes", "in"), ("a", "rejected", "no", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let id = {
+        let (engine, _) = engine_with(svc.clone(), config());
+        let id = engine.start(start(items(&[1, 2]))).await.unwrap();
+        assert_eq!(engine.wait(&id).await, RunStatus::Waiting);
+        id
+    }; // first engine dropped: the "restart"
+
+    let pending = fakes.store.list_approvals("ws_t", true).await.unwrap();
+    assert_eq!(pending.len(), 2);
+    assert_eq!(fakes.notifier.sent.lock().unwrap().iter().filter(|n| n.channel == "slack").count(), 2);
+    let waiting = fakes.store.run_events(&id, 0).await.unwrap();
+    assert_eq!(waiting.iter().filter(|e| matches!(e.kind, RunEventKind::NodeWaiting { .. })).count(), 2);
+
+    let (engine, _) = engine_with(svc, config());
+    let first = pending.iter().find(|a| a.payload["n"] == 1).unwrap().id.clone();
+    let second = pending.iter().find(|a| a.payload["n"] == 2).unwrap().id.clone();
+    let edited = ApprovalDecision { decision: Decision::Approve, payload: Some(json!({ "n": 10 })), comment: None };
+    engine.decide(&first, edited, Some("dana".into())).await.unwrap();
+    assert_eq!(engine.wait(&id).await, RunStatus::Waiting, "one approval still pending");
+    let reject = ApprovalDecision { decision: Decision::Reject, payload: None, comment: None };
+    engine.decide(&second, reject, None).await.unwrap();
+    assert_eq!(engine.wait(&id).await, RunStatus::Succeeded);
+
+    let run = fakes.store.get_run(&id).await.unwrap().unwrap();
+    assert_eq!(outputs(&run, "yes", "out"), [json!({ "n": 20 })], "edited payload flows on");
+    assert_eq!(outputs(&run, "no", "out"), [json!({ "n": 2, "text": "rejected" })]);
+    let a = fakes.store.get_approval(&first).await.unwrap().unwrap();
+    assert_eq!(a.status, ApprovalStatus::Approved);
+    assert_eq!(a.decided_by.as_deref(), Some("dana"));
+    let events = fakes.store.run_events(&id, 0).await.unwrap();
+    assert_eq!(
+        events.iter().filter(|e| matches!(e.kind, RunEventKind::NodeWaiting { .. })).count(),
+        2,
+        "no duplicate waits"
+    );
+    assert_eq!(events.iter().filter(|e| matches!(e.kind, RunEventKind::ApprovalDecided { .. })).count(), 2);
+    // Deciding twice is refused.
+    let again = ApprovalDecision { decision: Decision::Approve, payload: None, comment: None };
+    assert!(engine.decide(&first, again, None).await.is_err());
+}
+
+#[tokio::test]
+async fn spend_cap_pauses_the_run() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let mut f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("c1", "test.cost", json!({ "usd": 0.6 })),
+            ("c2", "test.cost", json!({ "usd": 0.6 })),
+            ("c3", "test.cost", json!({ "usd": 0.6 })),
+        ],
+        &[("t", "out", "c1", "in"), ("c1", "out", "c2", "in"), ("c2", "out", "c3", "in")],
+    );
+    f.settings.spend_cap_usd_per_run = Some(1.0);
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, events) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::CapReached);
+    assert!((run.cost_usd - 1.2).abs() < 1e-9);
+    let cap = events.iter().find_map(|e| match &e.kind {
+        RunEventKind::RunCapReached { cap, limit_usd, .. } => Some((cap.clone(), *limit_usd, e.node_id.clone())),
+        _ => None,
+    });
+    assert_eq!(cap, Some(("run".into(), 1.0, Some("c3".into()))));
+}
+
+#[tokio::test]
+async fn invoke_returns_the_respond_output() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[("t", "test.trigger", json!({})), ("r", "output.respond", json!({ "body": "Hi {{ item.name }}" }))],
+        &[("t", "out", "r", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let req = StartRun { items: vec![il_core::Item::json(json!({ "name": "Maya" }))], ..start(vec![]) };
+    let out = engine.invoke(req).await.unwrap();
+    assert_eq!(out.run.status, RunStatus::Succeeded);
+    assert_eq!(out.response.len(), 1);
+    assert_eq!(out.response[0].json, json!({ "answer": "Hi Maya" }));
+}
+
+#[tokio::test]
+async fn failures_unknown_types_and_disabled_nodes() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(&[("t", "test.trigger", json!({})), ("x", "nope.missing", json!({}))], &[("t", "out", "x", "in")]);
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::Failed);
+    assert!(run.error.unwrap().contains("unknown node type"));
+
+    let mut f = flow(&[("t", "test.trigger", json!({})), ("x", "test.fail", json!({}))], &[("t", "out", "x", "in")]);
+    f.nodes[1].disabled = true;
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[7])).await;
+    assert_eq!(run.status, RunStatus::Succeeded, "disabled nodes pass items through");
+    assert_eq!(outputs(&run, "x", "out"), [json!({ "n": 7 })]);
+}
+
+#[tokio::test]
+async fn replays_a_recorded_run_with_a_replay_label() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(&[("t", "test.trigger", json!({})), ("d", "test.double", json!({}))], &[("t", "out", "d", "in")]);
+    fakes.store.put_flow(&f).await.unwrap();
+    let (recorded, original) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    let mut live = engine.events().subscribe();
+    let id = engine.replay(&recorded.id).await.unwrap();
+    assert_eq!(engine.wait(&id).await, RunStatus::Succeeded);
+    let replayed = fakes.store.run_events(&id, 0).await.unwrap();
+    assert_eq!(replayed.len(), original.len());
+    assert!(fakes.store.get_run(&id).await.unwrap().unwrap().replay);
+    let first_live = live.recv().await.unwrap();
+    assert_eq!(first_live.run_id, id, "replayed events are broadcast live");
+}

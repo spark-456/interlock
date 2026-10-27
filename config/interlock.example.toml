@@ -44,6 +44,12 @@ model = ""              # set to a speech-to-text model id if available; else fa
 base_url = "https://api.tavily.com"
 max_pages_per_source = 50   # key: TAVILY_API_KEY
 
+[engine]
+max_parallel = 4        # nodes running at once within a run
+retries = 2             # retries for retryable node errors (backoff doubles)
+retry_backoff_ms = 500
+node_timeout_ms = 300000
+
 [caps]
 global_daily_usd = 25.0
 workspace_daily_usd = 5.0
