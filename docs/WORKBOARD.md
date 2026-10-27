@@ -24,7 +24,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 13 | W04 | Create & Building screens | P0 | T00 | ready | | | 2026-10-27 06:10 | Building (`/new/[id]/building`) is done (design PR). Still to do: Create (`/new`, design S2) and wiring Building to live `POST /api/builds` |
 | 14 | K01 | Knowledge: ingest, Tavily, hybrid search | P0 | T00 | claimed | codex-1 | t/K01-knowledge | 2026-10-27 15:07 | Pushed `b4482667c7b1e3a1151c9e41a282c107a8829328`; Rust checks pass. Full check needs generated `web/fixtures/api/nodes.json`; awaiting owner decision on no-web rule before PR. |
 | 15 | B08 | Nodes: human & output | P0 | T00 | claimed | codex-1 | t/B08-human-output | 2026-10-27 14:27 | Core executors and 46 node tests pushed at 2b99391; approval timeout needs B03b, full check and PR need generated `web/` fixture decision |
-| 16 | P01 | Publish: OpenAI API, MCP, widget, guide | P0 | T00 | claimed | codex-1 | t/P01-publish | 2026-10-27 15:22 | |
+| 16 | P01 | Publish: OpenAI API, MCP, widget, guide | P0 | T00 | claimed | codex-1 | t/P01-publish | 2026-10-27 15:36 | Pushed `0c76ba70dad4cd068334d4096fc55eb29f94ac35`; API keys, OpenAI chat/models, guide pass full check. Left: rmcp per-flow/platform routes, official SDK test, widget; widget conflicts with no-`web/` instruction. |
 | 17 | R01 | Templates, fixtures, recorded runs, demo seed | P0 | T00 | ready | | | | |
 | 18 | A02 | Architect: test-and-fix, Ask diff, app kit | P0 | A01 | ready | | | | |
 | 19 | W05 | Runs, approvals, flows list, templates, connections | P0 | T00 | ready | | | | |
