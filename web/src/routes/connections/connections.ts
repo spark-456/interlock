@@ -30,8 +30,11 @@ export function appRows(nodes: NodeManifest[], connections: ConnectionSummary[])
   return [...rows.values()].sort((a, b) => rank[a.status] - rank[b.status] || a.name.localeCompare(b.name));
 }
 
-/** Where the Connect button goes: the OAuth start route, or nowhere for key-based apps. */
-export const connectHref = (row: AppRow) => (row.kind === 'oAuth2' ? `/api/oauth/${row.app}/start` : null);
+/** Apps with a sign-in (OAuth provider) on the server; other OAuth apps can't be connected yet. */
+const SIGN_IN = new Set(['google']);
+
+/** Where the Connect button goes: the OAuth start route, or nowhere for apps without a sign-in. */
+export const connectHref = (row: AppRow) => (row.kind === 'oAuth2' && SIGN_IN.has(row.app) ? `/api/oauth/${row.app}/start` : null);
 
 export interface KeyField {
   key: string;
@@ -46,9 +49,14 @@ const FIELDS: Record<string, KeyField[]> = {
     { key: 'app_password', label: 'App password', placeholder: 'xxxx-xxxx-xxxx-xxxx', secret: true }
   ],
   discord: [{ key: 'url', label: 'Webhook URL', placeholder: 'https://discord.com/api/webhooks/…', secret: true }],
+  // Slack has no sign-in yet; a bot token from api.slack.com/apps works for sending and approvals.
+  slack: [{ key: 'bot_token', label: 'Bot token', placeholder: 'xoxb-…', secret: true }],
   telegram: [{ key: 'token', label: 'Bot token', placeholder: '123456:ABC…', secret: true }],
   shopify: [{ key: 'access_token', label: 'Admin API access token', placeholder: 'shpat_…', secret: true }]
 };
+
+/** Whether the drawer can save a key for the app: key-based apps, and Slack with a bot token. */
+export const takesKey = (row: AppRow) => row.kind !== 'oAuth2' || row.app in FIELDS;
 
 /** The fields a key-based app needs; the keys are what its steps read from the credential. */
 export function keyFields(row: AppRow): KeyField[] {

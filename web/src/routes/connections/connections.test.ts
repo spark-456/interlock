@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ConnectionSummary, NodeManifest } from '$lib/api/types';
-import { appRows, connectHref, keyFields, type AppRow } from './connections';
+import { appRows, connectHref, keyFields, takesKey, type AppRow } from './connections';
 
 const node = (...specs: [string, string, string][]) =>
   ({ credentials: specs.map(([app, kind, label]) => ({ key: app, app, kind, label, scopes: [], optional: false })) }) as unknown as NodeManifest;
@@ -26,10 +26,14 @@ describe('connections', () => {
     expect(rows[0]?.account).toBe('Larkspur');
   });
 
-  it('starts OAuth only for sign-in apps', () => {
-    const [slack, , telegram] = appRows(nodes, conns);
-    expect(connectHref(slack!)).toBe('/api/oauth/slack/start');
+  it('starts OAuth only for apps with a sign-in, and takes a bot token for Slack', () => {
+    const [slack, google, telegram] = appRows(nodes, conns);
+    expect(connectHref(google!)).toBe('/api/oauth/google/start');
+    expect(connectHref(slack!)).toBeNull();
     expect(connectHref(telegram!)).toBeNull();
+    expect(keyFields(slack!).map((f) => f.key)).toEqual(['bot_token']);
+    expect([slack, telegram].every((r) => takesKey(r!))).toBe(true);
+    expect(takesKey({ ...slack!, app: 'linkedin' })).toBe(false);
   });
 
   it('asks key-based apps for the fields their steps read', () => {

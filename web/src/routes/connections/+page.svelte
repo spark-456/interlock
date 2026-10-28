@@ -8,7 +8,7 @@
   import StatusPill, { type PillTone } from '$lib/design/StatusPill.svelte';
   import Input from '$lib/design/Input.svelte';
   import { toast } from '$lib/design/toasts.svelte';
-  import { appRows, connectHref, keyFields, type AppRow } from './connections';
+  import { appRows, connectHref, keyFields, takesKey, type AppRow } from './connections';
 
   let rows = $state.raw<AppRow[] | null>(null);
   let failed = $state(false);
@@ -98,7 +98,9 @@
         </dd>
       </div>
     </dl>
-    {#if !connectHref(open)}
+    {#if !connectHref(open) && !takesKey(open)}
+      <p class="hint">Connecting {open.name} isn't available yet. Its steps run as dry runs: they show what would be posted.</p>
+    {:else if !connectHref(open)}
       {@const row = open}
       <form id="key-form" class="keys" onsubmit={(e) => (e.preventDefault(), save(row))}>
         <p class="hint">{row.name} uses a {row.label.toLowerCase()} rather than a sign-in. It's encrypted on the server and never shown again.</p>
@@ -111,7 +113,7 @@
     {#snippet footer()}
       {#if open && connectHref(open)}
         <Button variant="primary" href={connectHref(open) ?? undefined}>{open.status === 'notConnected' ? 'Connect' : 'Reconnect'}</Button>
-      {:else if open}
+      {:else if open && takesKey(open)}
         <Button variant="primary" type="submit" form="key-form" loading={saving}>Save</Button>
       {/if}
     {/snippet}

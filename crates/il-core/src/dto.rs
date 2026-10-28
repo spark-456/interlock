@@ -254,6 +254,16 @@ pub struct UsageCaps {
     pub workspace_daily_usd: f64,
 }
 
+/// `GET /api/flows/:id/hooks`: where each webhook step of a flow listens.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WebhookUrl {
+    pub node_id: String,
+    /// `/hooks/<flowId>/<token>`, relative to the server's public address.
+    pub path: String,
+}
+
 /// Connection state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]

@@ -25,5 +25,15 @@
       "linkedin",
       "sheets"
     ]
+  },
+  {
+    "id": "flw_larkspur",
+    "name": "Larkspur Support",
+    "kind": "app",
+    "version": 1,
+    "active": false,
+    "updatedAt": "2026-10-27T15:00:00Z",
+    "lastRun": null,
+    "apps": []
   }
 ]

@@ -5,7 +5,7 @@ use axum::http::StatusCode;
 use axum::http::header;
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use il_core::dto::{AskDiff, AskRequest, FlowSummary, RunCreated, RunSummary, TestRunRequest};
+use il_core::dto::{AskDiff, AskRequest, FlowSummary, RunCreated, RunSummary, TestRunRequest, WebhookUrl};
 use il_core::{Flow, Item, Run};
 use il_sdk::services::StartRun;
 use serde_json::{Value, json};
@@ -19,6 +19,7 @@ pub fn routes() -> Router<AppState> {
         .route("/api/flows/{id}", get(read).put(update).delete(remove))
         .route("/api/flows/{id}/versions", get(versions))
         .route("/api/flows/{id}/guide", get(guide))
+        .route("/api/flows/{id}/hooks", get(hooks))
         .route("/api/flows/{id}/activate", post(activate))
         .route("/api/flows/{id}/deactivate", post(deactivate))
         .route("/api/flows/{id}/test", post(test))
@@ -95,6 +96,19 @@ async fn create(
 
 async fn read(State(state): State<AppState>, ws: Ws, Path(id): Path<String>) -> ApiResult<Json<Flow>> {
     Ok(Json(owned(&state, &ws, &id).await?))
+}
+
+/// Where each webhook step listens. Tokens are made on first ask, so the address can be copied
+/// before the flow is turned on; calls are refused until it is.
+async fn hooks(State(state): State<AppState>, ws: Ws, Path(id): Path<String>) -> ApiResult<Json<Vec<WebhookUrl>>> {
+    use il_nodes::trigger::webhook::{ensure_token, webhook_path};
+    let flow = owned(&state, &ws, &id).await?;
+    let mut out = Vec::new();
+    for node in flow.nodes.iter().filter(|n| n.node_type == "trigger.webhook") {
+        let token = ensure_token(state.services.store.as_ref(), &flow.id, &node.id).await.map_err(ApiErr::internal)?;
+        out.push(WebhookUrl { node_id: node.id.clone(), path: webhook_path(&flow.id, &token) });
+    }
+    Ok(Json(out))
 }
 
 async fn guide(

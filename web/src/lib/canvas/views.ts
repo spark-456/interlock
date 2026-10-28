@@ -7,8 +7,9 @@ import type { FlowDiff } from './edit';
 import { columnLabels, type ColumnLabel } from './geometry';
 import type { RunState } from './runState';
 import type { CardStatus, CardView, Diff, EdgeView, GroupView } from './types';
+import { problems, type Schema as FormSchema } from '$lib/forms/schema';
 
-export type Catalog = Record<string, Pick<NodeManifest, 'title' | 'icon' | 'app'> & Partial<Pick<NodeManifest, 'settingsSchema'>>>;
+export type Catalog = Record<string, Pick<NodeManifest, 'title' | 'icon' | 'app'> & Partial<Pick<NodeManifest, 'settingsSchema' | 'credentials'>>>;
 
 /** Cards for every node in the flow being built. */
 export function cardViews(s: BuildState, catalog: Catalog = {}): CardView[] {
@@ -83,12 +84,22 @@ const DIFF_PILL: Record<Diff, { status: CardStatus; label: string }> = {
 };
 
 /** Cards for a saved flow: live run status when a run is on, Ask diff marks when a proposal is shown. */
+/** Before any run, what a step still needs: a connection, then required settings. */
+export function readiness(n: Node, m: Catalog[string] | undefined): { status: CardStatus; label?: string } {
+  const missing = (m?.credentials ?? []).find((c) => !c.optional && !n.credentials[c.key]);
+  if (missing) return { status: 'warning', label: `Connect ${missing.label.split(' ')[0]}` };
+  if (m?.settingsSchema && Object.keys(problems(m.settingsSchema as FormSchema, n.settings)).length) {
+    return { status: 'warning', label: 'Needs settings' };
+  }
+  return { status: 'ready' };
+}
+
 export function flowCards(flow: Flow, catalog: Catalog, run: RunState, diff?: FlowDiff): CardView[] {
   const card = (n: Node, d?: Diff): CardView => {
     const m = catalog[n.type];
     const tone = toneFor(n.type);
     const live = run.status === 'idle' ? undefined : (run.nodes[n.id] ?? { status: 'waiting' as const, label: 'Not run' });
-    const pill = d ? DIFF_PILL[d] : n.disabled ? { status: 'waiting' as const, label: 'Off' } : (live ?? { status: 'ready' as const });
+    const pill = d ? DIFF_PILL[d] : n.disabled ? { status: 'waiting' as const, label: 'Off' } : (live ?? readiness(n, m));
     return {
       id: n.id,
       title: n.name,
