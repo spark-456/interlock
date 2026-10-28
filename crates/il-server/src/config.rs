@@ -46,10 +46,14 @@ pub struct Config {
 }
 
 impl Config {
-    /// Loads from `IL_CONFIG`, else `config/interlock.toml`, else defaults; then applies env overrides.
+    /// Loads from `IL_CONFIG`, else `config/interlock.toml`, else the checked-in example (so a fresh
+    /// clone runs with working model roles), else defaults; then applies env overrides.
     pub fn load() -> anyhow::Result<Self> {
-        let path =
-            std::env::var("IL_CONFIG").map(PathBuf::from).unwrap_or_else(|_| PathBuf::from("config/interlock.toml"));
+        let path = std::env::var("IL_CONFIG").map(PathBuf::from).unwrap_or_else(|_| {
+            let own = PathBuf::from("config/interlock.toml");
+            let example = PathBuf::from("config/interlock.example.toml");
+            if own.exists() || !example.exists() { own } else { example }
+        });
         let raw = if path.exists() { read(&path)? } else { Value::Object(Default::default()) };
         Self::from_value(raw)
     }
