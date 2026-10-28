@@ -59,7 +59,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 48 | Q06 | Accessibility and mobile pass | P1 | W07 | ready |  |  |  | axe-core checks in Playwright on every screen (fail on serious issues); keyboard-only walk through create → build → editor → publish; 390 px layouts for the editor panel and playground per design M2–M4 |
 | 49 | Q07 | Friendly run errors | P2 | B03 | ready |  |  |  | Map connector and engine errors to plain-language messages with a next step ("Connect Google in Connections", "This step needs a video from an earlier step") in the run view and node panel |
 | 50 | Q08 | Parallel branches pair items when they join | P1 | B03 | ready |  |  |  | When two per-item branches from one step meet at a per-item step, the join sees 2×N separate items (one per branch) instead of N items carrying both branches' fields and files; and `nodes.<id>.json` is always the upstream step's first item, so per-item flows that read it get item 1's values. Pair items by their source item (zip on lineage) and expose the paired upstream item in expressions; add engine tests. Found in Q02 (promos had to be chained instead). |
-| 51 | Q09 | Edit a trigger's sample data in the panel | P2 | Q02 | claimed | claude-a | t/Q09-trigger-samples | 2026-10-28 04:53 | Test runs with no items now use the trigger's `sampleItems` (Q02), but only the manual trigger's schema shows that field. Add `sampleItems` (JSON list, `x-widget` json) to every trigger's settings schema, show it in the trigger panel as "Sample data for test runs", regenerate NODES.md. |
+| 51 | Q09 | Edit a trigger's sample data in the panel | P2 | Q02 | review | claude-a | t/Q09-trigger-samples | 2026-10-28 05:02 | PR #53 |
 
 ## Waiting on the owner
 
