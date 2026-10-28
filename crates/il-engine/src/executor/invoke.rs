@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use il_core::expr::{Scope, render_value};
-use il_core::{ApprovalDecision, ExecMode, Item, Node, RunEventKind};
+use il_core::{ApprovalDecision, ExecMode, Item, Node, NodeManifest, RunEventKind, SideEffect};
 use il_sdk::ctx::{NodeCtx, ProgressSink, RunInfo};
 use il_sdk::{NodeError, NodeExecutor, NodeInput, NodeOutput, Services};
 use serde_json::{Value, json};
@@ -93,6 +93,12 @@ pub(crate) async fn run_node(
             Ok(s) => s,
             Err(e) => return CallResult::Failed { error: e.to_string(), retryable: false, input: main },
         };
+        // Test runs never send or post: steps with outside effects pass their items on with a
+        // preview of what they would have done, and need no connected account.
+        if base.test && exec.manifest().side_effect == SideEffect::External {
+            partial.results.insert(idx, test_preview(exec.manifest(), &settings, node_input.main()));
+            continue;
+        }
         let info = RunInfo { node_id: node.id.clone(), node_name: node.name.clone(), item_index: idx, ..base.clone() };
         match call_with_retry(&inner, &services, exec.as_ref(), info, &node, settings, node_input, &cancel, decision)
             .await
@@ -117,6 +123,25 @@ pub(crate) async fn run_node(
     }
     let ms = started.elapsed().as_millis() as u64;
     CallResult::Done { ports: partial.merged(), cost_usd: partial.cost_usd, ms, input: main }
+}
+
+/// What a skipped outside-effect step outputs in a test run: its items on its first output, each
+/// marked with the settings it would have used.
+fn test_preview(manifest: &NodeManifest, settings: &Value, items: &[Item]) -> Ports {
+    let port = manifest.outputs.first().map_or("out", |p| p.name.as_str()).to_string();
+    let note = json!({ "skipped": "Test runs don't send or post.", "would": settings });
+    let items = items
+        .iter()
+        .cloned()
+        .map(|mut item| {
+            if !item.json.is_object() {
+                item.json = json!({ "value": item.json });
+            }
+            item.json["testRun"] = note.clone();
+            item
+        })
+        .collect();
+    Ports::from([(port, items)])
 }
 
 #[allow(clippy::too_many_arguments)]
