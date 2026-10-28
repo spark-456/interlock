@@ -203,7 +203,7 @@
       "type": "array"
     },
     "settingsSchema": {
-      "description": "JSON Schema for settings. `x-widget` hints: expression, credential, file, longtext, select, model-role."
+      "description": "JSON Schema for settings. `x-widget` hints: expression, credential, file, longtext, select, model-role, json."
     },
     "sideEffect": {
       "$ref": "#/$defs/SideEffect"

@@ -38,6 +38,6 @@ trigger: boolean, inputs: Array<PortSpec>, outputs: Array<PortSpec>,
  */
 dynamicOutputs: string | null, execMode: ExecMode, 
 /**
- * JSON Schema for settings. `x-widget` hints: expression, credential, file, longtext, select, model-role.
+ * JSON Schema for settings. `x-widget` hints: expression, credential, file, longtext, select, model-role, json.
  */
 settingsSchema: JsonValue, credentials: Array<CredentialSpec>, sideEffect: SideEffect, status: NodeStatus, costHint: CostHint, examples: Array<NodeExample>, };
