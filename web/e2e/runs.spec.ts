@@ -45,7 +45,7 @@ test('saves a bot token for a key-based app', async ({ page }) => {
   const drawer = page.getByRole('dialog', { name: 'Telegram' });
   await drawer.getByLabel('Bot token').fill('123456:ABC');
   const sent = page.waitForRequest((r) => r.url().includes('connections.post'));
-  await drawer.getByRole('button', { name: 'Save' }).click();
+  await drawer.getByRole('button', { name: 'Save', exact: true }).click();
   expect(JSON.parse((await sent).postData() ?? '{}')).toBeTruthy();
   await expect(page.getByText('Telegram is connected.')).toBeVisible();
 });

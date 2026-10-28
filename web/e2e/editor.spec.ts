@@ -41,7 +41,7 @@ test('shows an Ask Interlock diff, then accepts it', async ({ page }) => {
   await page.getByRole('button', { name: 'Accept' }).click();
   await expect(page.getByTestId('node-n_tiktok')).toHaveCount(0);
   await expect(page.getByTestId('node-n_telegram')).not.toHaveAttribute('data-diff');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('Saved')).toBeVisible();
 });
 

@@ -16,6 +16,7 @@
   import { problems, type Schema } from '$lib/forms/schema';
   import CredentialPicker from './CredentialPicker.svelte';
   import Preview from './Preview.svelte';
+  import TriggerInfo from './TriggerInfo.svelte';
 
   let {
     flow,
@@ -85,6 +86,7 @@
   <div class="body" role="tabpanel">
     {#if tab === 'settings'}
       <Input label="Name" bind:value={() => node.name, (v) => onchange({ ...node, name: v })} />
+      {#if manifest?.trigger}<TriggerInfo {flow} {node} saved={!dirty} />{/if}
       {#if manifest?.credentials.length}
         <CredentialPicker
           specs={manifest.credentials}
@@ -106,7 +108,8 @@
   </div>
   <footer>
     <Button icon="play" loading={running} disabled={manifest?.trigger || dirty} title={dirty ? 'Save first' : undefined} onclick={() => ((tab = 'output'), onrunstep(inputs))}>Run this step</Button>
-    {#if issues}<span class="warn">{issues === 1 ? '1 setting needs' : `${issues} settings need`} attention</span>{/if}
+    {#if issues}<span class="warn">{issues === 1 ? '1 setting needs' : `${issues} settings need`} attention</span>
+    {:else if dirty && !manifest?.trigger}<span class="hint">Save to run this step</span>{/if}
   </footer>
 </aside>
 
@@ -129,6 +132,7 @@
   h3 { margin: 0; font-size: 13px; font-weight: 700; }
   footer { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border); }
   .warn { font-size: 12px; color: var(--warning-text); }
+  .hint { font-size: 12px; color: var(--text-3); }
   @media (max-width: 767px) {
     .panel { position: fixed; inset: 0; z-index: 20; width: auto; border-left: 0; }
   }

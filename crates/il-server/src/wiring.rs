@@ -166,7 +166,8 @@ fn wire_models(services: &mut Services, config: &Config) {
     match il_ai::Gateway::from_config(&models, config.providers == "fake") {
         Ok(gateway) => {
             let gateway = Arc::new(gateway);
-            if let Ok(rt) = tokio::runtime::Handle::try_current() {
+            // The fake provider offers no real models, so checking the configured ones would only cry wolf.
+            if let (false, Ok(rt)) = (config.providers == "fake", tokio::runtime::Handle::try_current()) {
                 let g = gateway.clone();
                 rt.spawn(async move { g.check().await });
             }

@@ -5,7 +5,7 @@ import {
 } from './edit';
 import { paletteGroups } from './palette';
 import { idleRun, reduceRun } from './runState';
-import { flowCards, flowEdges } from './views';
+import { flowCards, flowEdges, readiness } from './views';
 
 const node = (id: string, type: string, x: number, settings: object = {}) => ({
   id, type, typeVersion: 1, name: id, position: { x, y: 0 }, group: null, settings, credentials: {}, disabled: false, notes: null
@@ -122,5 +122,16 @@ describe('palette', () => {
     const nodes = [m('ai.write', 'ai', 'Write'), m('trigger.manual', 'trigger', 'Manual'), m('app.slack.send', 'app', 'Slack message')];
     expect(paletteGroups(nodes, '').map((g) => g.label)).toEqual(['Triggers', 'AI', 'Apps']);
     expect(paletteGroups(nodes, 'slack')).toEqual([{ label: 'Apps', items: [nodes[2]] }]);
+  });
+});
+
+describe('step readiness', () => {
+  it('flags a missing connection, then missing settings, before any run', () => {
+    const node = { ...sample().nodes[1]!, credentials: {}, settings: {} };
+    const spec = { key: 'discord', app: 'discord', kind: 'webhook' as const, label: 'Discord webhook', scopes: [], optional: false };
+    expect(readiness(node, { title: 'Send', icon: 'send', app: 'discord', credentials: [spec] })).toEqual({ status: 'warning', label: 'Connect Discord' });
+    const schema = { type: 'object', required: ['text'], properties: { text: { type: 'string', title: 'Text' } } };
+    expect(readiness(node, { title: 'Send', icon: 'send', app: null, settingsSchema: schema })).toEqual({ status: 'warning', label: 'Needs settings' });
+    expect(readiness({ ...node, settings: { text: 'hi' } }, { title: 'Send', icon: 'send', app: null, settingsSchema: schema })).toEqual({ status: 'ready' });
   });
 });

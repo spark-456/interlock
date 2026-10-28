@@ -21,7 +21,8 @@ import type {
   RunEvent,
   RunSummary,
   TemplateSummary,
-  UsageReport
+  UsageReport,
+  WebhookUrl
 } from './types';
 import { subscribe, type SubscribeOptions } from './sse';
 
@@ -39,6 +40,8 @@ export const api = {
   activate: (flowId: string) => post<void>(`/api/flows/${flowId}/activate`, {}),
   deactivate: (flowId: string) => post<void>(`/api/flows/${flowId}/deactivate`, {}),
   /** The integration guide (INTERLOCK.md) for a published AI app. */
+  /** Where each webhook step listens (made on first ask; refused until the flow is on). */
+  hooks: (flowId: string) => get<WebhookUrl[]>(`/api/flows/${flowId}/hooks`),
   guide: (flowId: string) => get<{ markdown: string }>(`/api/flows/${flowId}/guide`),
   /** Starts an anonymous demo workspace (sets the session cookie). */
   demoSession: () => post<Me>('/api/demo/session', {}),

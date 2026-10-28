@@ -19,6 +19,7 @@
   import { idleRun, reduceRun, type RunState } from '$lib/canvas/runState';
   import { flowCards, flowEdges, groupViews } from '$lib/canvas/views';
   import Button from '$lib/design/Button.svelte';
+  import Icon from '$lib/design/Icon.svelte';
   import Spinner from '$lib/design/Spinner.svelte';
   import StatusPill from '$lib/design/StatusPill.svelte';
   import TopBar from '$lib/design/TopBar.svelte';
@@ -54,6 +55,9 @@
     })
     .catch((e: Error) => (loadError = e.message));
   api.connections().then((c) => (connections = c), () => {});
+  // Templates and new flows start Off: nothing runs or posts until the person turns it on.
+  let active = $state<boolean | null>(null);
+  api.flows().then((list) => (active = list.find((f) => f.id === flowId)?.active ?? false), () => {});
   onDestroy(() => sub?.close());
 
   const catalog = $derived(Object.fromEntries(manifests.map((m) => [m.typeId, m])));
@@ -117,14 +121,17 @@
     if (selected && nodeIds.includes(selected)) selected = null;
   }
 
-  async function save() {
-    if (!flow) return;
+  /** Saves the flow; false when it couldn't be saved. */
+  async function save(): Promise<boolean> {
+    if (!flow) return false;
     saving = true;
     try {
       flow = saved = await api.saveFlow(flow);
       toast('Saved', 'success');
+      return true;
     } catch (e) {
       toast((e as Error).message, 'error');
+      return false;
     } finally {
       saving = false;
     }
@@ -161,7 +168,9 @@
     }, { speed });
   }
 
+  // A test run uses the saved flow, so unsaved edits are saved first.
   async function testRun() {
+    if (dirty && !(await save())) return;
     try {
       watch((await api.testRun(flowId)).runId);
     } catch (e) {
@@ -206,13 +215,20 @@
     {#snippet actions()}
       <Button icon="plus" size="s" aria-pressed={palette === 'add'} onclick={() => (palette = palette === 'add' ? null : 'add')}>Add step</Button>
       <Button icon="sparkle" size="s" aria-pressed={asking} onclick={() => (asking = !asking)}>Refine</Button>
-      <Button icon="play" size="s" loading={run.status === 'running'} disabled={!flow || dirty} title={dirty ? 'Save first' : undefined} onclick={testRun}>
-        Test run
+      <Button icon="play" size="s" loading={run.status === 'running' || saving} disabled={!flow || !!proposal} onclick={testRun}>
+        {dirty ? 'Save & test run' : 'Test run'}
       </Button>
       <Button size="s" icon="globe" href="/flows/{flowId}/publish">{flow?.kind === 'app' ? 'Connect' : 'Activate'}</Button>
       <Button variant="primary" size="s" loading={saving} disabled={!dirty || !!proposal} onclick={save}>Save</Button>
     {/snippet}
   </TopBar>
+  {#if active === false && flow}
+    <div class="off" role="note">
+      <Icon name="info" size={16} />
+      <span><strong>This flow is off.</strong> Test run tries it with sample data and never posts or sends for real. Turn it on when it looks right.</span>
+      <Button size="s" href="/flows/{flowId}/publish">{flow.kind === 'app' ? 'Publish' : 'Turn on'}</Button>
+    </div>
+  {/if}
   <div class="body">
     {#if palette && manifests.length}
       <Palette
@@ -287,6 +303,12 @@
 <style>
   .editor { display: flex; flex-direction: column; height: 100vh; min-height: 0; }
   .body { flex: 1 1 auto; min-height: 0; display: flex; }
+  .off {
+    display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2) var(--s-4); font: var(--t-small);
+    background: var(--primary-soft); color: var(--text-2); border-bottom: 1px solid var(--primary-line);
+  }
+  .off span { flex: 1; }
+  .off :global(svg) { color: var(--primary); flex: none; }
   .stage { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; }
   .stage.list { overflow: auto; }
   .list-wrap { max-width: 520px; margin: 0 auto; padding: 24px 16px 140px; }

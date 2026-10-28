@@ -456,3 +456,25 @@ async fn usage_reports_thirty_days_by_day_and_flow_with_the_caps() {
     assert_eq!(usage["flows"], json!([{ "flowId": flow_id, "name": "Hello", "costUsd": 0.75 }]));
     assert_eq!(usage["caps"]["runUsd"], 0.5);
 }
+
+#[tokio::test]
+async fn webhook_steps_get_a_stable_address_before_activation() {
+    let app = app(build_state(Config::from_value(json!({})).unwrap()));
+    let flow = json!({"name": "Hooked", "nodes": [
+        {"id": "n_hook", "type": "trigger.webhook", "name": "Incoming", "settings": {}},
+        {"id": "n_text", "type": "data.template", "name": "Echo", "settings": {"template": "hi"}}],
+        "edges": [{"id": "e1", "from": {"node": "n_hook", "port": "out"}, "to": {"node": "n_text", "port": "in"}}]});
+    let (_, created, _) = call(&app, "POST", "/api/flows", Some(flow), None).await;
+    let path = format!("/api/flows/{}/hooks", created["id"].as_str().unwrap());
+    let (s, hooks, _) = call(&app, "GET", &path, None, None).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(hooks[0]["nodeId"], "n_hook");
+    let url = hooks[0]["path"].as_str().unwrap().to_string();
+    assert!(url.starts_with(&format!("/hooks/{}/whk", created["id"].as_str().unwrap())));
+    let (_, again, _) = call(&app, "GET", &path, None, None).await;
+    assert_eq!(again[0]["path"], url.as_str(), "the address is stable");
+    let (s, _, _) = call(&app, "POST", &url, Some(json!({"x": 1})), None).await;
+    assert_eq!(s, StatusCode::NOT_FOUND, "refused while the flow is off");
+    let (s, _, _) = call(&app, "GET", "/api/flows/flw_nope/hooks", None, None).await;
+    assert_eq!(s, StatusCode::NOT_FOUND);
+}
