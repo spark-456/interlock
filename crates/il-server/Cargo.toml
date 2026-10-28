@@ -7,6 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+chrono.workspace = true
 il-core.workspace = true
 # testkit gives the fake services used until B01/B02/B03 land (and for IL_PROVIDERS=fake).
 il-sdk = { workspace = true, features = ["testkit"] }

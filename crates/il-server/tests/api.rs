@@ -420,3 +420,39 @@ async fn key_connections_are_saved_listed_and_never_returned() {
     let (s, err, _) = call(&app, "POST", "/api/connections", Some(body), Some(demo)).await;
     assert_eq!((s, err["error"]["code"].as_str()), (StatusCode::FORBIDDEN, Some("demo_restricted")));
 }
+
+#[tokio::test]
+async fn usage_reports_thirty_days_by_day_and_flow_with_the_caps() {
+    let state = build_state(Config::from_value(json!({"caps": {"run_usd": 0.5}})).unwrap());
+    let app = app(state.clone());
+    let (_, me, _) = call(&app, "GET", "/api/me", None, None).await;
+    let ws = me["workspaceId"].as_str().unwrap().to_string();
+    let (_, flow, _) = call(&app, "POST", "/api/flows", Some(manual_flow()), None).await;
+    let flow_id = flow["id"].as_str().unwrap().to_string();
+    let entry = |flow: Option<&str>, cost: f64, days_ago: i64| il_sdk::services::store::SpendEntry {
+        workspace_id: ws.clone(),
+        flow_id: flow.map(String::from),
+        run_id: None,
+        build_id: None,
+        role: "node".into(),
+        cost_usd: cost,
+        at: chrono::Utc::now() - chrono::Duration::days(days_ago),
+    };
+    for e in [
+        entry(Some(&flow_id), 0.25, 0),
+        entry(Some(&flow_id), 0.5, 2),
+        entry(None, 0.125, 0),
+        entry(Some(&flow_id), 9.0, 40),
+    ] {
+        state.services.store.record_spend(&e).await.unwrap();
+    }
+    let (s, usage, _) = call(&app, "GET", "/api/usage", None, None).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(usage["totalUsd"], 0.875, "the 40-day-old entry is outside the window");
+    let days = usage["days"].as_array().unwrap();
+    assert_eq!(days.len(), 30);
+    assert_eq!(days[29]["costUsd"], 0.375);
+    assert_eq!(days[27]["costUsd"], 0.5);
+    assert_eq!(usage["flows"], json!([{ "flowId": flow_id, "name": "Hello", "costUsd": 0.75 }]));
+    assert_eq!(usage["caps"]["runUsd"], 0.5);
+}

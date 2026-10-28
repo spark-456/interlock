@@ -1,6 +1,7 @@
 <script lang="ts">
   // Settings: the workspace you're in, API keys (create once, revoke), and how spending is capped.
-  import { api, type Me } from '$lib/api';
+  import { api, type Me, type UsageReport } from '$lib/api';
+  import { usd } from '$lib/design/format';
   import Button from '$lib/design/Button.svelte';
   import CopyField from '$lib/design/CopyField.svelte';
   import Input from '$lib/design/Input.svelte';
@@ -18,6 +19,12 @@
   const now = new Date();
 
   api.me().then((m) => (me = m), () => {});
+  let usage = $state.raw<UsageReport | null>(null);
+  api.usage().then((u) => (usage = u), () => {});
+  const barHeight = (cost: number) => {
+    const max = Math.max(...(usage?.days.map((d) => d.costUsd) ?? [0]), 0.000001);
+    return cost > 0 ? Math.max(2, (cost / max) * 58) : 1;
+  };
   const loadKeys = () => api.keys().then((k) => (keys = k), (e) => (keysError = e instanceof Error ? e.message : 'Could not load keys.'));
   loadKeys();
 
@@ -93,11 +100,28 @@
     {/if}
   </section>
 
-  <section aria-labelledby="caps">
-    <h2 id="caps">Usage and caps</h2>
+  <section aria-labelledby="usage">
+    <h2 id="usage">Usage and caps</h2>
+    {#if usage}
+      <p class="total"><span class="mono">{usd(usage.totalUsd)}</span> spent in the last 30 days</p>
+      <svg class="bars" viewBox="0 0 300 60" role="img" aria-label="Spend per day for the last 30 days">
+        {#each usage.days as d, i (d.day)}
+          <rect x={i * 10 + 1} y={60 - barHeight(d.costUsd)} width="8" height={barHeight(d.costUsd)} rx="1"><title>{d.day}: {usd(d.costUsd)}</title></rect>
+        {/each}
+      </svg>
+      {#if usage.flows.length}
+        <ul class="flows" aria-label="Spend by flow">
+          {#each usage.flows as f (f.flowId)}<li><a href="/flows/{f.flowId}">{f.name}</a><span class="mono">{usd(f.costUsd)}</span></li>{/each}
+        </ul>
+      {/if}
+      <dl class="caps">
+        <div><dt>Per run</dt><dd class="mono">{usd(usage.caps.runUsd)}</dd></div>
+        <div><dt>Per flow, per day</dt><dd class="mono">{usd(usage.caps.flowDailyUsd)}</dd></div>
+        <div><dt>Workspace, per day</dt><dd class="mono">{usd(usage.caps.workspaceDailyUsd)}</dd></div>
+      </dl>
+    {/if}
     <p class="muted">
-      Every run is capped: per run, per flow per day and per workspace per day. A flow can set its own lower per-run cap in its settings.
-      When a cap is reached the run stops and says so.{#if me?.demo} Demo workspaces use small caps, the smaller models and recorded media.{/if}
+      When a cap is reached the run stops and says so. A flow can set its own lower per-run cap in its settings.{#if me?.demo} Demo workspaces use small caps, the smaller models and recorded media.{/if}
     </p>
   </section>
 </div>
@@ -117,6 +141,14 @@
   dd { margin: var(--s-1) 0 0; overflow-wrap: anywhere; }
   .mono { font-family: var(--font-mono); }
   .muted { margin: 0; color: var(--text-3); }
+  .total { margin: 0; }
+  .total .mono { font: var(--t-h3); font-family: var(--font-mono); margin-right: var(--s-1); }
+  .bars { width: 100%; height: 60px; }
+  .bars rect { fill: var(--primary); }
+  .flows { list-style: none; margin: 0; padding: 0; }
+  .flows li { display: flex; justify-content: space-between; padding: var(--s-1) 0; border-bottom: 1px solid var(--border); }
+  .flows a { color: var(--text); }
+  .caps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin: 0; }
   .create { display: flex; align-items: flex-end; gap: var(--s-2); }
   .create :global(.field) { flex: 1; }
   .keys { list-style: none; margin: 0; padding: 0; }

@@ -20,7 +20,8 @@ import type {
   RunCreated,
   RunEvent,
   RunSummary,
-  TemplateSummary
+  TemplateSummary,
+  UsageReport
 } from './types';
 import { subscribe, type SubscribeOptions } from './sse';
 
@@ -49,6 +50,7 @@ export const api = {
   runStep: (flowId: string, nodeId: string, items: JsonValue[]) =>
     post<RunCreated>(`/api/flows/${flowId}/nodes/${nodeId}/run`, { items }),
   connections: () => get<ConnectionSummary[]>('/api/connections'),
+  usage: () => get<UsageReport>('/api/usage'),
   /** Saves a key-based connection; the secret is encrypted on the server and never sent back. */
   createConnection: (req: CreateConnectionRequest) => post<ConnectionSummary>('/api/connections', req),
   runs: (flowId: string) => get<RunSummary[]>(`/api/flows/${flowId}/runs`),

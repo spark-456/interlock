@@ -119,4 +119,6 @@ pub trait Store: Send + Sync {
     // Spend ledger.
     async fn record_spend(&self, entry: &SpendEntry) -> StoreResult<()>;
     async fn spend(&self, scope: &SpendScope) -> StoreResult<f64>;
+    /// A workspace's spend entries since `since`, oldest first.
+    async fn spend_entries(&self, workspace_id: &str, since: DateTime<Utc>) -> StoreResult<Vec<SpendEntry>>;
 }

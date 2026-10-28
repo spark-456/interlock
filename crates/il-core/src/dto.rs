@@ -212,6 +212,48 @@ pub struct CreateConnectionRequest {
     pub secret: std::collections::BTreeMap<String, String>,
 }
 
+/// `GET /api/usage`: the workspace's spend over the last 30 days and the caps in force.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct UsageReport {
+    pub total_usd: f64,
+    /// One entry per day, oldest first, including days with no spend.
+    pub days: Vec<UsageDay>,
+    /// Flows that spent anything, most expensive first.
+    pub flows: Vec<UsageFlow>,
+    pub caps: UsageCaps,
+}
+
+/// Spend on one UTC day (`YYYY-MM-DD`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct UsageDay {
+    pub day: String,
+    pub cost_usd: f64,
+}
+
+/// Spend by one flow.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct UsageFlow {
+    pub flow_id: String,
+    pub name: String,
+    pub cost_usd: f64,
+}
+
+/// Spending caps in USD.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct UsageCaps {
+    pub run_usd: f64,
+    pub flow_daily_usd: f64,
+    pub workspace_daily_usd: f64,
+}
+
 /// Connection state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]
