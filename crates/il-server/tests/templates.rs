@@ -86,9 +86,16 @@ async fn every_template_test_runs_end_to_end_in_fake_mode() {
     config["server"]["templates_dir"] = root.join("fixtures/templates").to_str().unwrap().into();
     config["storage"]["path"] = data.path().to_str().unwrap().into();
     let app = il_server::app(il_server::build_state(il_server::Config::from_value(config).unwrap()));
+    let ffmpeg = std::process::Command::new("ffprobe").arg("-version").output().is_ok();
     for template in call(&app, "GET", "/api/templates").await.as_array().unwrap() {
         let id = template["id"].as_str().unwrap();
         let flow = call(&app, "POST", &format!("/api/templates/{id}/use")).await;
+        let edits_media =
+            flow["nodes"].as_array().unwrap().iter().any(|n| n["type"].as_str().unwrap().starts_with("media."));
+        if edits_media && !ffmpeg {
+            eprintln!("{id} skipped: its media steps need ffmpeg, which is unavailable");
+            continue;
+        }
         let run = call(&app, "POST", &format!("/api/flows/{}/test", flow["id"].as_str().unwrap())).await;
         let mut detail = serde_json::Value::Null;
         for _ in 0..200 {
