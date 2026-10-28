@@ -49,6 +49,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 38 | R05 | Agents use the flow's OpenAPI tools (F-C invoices) | P0 | K02, P01 | claimed | codex-1 | t/R05-agent-openapi-tools | 2026-10-28 02:39 | Branch `0a8598621a0eb532b7e546f894a9aca150f0eae6` pushed: agent `apiTools`, offline spec seeding, F-C invoice tools, targeted tests pass, including both operations invoked against wiremock and risky-operation exclusion. `cargo xtask check` passes through Rust/tests but needs catalog refresh in `web/fixtures/api/nodes.json`; Claude-a to commit only that file on this branch. Then rebase, full check, PR/CI/merge. |
 | 39 | R06 | Builds in fake mode | P1 | A01 | done | codex-1 | t/R06-fake-builds | 2026-10-27 23:32 | [PR #41](https://github.com/spark-456/interlock/pull/41) squash merged after Ubuntu and Windows CI passed; local `cargo xtask check` passed. |
 | 40 | U02 | Spend by model role and editable workspace caps | P2 | U01 | ready | | | | The gateway records each model call's role, workspace and cost in `us_ledger`; the engine reads per-workspace cap overrides (stored per workspace) before config; Settings lets owners edit them |
+| 41 | R07 | Owner feedback: panel gaps, templates Off hint, app logos, UI/UX pass | P0 | R03 | claimed | claude-a | t/R07-panel-fixes | 2026-10-28 03:47 | Webhook URL and trigger info in the node panel, Save & test run, quiet fake-mode log, node panel audit, real app logos, UI polish; small PRs |
 
 ## Waiting on the owner
 
