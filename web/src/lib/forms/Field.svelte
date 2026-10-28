@@ -9,6 +9,7 @@
   import Select from '$lib/design/Select.svelte';
   import Toggle from '$lib/design/Toggle.svelte';
   import ExpressionInput from './ExpressionInput.svelte';
+  import JsonInput from './JsonInput.svelte';
   import SchemaForm from './SchemaForm.svelte';
   import type { Source } from './mapper';
   import { branchOf, emptyOf, type Field, type Schema } from './schema';
@@ -61,6 +62,8 @@
     {error}
     hint={s.description ?? (field.kind === 'file' ? 'A file from an earlier step, e.g. {{ item.files.video }}' : undefined)}
   />
+{:else if field.kind === 'json'}
+  <JsonInput {id} {label} {value} {onchange} {error} hint={s.description} />
 {:else if field.kind === 'text'}
   <Input {id} {label} bind:value={() => text, (v) => onchange(v)} {error} hint={s.description} />
 {:else if field.kind === 'number'}

@@ -1360,6 +1360,16 @@
             "description": "Gmail search, e.g. `to:support@larkspur.example`.",
             "title": "Search",
             "type": "string"
+          },
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
           }
         },
         "type": "object"
@@ -1853,6 +1863,16 @@
             "minimum": 1,
             "title": "Check every (min)",
             "type": "integer"
+          },
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
           },
           "store": {
             "default": "sandbox",
@@ -4134,6 +4154,16 @@
             "description": "JSON Schema of the request body.",
             "title": "Input schema",
             "type": "object"
+          },
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
           }
         },
         "type": "object"
@@ -4174,6 +4204,16 @@
       ],
       "settingsSchema": {
         "properties": {
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
+          },
           "suggestedQuestions": {
             "default": [],
             "items": {
@@ -4201,7 +4241,7 @@
       "category": "trigger",
       "costHint": "free",
       "credentials": [],
-      "description": "Starts the flow when you press Run or Test. Optional sample items are used for test runs.",
+      "description": "Starts the flow when you press Run or Test.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -4228,11 +4268,13 @@
         "properties": {
           "sampleItems": {
             "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
             "items": {
               "type": "object"
             },
-            "title": "Sample items",
-            "type": "array"
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
           }
         },
         "type": "object"
@@ -4274,6 +4316,16 @@
           "inputSchema": {
             "title": "Input schema",
             "type": "object"
+          },
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
           },
           "toolDescription": {
             "title": "Tool description",
@@ -4327,6 +4379,16 @@
             "description": "Five-field cron, e.g. `0 9 * * MON`.",
             "title": "Cron",
             "type": "string"
+          },
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
           },
           "timezone": {
             "default": "UTC",
@@ -4393,6 +4455,16 @@
             "title": "Respond",
             "type": "string",
             "x-widget": "select"
+          },
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
           }
         },
         "type": "object"
