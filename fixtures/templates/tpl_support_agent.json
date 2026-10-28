@@ -20,7 +20,12 @@
           "Where is my order?",
           "How do refunds work?"
         ],
-        "welcomeMessage": "Hi, I'm the Larkspur assistant. How can I help?"
+        "welcomeMessage": "Hi, I'm the Larkspur assistant. How can I help?",
+        "sampleItems": [
+          {
+            "message": "How do refunds work?"
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,

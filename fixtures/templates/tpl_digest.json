@@ -16,7 +16,12 @@
       },
       "group": "g_in",
       "settings": {
-        "cron": "0 16 * * FRI"
+        "cron": "0 16 * * FRI",
+        "sampleItems": [
+          {
+            "firedAt": "2026-10-30T16:00:00Z"
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,

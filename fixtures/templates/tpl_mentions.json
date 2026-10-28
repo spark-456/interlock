@@ -16,7 +16,14 @@
       },
       "group": "g_in",
       "settings": {
-        "method": "POST"
+        "method": "POST",
+        "sampleItems": [
+          {
+            "text": "Just got my Larkspur linen tote and the strap already tore. @larkspur how do I get a replacement?",
+            "author": "@sam_reads",
+            "url": "https://bsky.app/profile/sam_reads"
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,

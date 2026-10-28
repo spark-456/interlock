@@ -78,8 +78,13 @@ impl Engine {
         let kind = RunEventKind::RunStarted { flow_id: flow.id.clone(), trigger: req.trigger.clone() };
         inner.bus.emit(&run.id, None, kind).await;
 
-        // The trigger node's output is the request's items.
-        let items: Vec<Item> = req.items;
+        // The trigger node's output is the request's items; a test run without any uses the
+        // trigger's `sampleItems`, so Test run on a fresh flow runs it end to end.
+        let mut items: Vec<Item> = req.items;
+        if items.is_empty() && req.trigger == "test" {
+            let samples = flow.nodes.iter().find(|n| n.id == trigger_node).and_then(|n| n.settings["sampleItems"].as_array());
+            items = samples.into_iter().flatten().cloned().map(Item::json).collect();
+        }
         inner.bus.emit(&run.id, Some(&trigger_node), RunEventKind::NodeStarted {}).await;
         let preview = items.iter().take(3).cloned().collect();
         let kind = RunEventKind::NodeItems { port: "out".into(), items: preview, total: items.len() as u64 };

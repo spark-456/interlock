@@ -20,7 +20,12 @@
           "Can I fly business class to Singapore?",
           "What is the hotel limit in Berlin in euros?"
         ],
-        "welcomeMessage": "Planning a trip? Ask me what the policy allows."
+        "welcomeMessage": "Planning a trip? Ask me what the policy allows.",
+        "sampleItems": [
+          {
+            "message": "Can I fly business class to Singapore?"
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,

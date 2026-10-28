@@ -16,7 +16,14 @@
       },
       "group": "g_in",
       "settings": {
-        "store": "sandbox"
+        "store": "sandbox",
+        "sampleItems": [
+          {
+            "title": "Larkspur Linen Tote",
+            "description": "A roomy everyday tote in washed linen, with an inside pocket and long straps.",
+            "price": "38.00"
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,
