@@ -70,7 +70,10 @@
   </dl>
   <footer>
     <span>Updated {ago(flow.updatedAt, now)}</span>
-    <a href={app ? `/flows/${flow.id}/publish` : `/flows/${flow.id}`}>{app ? 'Connect' : 'Open'} <Icon name="arrow-right" size={14} /></a>
+    <span class="go">
+      {#if !flow.active}<a class="try" href="/flows/{flow.id}?test=1" aria-label="Test run {flow.name}"><Icon name="play" size={14} /> Test run</a>{/if}
+      <a href={app ? `/flows/${flow.id}/publish` : `/flows/${flow.id}`}>{app ? 'Connect' : 'Open'} <Icon name="arrow-right" size={14} /></a>
+    </span>
   </footer>
 </article>
 
@@ -104,5 +107,6 @@
     display: flex; justify-content: space-between; align-items: center; padding-top: var(--s-3);
     border-top: 1px solid var(--border); color: var(--text-3); font: var(--t-small);
   }
+  .go { display: inline-flex; gap: var(--s-3); }
   footer a { display: inline-flex; align-items: center; gap: var(--s-1); color: var(--primary); font-weight: 600; text-decoration: none; }
 </style>

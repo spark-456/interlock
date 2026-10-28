@@ -35,7 +35,10 @@
     <div>
       <h1>Flows</h1>
       {#if flows}
-        <p>{flows.length} {flows.length === 1 ? 'flow' : 'flows'}. {live} live.</p>
+        <p>
+          {flows.length} {flows.length === 1 ? 'flow' : 'flows'}. {live} live.
+          {#if live < flows.length}New flows start off: try one with Test run, which never posts or sends, then turn it on.{/if}
+        </p>
       {/if}
     </div>
     <div class="actions">
