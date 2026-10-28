@@ -82,7 +82,7 @@ pub(crate) async fn run_node(
         } else {
             NodeInput::items(main.get(idx).cloned().into_iter().collect())
         };
-        let current = node_input.main().first().map(|i| i.json.clone()).unwrap_or(Value::Null);
+        let current = node_input.main().first().map(Item::scope_json).unwrap_or(Value::Null);
         let scope = Scope::new()
             .item(current)
             .items(all_json.clone())

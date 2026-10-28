@@ -16,7 +16,16 @@
       },
       "group": "g_in",
       "settings": {
-        "method": "POST"
+        "method": "POST",
+        "sampleItems": [
+          {
+            "title": "Weekly ops sync",
+            "text": "Maya: the tote restock lands Thursday. Dev: the refund page copy is ready for review. Action: Maya to email the supplier about the candle delay by Friday.",
+            "files": {
+              "audio": "voice-memo.mp3"
+            }
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,

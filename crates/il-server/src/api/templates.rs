@@ -41,7 +41,7 @@ pub(super) async fn load_all(dir: &str) -> ApiResult<Vec<(String, Flow)>> {
 pub(super) async fn seed(state: &AppState, workspace_id: &str) -> ApiResult<()> {
     let dir = &state.config.server.templates_dir;
     for (id, flow) in load_all(dir).await? {
-        let flow = instance(flow, workspace_id);
+        let flow = instance(state, flow, workspace_id).await?;
         state.services.store.put_flow(&flow).await.map_err(ApiErr::internal)?;
         if let Ok(bytes) = tokio::fs::read(recorded(dir, &id)).await {
             import_run(state, &flow, &bytes).await?;
@@ -91,11 +91,33 @@ async fn import_run(state: &AppState, flow: &Flow, bytes: &[u8]) -> ApiResult<()
 }
 
 /// A copy of `flow` for `workspace_id`, with a fresh id, not yet saved.
-fn instance(mut flow: Flow, workspace_id: &str) -> Flow {
+async fn instance(state: &AppState, mut flow: Flow, workspace_id: &str) -> ApiResult<Flow> {
     flow.id = il_sdk::id("flw");
     flow.workspace_id = workspace_id.into();
     flow.version = 0;
-    flow
+    attach_sample_files(state, &mut flow).await?;
+    Ok(flow)
+}
+
+/// A trigger's sample items name their files (`"files": {"attachment": "invoice.txt"}`); each
+/// is stored from `<templates_dir>/../samples/` and replaced by its file reference.
+async fn attach_sample_files(state: &AppState, flow: &mut Flow) -> ApiResult<()> {
+    let dir = FsPath::new(&state.config.server.templates_dir).parent().unwrap_or(FsPath::new(".")).join("samples");
+    for node in &mut flow.nodes {
+        let Some(samples) = node.settings.get_mut("sampleItems").and_then(Value::as_array_mut) else { continue };
+        for files in samples.iter_mut().filter_map(|s| s.get_mut("files").and_then(Value::as_object_mut)) {
+            for file in files.values_mut() {
+                let Some(name) = file.as_str().filter(|n| !n.contains(['/', '\\']) && !n.starts_with('.')) else {
+                    continue;
+                };
+                let bytes = tokio::fs::read(dir.join(name)).await.map_err(ApiErr::internal)?;
+                let mime = mime_guess::from_path(name).first_or_octet_stream().to_string();
+                let stored = state.services.files.put(name, &mime, bytes.into()).await.map_err(ApiErr::internal)?;
+                *file = serde_json::to_value(stored).map_err(ApiErr::internal)?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn template_id(path: &FsPath) -> Option<String> {
@@ -143,7 +165,7 @@ async fn use_template(State(state): State<AppState>, ws: Ws, Path(id): Path<Stri
     if template_id(&path).as_deref() != Some(id.as_str()) || !tokio::fs::try_exists(&path).await.unwrap_or(false) {
         return Err(ApiErr::not_found("Template"));
     }
-    let flow = instance(read(&path).await?, &ws.0.workspace_id);
+    let flow = instance(&state, read(&path).await?, &ws.0.workspace_id).await?;
     state.services.store.put_flow(&flow).await.map_err(ApiErr::internal)?;
     Ok(Json(flow))
 }

@@ -17,7 +17,17 @@
       "group": "g_read",
       "settings": {
         "label": "INBOX",
-        "query": "to:support@larkspur.example"
+        "query": "to:support@larkspur.example",
+        "sampleItems": [
+          {
+            "from": "maya@northfield.example",
+            "subject": "Refund for a damaged mug",
+            "messageId": "msg_sample",
+            "threadId": "thr_sample",
+            "body": "Hi, my Larkspur mug arrived cracked (order #4410). Can I get a refund or a replacement?",
+            "text": "Hi, my Larkspur mug arrived cracked (order #4410). Can I get a refund or a replacement?"
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,

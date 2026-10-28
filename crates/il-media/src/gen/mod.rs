@@ -99,7 +99,9 @@ pub(super) async fn execute(
         MediaKind::Voice => "voice",
         MediaKind::Image => "image",
     };
-    item.files.insert(label.into(), result.file);
+    // Voice is saved as `audio`, the file the merge and transcribe steps read.
+    let file_key = if kind == MediaKind::Voice { "audio" } else { label };
+    item.files.insert(file_key.into(), result.file);
     item.json[label] = serde_json::json!({"provider": result.provider, "costUsd": result.cost_usd});
     let mut output = il_sdk::node::NodeOutput::out(vec![item]);
     output.cost_usd = result.cost_usd;
@@ -151,7 +153,7 @@ mod tests {
 
         let voice = NodeHarness::new(voice::AiGenerateVoice).settings(json!({"text": "Hello"}));
         let result = voice.run().await.unwrap();
-        assert_eq!(result.ports["out"][0].files["voice"].mime, "audio/mpeg");
+        assert_eq!(result.ports["out"][0].files["audio"].mime, "audio/mpeg");
 
         let image = NodeHarness::new(image::AiGenerateImage).settings(json!({"prompt": "A blue sky"}));
         let result = image.run().await.unwrap();

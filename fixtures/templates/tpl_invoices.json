@@ -16,7 +16,17 @@
       },
       "group": "g_in",
       "settings": {
-        "query": "has:attachment subject:invoice"
+        "query": "has:attachment subject:invoice",
+        "sampleItems": [
+          {
+            "from": "billing@harbor-print.example",
+            "subject": "Invoice INV-2291 for October",
+            "text": "Harbor Print Co.\nInvoice INV-2291\nDate: 2026-10-24\nTotal due: $1,284.50\nThank you for your business.",
+            "files": {
+              "attachment": "harbor-invoice.txt"
+            }
+          }
+        ]
       },
       "credentials": {},
       "disabled": false,

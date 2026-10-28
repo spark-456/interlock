@@ -1,12 +1,14 @@
 //! `fake` provider (`IL_PROVIDERS=fake`): deterministic, offline. Echoes the last user message, or,
-//! when the request asks for JSON, returns a minimal instance of its schema so structured steps run.
+//! when the request asks for JSON, returns a minimal instance of its schema so structured steps run;
+//! transcribes any audio to a line naming the file.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use il_core::FileRef;
 use il_sdk::registry::ProviderFactory;
 use il_sdk::services::models::{
-    ChatDelta, ChatRequest, ChatResponse, ChatRole, ChatStream, ModelError, ModelProvider, Usage,
+    ChatDelta, ChatRequest, ChatResponse, ChatRole, ChatStream, ModelError, ModelProvider, Transcript, Usage,
 };
 use serde_json::Value;
 
@@ -41,6 +43,10 @@ impl ModelProvider for FakeProvider {
 
     async fn list_models(&self) -> Result<Vec<String>, ModelError> {
         Ok(vec!["fake".into()])
+    }
+
+    async fn transcribe(&self, _model: &str, file: &FileRef, _bytes: &[u8]) -> Result<Transcript, ModelError> {
+        Ok(Transcript { text: format!("Transcript of {}", file.name), ..Default::default() })
     }
 }
 

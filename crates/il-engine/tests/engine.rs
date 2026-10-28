@@ -455,6 +455,21 @@ async fn agents_get_the_flows_own_tools_when_a_run_starts() {
     assert_eq!(outputs(&run, "a", "out")[0]["tools"], json!(["lookup_customer"]));
 }
 
+#[tokio::test]
+async fn test_runs_without_items_use_the_triggers_sample_items() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let samples = json!({ "sampleItems": [{ "n": 4 }, { "n": 5 }] });
+    let f = flow(&[("t", "test.trigger", samples), ("d", "test.double", json!({}))], &[("t", "out", "d", "in")]);
+    fakes.store.put_flow(&f).await.unwrap();
+    let id = engine.start(StartRun { trigger: "test".into(), ..start(vec![]) }).await.unwrap();
+    engine.wait(&id).await;
+    let run = fakes.store.get_run(&id).await.unwrap().unwrap();
+    assert_eq!(outputs(&run, "d", "out"), [json!({ "n": 8 }), json!({ "n": 10 })]);
+    let (manual, _) = run_to_end(&engine, fakes.store.as_ref(), vec![]).await;
+    assert!(outputs(&manual, "d", "out").is_empty(), "only test runs fall back to the samples");
+}
+
 /// A step with outside effects that counts how often it really runs.
 struct Sends(il_core::NodeManifest, std::sync::atomic::AtomicUsize);
 
