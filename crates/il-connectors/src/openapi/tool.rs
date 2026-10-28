@@ -129,7 +129,7 @@ mod tests {
     use serde_json::json;
     use wiremock::{
         Mock, MockServer, ResponseTemplate,
-        matchers::{header, method, path},
+        matchers::{header, method, path, query_param},
     };
 
     use super::*;
@@ -207,9 +207,25 @@ mod tests {
 
     #[tokio::test]
     async fn r05_agent_declares_selected_openapi_tools_without_execution_edges() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/v1/customers"))
+            .and(query_param("email", "buyer@example.com"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"id":"cus_1"})))
+            .expect(1)
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/v1/customers/cus_1/invoices"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([{"id":"inv_1"}])))
+            .expect(1)
+            .mount(&server)
+            .await;
         let fakes = FakeServices::default();
-        let spec = include_str!("../../../../fixtures/apis/larkspur.openapi.json");
-        let file = fakes.files.put("larkspur.openapi.json", "application/json", spec.into()).await.unwrap();
+        let mut spec: Value =
+            serde_json::from_str(include_str!("../../../../fixtures/apis/larkspur.openapi.json")).unwrap();
+        spec["servers"][0]["url"] = json!(format!("{}/v1", server.uri()));
+        let file = fakes.files.put("larkspur.openapi.json", "application/json", spec.to_string().into()).await.unwrap();
         let flow: Flow = serde_json::from_value(json!({
             "id":"flow_1","workspaceId":"ws_a","version":1,"name":"Support","kind":"app","edges":[],
             "nodes":[{"id":"agent","type":"ai.agent","name":"Billing",
@@ -220,5 +236,7 @@ mod tests {
         let tools = for_flow(&flow, &fakes.services()).await.unwrap();
         let names: Vec<_> = tools.iter().map(|tool| tool.name()).collect();
         assert_eq!(names, ["lookup_customer", "list_invoices"]);
+        assert_eq!(tools[0].invoke(json!({"email":"buyer@example.com"})).await.unwrap()["id"], "cus_1");
+        assert_eq!(tools[1].invoke(json!({"customerId":"cus_1"})).await.unwrap()[0]["id"], "inv_1");
     }
 }
