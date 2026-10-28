@@ -36,7 +36,7 @@ test('lists apps with their state and opens the connect drawer', async ({ page }
   await expect(drawer).toContainText('rather than a sign-in');
   await drawer.getByRole('button', { name: 'Close' }).click();
   await apps.getByRole('button', { name: 'Slack, Connected' }).click();
-  await expect(page.getByRole('dialog', { name: 'Slack' }).getByRole('link', { name: 'Reconnect' })).toHaveAttribute('href', '/api/oauth/slack/start');
+  await expect(page.getByRole('dialog', { name: 'Slack' }).getByLabel('Bot token')).toBeVisible();
 });
 
 test('saves a bot token for a key-based app', async ({ page }) => {

@@ -4,6 +4,7 @@
   // Selecting a step opens the node panel (ED-3) beside the canvas.
   import { onDestroy } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
+  import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { api, runEvents, type ConnectionSummary, type Flow, type Item, type Node, type NodeManifest } from '$lib/api';
   import AskBar from '$lib/canvas/AskBar.svelte';
@@ -52,6 +53,11 @@
       manifests = c.nodes;
       const runId = page.url.searchParams.get('run');
       if (runId) watch(runId);
+      // "Test run" on a flow card lands here with ?test=1; drop it so a reload doesn't run again.
+      else if (page.url.searchParams.has('test')) {
+        replaceState(page.url.pathname, {});
+        testRun();
+      }
     })
     .catch((e: Error) => (loadError = e.message));
   api.connections().then((c) => (connections = c), () => {});
