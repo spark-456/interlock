@@ -19,6 +19,10 @@ test('the demo opens a seeded template and starts a build of your own', async ({
 test('settings show the workspace and manage API keys', async ({ page }) => {
   await page.goto('/settings');
   await expect(page.getByRole('region', { name: 'Workspace' })).toContainText('Dana Ruiz');
+  const usage = page.getByRole('region', { name: 'Usage and caps' });
+  await expect(usage).toContainText('spent in the last 30 days');
+  await expect(usage.getByRole('img', { name: 'Spend per day for the last 30 days' })).toBeVisible();
+  await expect(usage.getByRole('list', { name: 'Spend by flow' })).toContainText('Weekly product promos');
   const keys = page.getByRole('list', { name: 'API keys' });
   await expect(keys.getByRole('listitem')).toHaveCount(2);
   await page.getByLabel('New key name').fill('CI');

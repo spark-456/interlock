@@ -1,0 +1,142 @@
+{
+  "totalUsd": 0.27,
+  "days": [
+    {
+      "day": "2026-09-28",
+      "costUsd": 0
+    },
+    {
+      "day": "2026-09-29",
+      "costUsd": 0
+    },
+    {
+      "day": "2026-09-30",
+      "costUsd": 0.004
+    },
+    {
+      "day": "2026-10-01",
+      "costUsd": 0.011
+    },
+    {
+      "day": "2026-10-02",
+      "costUsd": 0
+    },
+    {
+      "day": "2026-10-03",
+      "costUsd": 0.006
+    },
+    {
+      "day": "2026-10-04",
+      "costUsd": 0.02
+    },
+    {
+      "day": "2026-10-05",
+      "costUsd": 0.015
+    },
+    {
+      "day": "2026-10-06",
+      "costUsd": 0.003
+    },
+    {
+      "day": "2026-10-07",
+      "costUsd": 0
+    },
+    {
+      "day": "2026-10-08",
+      "costUsd": 0
+    },
+    {
+      "day": "2026-10-09",
+      "costUsd": 0.009
+    },
+    {
+      "day": "2026-10-10",
+      "costUsd": 0.012
+    },
+    {
+      "day": "2026-10-11",
+      "costUsd": 0.018
+    },
+    {
+      "day": "2026-10-12",
+      "costUsd": 0.006
+    },
+    {
+      "day": "2026-10-13",
+      "costUsd": 0
+    },
+    {
+      "day": "2026-10-14",
+      "costUsd": 0.004
+    },
+    {
+      "day": "2026-10-15",
+      "costUsd": 0.021
+    },
+    {
+      "day": "2026-10-16",
+      "costUsd": 0.016
+    },
+    {
+      "day": "2026-10-17",
+      "costUsd": 0.011
+    },
+    {
+      "day": "2026-10-18",
+      "costUsd": 0.005
+    },
+    {
+      "day": "2026-10-19",
+      "costUsd": 0
+    },
+    {
+      "day": "2026-10-20",
+      "costUsd": 0.007
+    },
+    {
+      "day": "2026-10-21",
+      "costUsd": 0.013
+    },
+    {
+      "day": "2026-10-22",
+      "costUsd": 0.019
+    },
+    {
+      "day": "2026-10-23",
+      "costUsd": 0.022
+    },
+    {
+      "day": "2026-10-24",
+      "costUsd": 0.008
+    },
+    {
+      "day": "2026-10-25",
+      "costUsd": 0.011
+    },
+    {
+      "day": "2026-10-26",
+      "costUsd": 0.017
+    },
+    {
+      "day": "2026-10-27",
+      "costUsd": 0.012
+    }
+  ],
+  "flows": [
+    {
+      "flowId": "flw_promos",
+      "name": "Weekly product promos",
+      "costUsd": 0.198
+    },
+    {
+      "flowId": "flw_larkspur",
+      "name": "Larkspur Support",
+      "costUsd": 0.058
+    }
+  ],
+  "caps": {
+    "runUsd": 1.0,
+    "flowDailyUsd": 3.0,
+    "workspaceDailyUsd": 5.0
+  }
+}

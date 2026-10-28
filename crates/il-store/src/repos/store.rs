@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use il_core::{Approval, ApprovalTimeout, BuildEvent, Flow, NodeRun, Run, RunEvent};
 use il_sdk::services::store::{Credential, CredentialInfo, SpendEntry, SpendScope, Store, StoreError, StoreResult};
 use rusqlite::{Connection, OptionalExtension, params};
@@ -359,6 +360,40 @@ impl Store for SqliteStore {
             } else {
                 c.query_row(sql, [a], |r| r.get(0)).map_err(backend)
             }
+        })
+        .await
+    }
+
+    async fn spend_entries(&self, workspace_id: &str, since: DateTime<Utc>) -> StoreResult<Vec<SpendEntry>> {
+        let (workspace_id, since) = (workspace_id.to_owned(), since.to_rfc3339());
+        self.with_conn(move |c| {
+            let mut stmt = c
+                .prepare(
+                    "SELECT workspace_id,flow_id,run_id,build_id,role,cost_usd,at FROM us_ledger                      WHERE workspace_id=?1 AND at>=?2 ORDER BY at",
+                )
+                .map_err(backend)?;
+            let rows = stmt
+                .query_map(params![workspace_id, since], |r| {
+                    Ok((
+                        SpendEntry {
+                            workspace_id: r.get(0)?,
+                            flow_id: r.get(1)?,
+                            run_id: r.get(2)?,
+                            build_id: r.get(3)?,
+                            role: r.get(4)?,
+                            cost_usd: r.get(5)?,
+                            at: Utc::now(),
+                        },
+                        r.get::<_, String>(6)?,
+                    ))
+                })
+                .map_err(backend)?;
+            rows.map(|row| {
+                let (mut entry, at) = row.map_err(backend)?;
+                entry.at = DateTime::parse_from_rfc3339(&at).map_err(backend)?.with_timezone(&Utc);
+                Ok(entry)
+            })
+            .collect()
         })
         .await
     }

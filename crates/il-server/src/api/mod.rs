@@ -9,6 +9,7 @@ mod runs;
 mod session;
 mod sse;
 mod templates;
+mod usage;
 
 use axum::Json;
 use axum::Router;
@@ -29,6 +30,7 @@ pub fn router() -> Router<AppState> {
         .merge(misc::routes())
         .merge(github::routes())
         .merge(templates::routes())
+        .merge(usage::routes())
         .merge(connections::routes())
 }
 

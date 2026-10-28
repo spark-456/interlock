@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Mutex;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use il_core::{Approval, ApprovalStatus, ApprovalTimeout, BuildEvent, Flow, NodeRun, Run, RunEvent};
 use serde_json::Value;
 
@@ -252,5 +253,9 @@ impl Store for MemoryStore {
             .map(|e| e.cost_usd)
             .sum();
         Ok(total)
+    }
+
+    async fn spend_entries(&self, workspace_id: &str, since: DateTime<Utc>) -> StoreResult<Vec<SpendEntry>> {
+        Ok(self.lock()?.spend.iter().filter(|e| e.workspace_id == workspace_id && e.at >= since).cloned().collect())
     }
 }
