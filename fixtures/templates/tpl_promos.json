@@ -114,7 +114,7 @@
       },
       "group": "g_make",
       "settings": {
-        "text": "{{ nodes.n_script.json.text }}",
+        "text": "{{ item.text }}",
         "voice": "Maya"
       },
       "credentials": {},
@@ -172,7 +172,7 @@
       },
       "group": "g_cut",
       "settings": {
-        "text": "{{ nodes.n_script.json.text }}",
+        "text": "{{ item.text }}",
         "video": "{{ item.files.video }}"
       },
       "credentials": {},
@@ -401,24 +401,13 @@
       }
     },
     {
-      "id": "e_script_voice",
-      "from": {
-        "node": "n_script",
-        "port": "out"
-      },
-      "to": {
-        "node": "n_voice",
-        "port": "in"
-      }
-    },
-    {
-      "id": "e_video_merge",
+      "id": "e_video_voice",
       "from": {
         "node": "n_video",
         "port": "out"
       },
       "to": {
-        "node": "n_merge",
+        "node": "n_voice",
         "port": "in"
       }
     },

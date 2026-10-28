@@ -13,7 +13,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "app.shopify.get_products",
         Category::App,
         "Get products (Shopify)",
-        "Lists products from the sandbox store (or a real store with a token), newest first.",
+        "Lists products from the sandbox store (or a real store with a token), newest first, as one item with a `products` list; follow it with Loop to handle each product.",
     )
     .icon("shop")
     .status(NodeStatus::Ready)
@@ -89,7 +89,8 @@ impl NodeExecutor for AppShopifyGetProducts {
                 b["createdAt"].as_str().unwrap_or("").cmp(a["createdAt"].as_str().unwrap_or(""))
             }
         });
-        Ok(NodeOutput::out(products.into_iter().take(limit).map(Item::json).collect()))
+        products.truncate(limit);
+        Ok(NodeOutput::out(vec![Item::json(json!({ "products": products }))]))
     }
 }
 
@@ -165,16 +166,16 @@ mod tests {
             .run()
             .await
             .unwrap();
-        let products = &newest.ports["out"];
-        assert_eq!(products.len(), 3);
-        assert_eq!(products[0].json["id"], "sandbox-003");
-        assert!(products[0].json["imageUrl"].as_str().unwrap().starts_with("data:image/svg+xml;base64,"));
+        let products = &newest.ports["out"][0].json["products"];
+        assert_eq!(products.as_array().unwrap().len(), 3);
+        assert_eq!(products[0]["id"], "sandbox-003");
+        assert!(products[0]["imageUrl"].as_str().unwrap().starts_with("data:image/svg+xml;base64,"));
         let selling = NodeHarness::new(super::AppShopifyGetProducts)
             .settings(json!({"store":"sandbox","sort":"bestSelling","limit":1}))
             .run()
             .await
             .unwrap();
-        assert_eq!(selling.ports["out"][0].json["id"], "sandbox-002");
+        assert_eq!(selling.ports["out"][0].json["products"][0]["id"], "sandbox-002");
     }
 
     #[tokio::test]
@@ -196,7 +197,7 @@ mod tests {
             meta: json!({"shop":"demo.myshopify.com"}),
         });
         let out = harness.run().await.unwrap();
-        assert_eq!(out.ports["out"][0].json["title"], "Test lamp");
+        assert_eq!(out.ports["out"][0].json["products"][0]["title"], "Test lamp");
         let requests = server.received_requests().await.unwrap();
         assert_eq!(requests[0].headers["x-shopify-access-token"].to_str().unwrap(), "token");
     }

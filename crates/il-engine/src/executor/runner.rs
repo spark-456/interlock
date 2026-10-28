@@ -84,7 +84,7 @@ impl Engine {
         if items.is_empty() && req.trigger == "test" {
             let samples =
                 flow.nodes.iter().find(|n| n.id == trigger_node).and_then(|n| n.settings["sampleItems"].as_array());
-            items = samples.into_iter().flatten().cloned().map(Item::json).collect();
+            items = samples.into_iter().flatten().cloned().map(sample_item).collect();
         }
         inner.bus.emit(&run.id, Some(&trigger_node), RunEventKind::NodeStarted {}).await;
         let preview = items.iter().take(3).cloned().collect();
@@ -288,4 +288,13 @@ impl FlowRunner for Engine {
     async fn replay(&self, recorded_run_id: &str) -> Result<String, RunnerError> {
         Ok(crate::replay::replay(self, recorded_run_id).await?)
     }
+}
+
+/// A sample item, with its `files` (file references the server stored) moved to the item's files.
+fn sample_item(mut json: serde_json::Value) -> Item {
+    let files = json.get("files").cloned().and_then(|f| serde_json::from_value(f).ok());
+    if let (Some(_), Some(object)) = (&files, json.as_object_mut()) {
+        object.remove("files");
+    }
+    Item { json, files: files.unwrap_or_default() }
 }

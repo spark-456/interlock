@@ -22,7 +22,7 @@ architect = "nvidia/Nemotron-3-Ultra"   # NVIDIA Nemotron 3 Ultra — goal → f
 agent = "nvidia/Nemotron-3-Super"       # NVIDIA Nemotron 3 Super — agents, writing
 fast = "nvidia/Nemotron-3-Nano"         # NVIDIA Nemotron 3 Nano — classify, extract, route
 embed = "Qwen/Qwen3-Embedding-8B"       # embeddings for knowledge search
-# transcribe = "openai/whisper-large-v3"  # speech to text for media flows; off when unset
+transcribe = "openai/whisper-large-v3" # speech to text (Transcribe audio); comment out if your provider lacks it
 # Retries after rate limits or provider outages (backoff doubles from backoff_ms).
 # retries = 3
 # backoff_ms = 500

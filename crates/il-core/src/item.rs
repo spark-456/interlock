@@ -22,6 +22,16 @@ impl Item {
     pub fn json(json: Json) -> Self {
         Self { json, files: BTreeMap::new() }
     }
+
+    /// What `item` means in expressions: the JSON, plus its files under `files` (so
+    /// `{{ item.files.audio }}` names a file) unless the JSON has its own `files` field.
+    pub fn scope_json(&self) -> Json {
+        let mut json = self.json.clone();
+        if let Some(object) = json.as_object_mut().filter(|o| !self.files.is_empty() && !o.contains_key("files")) {
+            object.insert("files".into(), serde_json::to_value(&self.files).unwrap_or_default());
+        }
+        json
+    }
 }
 
 /// A pointer to a file held by the `FileStore`.

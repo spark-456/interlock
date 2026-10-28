@@ -1747,7 +1747,7 @@
           "scopes": []
         }
       ],
-      "description": "Lists products from the sandbox store (or a real store with a token), newest first.",
+      "description": "Lists products from the sandbox store (or a real store with a token), newest first, as one item with a `products` list; follow it with Loop to handle each product.",
       "dynamicOutputs": null,
       "examples": [
         {

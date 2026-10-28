@@ -86,7 +86,7 @@ impl<N: NodeExecutor> NodeHarness<N> {
         };
         let mut merged = NodeOutput::default();
         for (index, items) in batches {
-            let current = items.first().map(|i| i.json.clone()).unwrap_or(Value::Null);
+            let current = items.first().map(Item::scope_json).unwrap_or(Value::Null);
             let scope = Scope::new().item(current).items(all.clone());
             let settings = render_value(&self.settings, &scope).map_err(|e| NodeError::Failed(e.to_string()))?;
             let mut ctx = NodeCtx {
