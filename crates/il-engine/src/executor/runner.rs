@@ -82,7 +82,8 @@ impl Engine {
         // trigger's `sampleItems`, so Test run on a fresh flow runs it end to end.
         let mut items: Vec<Item> = req.items;
         if items.is_empty() && req.trigger == "test" {
-            let samples = flow.nodes.iter().find(|n| n.id == trigger_node).and_then(|n| n.settings["sampleItems"].as_array());
+            let samples =
+                flow.nodes.iter().find(|n| n.id == trigger_node).and_then(|n| n.settings["sampleItems"].as_array());
             items = samples.into_iter().flatten().cloned().map(Item::json).collect();
         }
         inner.bus.emit(&run.id, Some(&trigger_node), RunEventKind::NodeStarted {}).await;

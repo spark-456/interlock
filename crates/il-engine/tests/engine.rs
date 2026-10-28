@@ -469,3 +469,50 @@ async fn test_runs_without_items_use_the_triggers_sample_items() {
     let (manual, _) = run_to_end(&engine, fakes.store.as_ref(), vec![]).await;
     assert!(outputs(&manual, "d", "out").is_empty(), "only test runs fall back to the samples");
 }
+
+/// A step with outside effects that counts how often it really runs.
+struct Sends(il_core::NodeManifest, std::sync::atomic::AtomicUsize);
+
+#[async_trait::async_trait]
+impl il_sdk::NodeExecutor for Sends {
+    fn manifest(&self) -> &il_core::NodeManifest {
+        &self.0
+    }
+    async fn execute(
+        &self,
+        _ctx: &mut il_sdk::ctx::NodeCtx,
+        input: il_sdk::NodeInput,
+    ) -> Result<il_sdk::NodeOutput, il_sdk::NodeError> {
+        self.1.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Ok(il_sdk::NodeOutput::out(input.main().to_vec()))
+    }
+}
+
+#[tokio::test]
+async fn test_runs_preview_outside_effects_instead_of_running_them() {
+    let (fakes, svc) = services();
+    let mut manifest = m("test.send");
+    manifest.side_effect = il_core::SideEffect::External;
+    let sends = std::sync::Arc::new(Sends(manifest, Default::default()));
+    let (lookup, _) = lookup();
+    let engine = Engine::new(svc, lookup.with(sends.clone()), config());
+    let f = flow(
+        &[("t", "test.trigger", json!({})), ("s", "test.send", json!({ "to": "{{ item.n }}@example.com" }))],
+        &[("t", "out", "s", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+
+    let test = StartRun { trigger: "test".into(), ..start(items(&[7])) };
+    let id = engine.start(test).await.unwrap();
+    engine.wait(&id).await;
+    let run = fakes.store.get_run(&id).await.unwrap().unwrap();
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(sends.1.load(std::sync::atomic::Ordering::SeqCst), 0, "a test run never sends");
+    let out = outputs(&run, "s", "out");
+    assert_eq!(out[0]["n"], 7);
+    assert_eq!(out[0]["testRun"]["would"]["to"], "7@example.com");
+
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[7])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(sends.1.load(std::sync::atomic::Ordering::SeqCst), 1, "a real run does");
+}
