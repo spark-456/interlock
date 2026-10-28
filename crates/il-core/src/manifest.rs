@@ -30,7 +30,7 @@ pub struct NodeManifest {
     /// Settings key whose entries (each with a `name`) become extra output ports, e.g. Switch `cases`.
     pub dynamic_outputs: Option<String>,
     pub exec_mode: ExecMode,
-    /// JSON Schema for settings. `x-widget` hints: expression, credential, file, longtext, select, model-role.
+    /// JSON Schema for settings. `x-widget` hints: expression, credential, file, longtext, select, model-role, json.
     pub settings_schema: Json,
     pub credentials: Vec<CredentialSpec>,
     pub side_effect: SideEffect,
@@ -208,9 +208,24 @@ impl NodeManifest {
         self.exec_mode = ExecMode::Batch;
         self
     }
-    /// Settings JSON Schema.
+    /// Settings JSON Schema. A trigger's schema also gets `sampleItems`, the items a test run
+    /// starts with when none are given.
     pub fn settings_schema(mut self, schema: Json) -> Self {
         self.settings_schema = schema;
+        let trigger = self.trigger;
+        let props = self.settings_schema.get_mut("properties").and_then(Json::as_object_mut);
+        if let Some(props) = props.filter(|_| trigger) {
+            props.entry("sampleItems").or_insert_with(|| {
+                serde_json::json!({
+                    "type": "array",
+                    "title": "Sample data for test runs",
+                    "description": "The items Test run starts with, as a JSON list of objects.",
+                    "items": { "type": "object" },
+                    "default": [],
+                    "x-widget": "json"
+                })
+            });
+        }
         self
     }
     /// Adds a credential requirement.

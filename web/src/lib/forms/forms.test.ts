@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Flow, Item } from '$lib/api/types';
 import { previewsFor } from '$lib/previews';
 import { chipsOf, sources, upstream } from './mapper';
-import { branchOf, emptyOf, fieldsOf, kindOf, problems, type Schema } from './schema';
+import { branchOf, emptyOf, fieldsOf, kindOf, problems, readJson, type Schema } from './schema';
 
 const settings: Schema = {
   type: 'object',
@@ -34,7 +34,14 @@ describe('schema', () => {
       ['draft', 'boolean'], ['channels', 'multiselect'], ['tags', 'list'], ['cases', 'objects'], ['target', 'object'], ['auth', 'oneOf']
     ]);
     expect(kindOf({ type: 'string' })).toBe('text');
+    expect(kindOf({ type: 'array', items: { type: 'object' }, 'x-widget': 'json' })).toBe('json');
     expect(fieldsOf(settings).find((f) => f.key === 'instructions')).toMatchObject({ label: 'Instructions', required: true });
+  });
+
+  it('reads typed JSON, keeping the draft until it is valid', () => {
+    expect(readJson('[{"n": 1}]')).toEqual({ value: [{ n: 1 }] });
+    expect(readJson('  ')).toEqual({ value: [] });
+    expect(readJson('[{"n": 1},]')).toHaveProperty('error');
   });
 
   it('starts from defaults or empty values', () => {

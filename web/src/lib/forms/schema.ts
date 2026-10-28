@@ -20,13 +20,14 @@ export interface Schema {
 
 export type Kind =
   | 'text' | 'longtext' | 'expression' | 'file' | 'select' | 'model-role' | 'number' | 'boolean'
-  | 'multiselect' | 'list' | 'objects' | 'object' | 'oneOf';
+  | 'multiselect' | 'list' | 'objects' | 'object' | 'oneOf' | 'json';
 
 /** How a schema is edited. */
 export function kindOf(s: Schema): Kind {
   if (s.oneOf?.length) return 'oneOf';
   const w = s['x-widget'];
   if (w === 'model-role') return 'model-role';
+  if (w === 'json') return 'json';
   if (s.enum || w === 'select') return 'select';
   if (!s.type && s.properties) return 'object';
   switch (s.type) {
@@ -98,4 +99,14 @@ export function problems(s: Schema, value: JsonValue, path = ''): Record<string,
     }
   }
   return out;
+}
+
+/** Parses typed JSON for a JSON field; an error says what is wrong in plain words. */
+export function readJson(text: string): { value: JsonValue } | { error: string } {
+  if (!text.trim()) return { value: [] };
+  try {
+    return { value: JSON.parse(text) as JsonValue };
+  } catch {
+    return { error: 'Not valid JSON yet: check quotes, commas and brackets.' };
+  }
 }

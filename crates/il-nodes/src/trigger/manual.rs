@@ -10,38 +10,24 @@ use il_sdk::prelude::*;
 pub struct TriggerManual;
 
 static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
-    NodeManifest::new(
-        "trigger.manual",
-        Category::Trigger,
-        "Manual",
-        "Starts the flow when you press Run or Test. Optional sample items are used for test runs.",
-    )
-    .icon("hand")
-    .trigger()
-    .status(NodeStatus::Ready)
-    .settings_schema(json!({
-        "type": "object",
-        "properties": {
-            "sampleItems": {
-                "type": "array",
-                "title": "Sample items",
-                "items": {
-                    "type": "object"
-                },
-                "default": []
-            }
-        }
-    }))
-    .example(
-        "Run by hand",
-        json!({
-            "sampleItems": [
-                {
-                    "title": "Larkspur Tote"
-                }
-            ]
-        }),
-    )
+    NodeManifest::new("trigger.manual", Category::Trigger, "Manual", "Starts the flow when you press Run or Test.")
+        .icon("hand")
+        .trigger()
+        .status(NodeStatus::Ready)
+        .settings_schema(json!({
+            "type": "object",
+            "properties": {}
+        }))
+        .example(
+            "Run by hand",
+            json!({
+                "sampleItems": [
+                    {
+                        "title": "Larkspur Tote"
+                    }
+                ]
+            }),
+        )
 });
 
 #[async_trait]
