@@ -67,6 +67,18 @@ pub fn token_key(flow_id: &str, node_id: &str) -> String {
     format!("tr:webhook:{flow_id}:{node_id}")
 }
 
+/// The webhook's token, created on first use so its address can be shown before activation.
+pub async fn ensure_token(store: &dyn Store, flow_id: &str, node_id: &str) -> Result<String, StoreError> {
+    let key = token_key(flow_id, node_id);
+    if let Some(token) = store.kv_get(&key).await?.as_ref().and_then(Value::as_str) {
+        return Ok(token.to_string());
+    }
+    // Two ULIDs: 160 bits, of which 160 random-ish (80 random bits each).
+    let token = format!("whk{}{}", il_sdk::id(""), il_sdk::id("")).replace('_', "").to_lowercase();
+    store.kv_put(&key, &json!(token)).await?;
+    Ok(token)
+}
+
 /// Public path for a webhook.
 pub fn webhook_path(flow_id: &str, token: &str) -> String {
     format!("/hooks/{flow_id}/{token}")
@@ -90,14 +102,9 @@ impl NodeExecutor for TriggerWebhook {
 #[async_trait]
 impl TriggerNode for TriggerWebhook {
     async fn start(&self, ctx: TriggerCtx) -> Result<TriggerHandle, NodeError> {
-        let store = &ctx.services.store;
-        let key = token_key(&ctx.flow_id, &ctx.node_id);
-        let existing = store.kv_get(&key).await.map_err(|e| NodeError::Failed(e.to_string()))?;
-        if existing.as_ref().and_then(Value::as_str).is_none() {
-            // Two ULIDs: 160 bits, of which 160 random-ish (80 random bits each).
-            let token = format!("whk{}{}", il_sdk::id(""), il_sdk::id("")).replace('_', "").to_lowercase();
-            store.kv_put(&key, &json!(token)).await.map_err(|e| NodeError::Failed(e.to_string()))?;
-        }
+        ensure_token(ctx.services.store.as_ref(), &ctx.flow_id, &ctx.node_id)
+            .await
+            .map_err(|e| NodeError::Failed(e.to_string()))?;
         Ok(TriggerHandle::noop())
     }
 }
