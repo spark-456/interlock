@@ -50,3 +50,14 @@ test('saves a bot token for a key-based app', async ({ page }) => {
   await expect(page.getByText('Telegram is connected.')).toBeVisible();
 });
 
+test('Q12 mobile run cards open their step details', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/flows/flw_promos/runs/run_fa?speed=120');
+  const card = page.getByTestId('node-list').getByRole('button', { name: /Cut for each platform.*Open details/ });
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await card.click();
+  const detail = page.getByRole('region', { name: 'Steps' }).locator('[data-step="n_resize"]');
+  await expect(detail).toHaveAttribute('data-selected', 'true');
+  await expect(detail).toBeFocused();
+});
+
