@@ -72,6 +72,8 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 61 | B10 | Enforce demo caps and count build spend | P0 | B03 | done | claude-a | t/B10-demo-caps | 2026-10-29 06:35 | [PR #72](https://github.com/spark-456/interlock/pull/72). Demo media is recorded already (il-media gen/mod.rs:91) |
 | 62 | N02 | Notify channels and ignored node settings | P1 | B08 | done | codex-1 | t/N02-notify-settings | 2026-10-29 07:19 | [#78](https://github.com/spark-456/interlock/pull/78) merged: notify delivery choices, webhook method and other ignored settings honoured |
 | 63 | W08 | UI state gaps: run step, cancel, delete, loading and stream errors | P1 | W05 | done | claude-a | t/W08-ui-gaps | 2026-10-29 06:07 | [PR #67](https://github.com/spark-456/interlock/pull/67) and [PR #70](https://github.com/spark-456/interlock/pull/70) |
+| 64 | Q11 | Real-model build reliability: builds fail with every step's settings empty ("still had problems after 3 repairs") | P0 | Q01 | claimed | claude-a | t/Q11-real-builds | 2026-10-29 20:58 | Owner's Test 1 build failed twice with real Nemotron Ultra; direct calls succeed. Find the root cause in the server path, fix, then run testing-kit flows in a browser. Real-model budget: $3 total |
+| 65 | Q12 | Fake-mode QA sweep: every screen and testing-kit flow with `IL_PROVIDERS=fake`, fix UI and engine bugs found | P1 | — | ready |  |  |  | Never set real keys or IL_PROVIDERS=real. Owns `web/` and `crates/il-nodes`, `crates/il-connectors`, `crates/il-engine` bug fixes; not `crates/il-architect` or `crates/il-ai` (Q11). Small PRs, each with a test |
 
 ## Waiting on the owner
 
