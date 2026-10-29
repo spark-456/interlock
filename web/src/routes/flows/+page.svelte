@@ -94,7 +94,7 @@
       {/if}
     </div>
   {:else}
-    <div class="grid" aria-busy="true" aria-label="Loading flows">
+    <div class="grid" role="status" aria-busy="true" aria-label="Loading flows">
       {#each [0, 1, 2] as i (i)}<div class="placeholder"><Skeleton height={112} /><Skeleton lines={3} /></div>{/each}
     </div>
   {/if}

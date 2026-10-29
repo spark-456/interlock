@@ -4,6 +4,7 @@
   import type { Approval, Decision } from '$lib/api/types';
   import Icon from '$lib/design/Icon.svelte';
   import ApprovalCard from './ApprovalCard.svelte';
+  import CardSkeleton from '$lib/design/CardSkeleton.svelte';
 
   let approvals = $state.raw<Approval[] | null>(null);
   let failed = $state(false);
@@ -49,6 +50,8 @@
         {/each}
       </section>
     {/if}
+  {:else}
+    <CardSkeleton count={2} label="Loading approvals" />
   {/if}
 </div>
 

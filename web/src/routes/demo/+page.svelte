@@ -10,6 +10,7 @@
   import Icon from '$lib/design/Icon.svelte';
   import Logo from '$lib/design/Logo.svelte';
   import { toast } from '$lib/design/toasts.svelte';
+  import CardSkeleton from '$lib/design/CardSkeleton.svelte';
 
   let templates = $state.raw<TemplateSummary[] | null>(null);
   let appNames = $state<Record<string, string>>({});
@@ -61,6 +62,7 @@
   <h1>Try Interlock without an account.</h1>
   <p class="lede">Open a ready-made flow instantly, or build your own from your goal, documents and one API.</p>
 
+  {#if !templates}<CardSkeleton count={3} label="Loading demos" />{/if}
   <div class="grid">
     {#each templates ?? [] as t (t.id)}
       <article class="card">

@@ -8,6 +8,7 @@
   import StatusPill from '$lib/design/StatusPill.svelte';
   import { toast } from '$lib/design/toasts.svelte';
   import { ago } from '../flows/flows';
+  import Skeleton from '$lib/design/Skeleton.svelte';
 
   type Key = Awaited<ReturnType<typeof api.keys>>[number];
   let me = $state.raw<Me | null>(null);
@@ -68,6 +69,8 @@
         <div><dt>Plan</dt><dd>{me.demo ? 'Demo workspace (resets daily)' : 'Free plan'}</dd></div>
       </dl>
       {#if !me.user}<Button variant="primary" href="/api/auth/github/start">Sign in with GitHub</Button>{/if}
+    {:else}
+      <Skeleton lines={3} />
     {/if}
   </section>
 

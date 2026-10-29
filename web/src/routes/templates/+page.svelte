@@ -7,6 +7,7 @@
   import Button from '$lib/design/Button.svelte';
   import Chip from '$lib/design/Chip.svelte';
   import { toast } from '$lib/design/toasts.svelte';
+  import CardSkeleton from '$lib/design/CardSkeleton.svelte';
 
   let templates = $state.raw<TemplateSummary[] | null>(null);
   let failed = $state(false);
@@ -59,6 +60,8 @@
         <p class="none">No templates yet.</p>
       {/each}
     </div>
+  {:else}
+    <CardSkeleton count={6} label="Loading templates" />
   {/if}
 </div>
 
