@@ -20,19 +20,20 @@ client_id = ""          # secret: GITHUB_CLIENT_SECRET
 # Nebius Token Factory, OpenAI-compatible. Key: NEBIUS_API_KEY.
 provider = "tokenfactory"
 base_url = "https://api.tokenfactory.nebius.com/v1/"
-# Role → model id. VERIFY these ids against `GET /v1/models` (the server logs them at startup).
+# Role → model id, checked against `GET /v1/models` on 2026-10-30 (the server re-checks at startup).
+# Nemotron-3_5-Lightning is listed but didn't answer, so `fast` uses Nano.
 [models.roles]
-architect = "nvidia/Nemotron-3-Ultra"   # NVIDIA Nemotron 3 Ultra — goal → flow, Ask diffs
-agent = "nvidia/Nemotron-3-Super"       # NVIDIA Nemotron 3 Super — agents, writing
-fast = "nvidia/Nemotron-3-Nano"         # NVIDIA Nemotron 3 Nano — classify, extract, route
+architect = "nvidia/Nemotron-3-Ultra-550b-a55b"   # NVIDIA Nemotron 3 Ultra — goal → flow, Ask diffs
+agent = "nvidia/Nemotron-3.5-Super-VL"   # NVIDIA Nemotron 3.5 Super — agents, writing
+fast = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"   # NVIDIA Nemotron 3 Nano — classify, extract, route
 embed = "Qwen/Qwen3-Embedding-8B"       # embeddings for knowledge search
-transcribe = "openai/whisper-large-v3" # speech to text (Transcribe audio); comment out if your provider lacks it
+# Token Factory has no speech-to-text model; Transcribe audio uses the Groq fallback.
 # Retries after rate limits or provider outages (backoff doubles from backoff_ms).
 # retries = 3
 # backoff_ms = 500
 # USD per 1M tokens (input, output), for cost metering and caps.
 [models.prices]
-architect = [0.6, 1.8]
+architect = [1.0, 3.0]
 agent = [0.3, 0.9]
 fast = [0.06, 0.24]
 embed = [0.01, 0.0]
