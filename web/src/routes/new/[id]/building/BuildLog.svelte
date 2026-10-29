@@ -15,7 +15,7 @@
 <style>
   .log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
   li { display: flex; gap: 10px; font-size: 13px; line-height: 19px; animation: in var(--dur-node-enter) ease-out; }
-  .t { flex: 0 0 34px; font: 400 12px/19px var(--font-mono); color: var(--text-4); }
+  .t { flex: 0 0 34px; font: 400 12px/19px var(--font-mono); color: var(--text-3); }
   .x { color: var(--control-text); }
   .latest .x { color: var(--primary); font-weight: 600; }
   @keyframes in { from { opacity: 0; transform: translateY(4px); } }

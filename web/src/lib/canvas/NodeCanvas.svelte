@@ -190,7 +190,7 @@
   }
   .col-label {
     position: absolute; left: 0; top: 0; width: 264px; display: flex; align-items: center; gap: 8px;
-    font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-4);
+    font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
     pointer-events: none;
   }
   .sq { width: 6px; height: 6px; border-radius: 2px; }

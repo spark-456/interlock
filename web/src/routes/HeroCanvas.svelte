@@ -57,7 +57,7 @@
   header { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-4); border-bottom: 1px solid var(--border); font: var(--t-small); }
   .dots { display: flex; gap: var(--s-1); }
   .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
-  .url { margin-left: auto; color: var(--text-4); font-family: var(--font-mono); }
+  .url { margin-left: auto; color: var(--text-3); font-family: var(--font-mono); }
   .canvas { position: relative; height: 460px; pointer-events: none; }
   .log {
     position: absolute; right: var(--s-5); bottom: var(--s-5); width: 300px; padding: var(--s-3) var(--s-4); display: flex; flex-direction: column; gap: var(--s-2);

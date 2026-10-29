@@ -81,7 +81,8 @@
         <NodeCanvas {cards} {edges} {labels} />
       {/if}
     </div>
-    <aside aria-label="Run details">
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region must be keyboard reachable) -->
+    <aside aria-label="Run details" tabindex="0">
       <dl class="summary">
         <div><dt>Status</dt><dd>{RUN[view.status][1]}</dd></div>
         <div><dt>Started by</dt><dd>{view.trigger ?? '—'}</dd></div>

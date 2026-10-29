@@ -70,6 +70,6 @@
     background: var(--surface); color: var(--primary); box-shadow: var(--shadow-tile);
   }
   .text { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--s-1); }
-  .text span { font: var(--t-small); color: var(--text-3); }
+  .text span { font: var(--t-small); color: var(--text-2); }
   @media (max-width: 600px) { .drop { flex-wrap: wrap; } }
 </style>

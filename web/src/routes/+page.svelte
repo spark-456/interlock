@@ -103,7 +103,8 @@
     </div>
     <div class="code">
       <CodeTabs snippets={code} value="js" />
-      <pre class="cc"><code><span>Claude Code</span> claude mcp add interlock {ends.platformMcp}</code></pre>
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region must be keyboard reachable) -->
+      <pre class="cc" tabindex="0"><code><span>Claude Code</span> claude mcp add interlock {ends.platformMcp}</code></pre>
     </div>
   </section>
 
@@ -180,7 +181,7 @@
     border-radius: var(--r-panel); background: var(--primary); color: var(--surface);
   }
   .cta h2 { max-width: 480px; }
-  .cta p { margin: 0; max-width: 460px; opacity: 0.85; }
+  .cta p { margin: 0; max-width: 460px; }
   .foot { border-top: 1px solid var(--border); padding: var(--s-6); display: flex; flex-direction: column; gap: var(--s-4); max-width: 1120px; margin: 0 auto; width: 100%; box-sizing: border-box; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
   .row nav { display: flex; gap: var(--s-5); }

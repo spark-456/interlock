@@ -43,7 +43,7 @@
     <div class="grid">
       {#each templates as t (t.id)}
         <article class="card">
-          <div class="apps" aria-label="Apps used">
+          <div class="apps" role="group" aria-label="Apps used">
             {#each t.apps.slice(0, 5) as a (a)}<span title={appNames[a] ?? a}><AppTile name={appNames[a] ?? a} size={28} /></span>{/each}
             {#if t.apps.length > 5}<span class="more">+{t.apps.length - 5}</span>{/if}
           </div>
