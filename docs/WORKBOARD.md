@@ -70,7 +70,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 59 | C07 | Connector reliability: Google token refresh, send dedupe, agent tools in test runs | P0 | C01 | done | claude-a | t/C07-connector-reliability | 2026-10-29 06:44 | [PR #74](https://github.com/spark-456/interlock/pull/74). Left: retry once after a 401 |
 | 60 | A03 | Architect emits `build.node` and the `build.tests` node | P0 | A01 | done | claude-a | t/A03-build-events | 2026-10-29 06:18 | [PR #71](https://github.com/spark-456/interlock/pull/71) |
 | 61 | B10 | Enforce demo caps and count build spend | P0 | B03 | done | claude-a | t/B10-demo-caps | 2026-10-29 06:35 | [PR #72](https://github.com/spark-456/interlock/pull/72). Demo media is recorded already (il-media gen/mod.rs:91) |
-| 62 | N02 | Notify channels and ignored node settings | P1 | B08 | claimed | codex-1 | t/N02-notify-settings | 2026-10-29 06:44 | Found in the audit (rank 11): `output.notify` reports success for in-app/email without delivering and can't bind channel credentials; several manifest settings are ignored |
+| 62 | N02 | Notify channels and ignored node settings | P1 | B08 | review | codex-1 | t/N02-notify-settings | 2026-10-29 06:58 | [PR #78](https://github.com/spark-456/interlock/pull/78) open; full local check passed. Notify delivery choices, webhook method, MCP tool settings, guardrail handoff, and knowledge files addressed. |
 | 63 | W08 | UI state gaps: run step, cancel, delete, loading and stream errors | P1 | W05 | done | claude-a | t/W08-ui-gaps | 2026-10-29 06:07 | [PR #67](https://github.com/spark-456/interlock/pull/67) and [PR #70](https://github.com/spark-456/interlock/pull/70) |
 
 ## Waiting on the owner
