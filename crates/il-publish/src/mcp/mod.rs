@@ -6,7 +6,7 @@ use axum::extract::{Path, Request, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
-use il_core::{Flow, FlowKind};
+use il_core::Flow;
 use il_sdk::registry::{RouteCtx, RouteFactory};
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, ListToolsResult, PaginatedRequestParams,
@@ -21,7 +21,7 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use crate::keys::KeyManager;
-use crate::openai::slug;
+use crate::openai::{published, slug};
 
 mod flow;
 mod platform;
@@ -117,18 +117,13 @@ async fn flow_request(
         Ok(id) => id,
         Err(status) => return status.into_response(),
     };
-    let flows = match ctx.services.store.list_flows(&workspace_id).await {
+    // Only active apps count, so older, inactive builds with the same name don't hide the live one.
+    let flows = match published(&ctx, &workspace_id).await {
         Ok(flows) => flows,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err((status, _)) => return status.into_response(),
     };
-    let mut matches = flows.into_iter().filter(|flow| flow.kind == FlowKind::App && slug(flow) == flow_slug);
-    let Some(flow) = matches.next() else { return StatusCode::NOT_FOUND.into_response() };
-    if matches.next().is_some() {
-        return StatusCode::NOT_FOUND.into_response();
-    }
-    if !ctx.services.store.is_flow_active(&flow.id).await.unwrap_or(false) {
-        return StatusCode::NOT_FOUND.into_response();
-    }
+    let mut matches = flows.into_iter().filter(|flow| slug(flow) == flow_slug);
+    let (Some(flow), None) = (matches.next(), matches.next()) else { return StatusCode::NOT_FOUND.into_response() };
     serve(McpServer { ctx, workspace_id, scope: Scope::Flow(Box::new(flow)) }, request).await
 }
 
@@ -232,6 +227,10 @@ mod tests {
         .unwrap();
         fakes.store.put_flow(&flow).await.unwrap();
         fakes.store.set_flow_active(&flow.id, true).await.unwrap();
+        // An older, inactive build with the same name must not hide the live one (Q17).
+        let mut old = flow.clone();
+        old.id = "flow_0".into();
+        fakes.store.put_flow(&old).await.unwrap();
         let (_, key) = KeyManager::new(fakes.store.clone()).create("ws_a", "test").await.unwrap();
         let allowed = router
             .clone()
