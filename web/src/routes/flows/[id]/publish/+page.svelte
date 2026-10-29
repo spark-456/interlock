@@ -110,7 +110,7 @@
 </div>
 
 <style>
-  .page { max-width: 1160px; margin: 0 auto; padding: var(--s-6) var(--s-6) var(--s-10); display: flex; flex-direction: column; gap: var(--s-5); }
+  .page { box-sizing: border-box; width: 100%; min-width: 0; max-width: 1160px; margin: 0 auto; padding: var(--s-6) var(--s-6) var(--s-10); display: flex; flex-direction: column; gap: var(--s-5); }
   .hero {
     display: flex; align-items: center; gap: var(--s-5); padding: var(--s-6); flex-wrap: wrap;
     background: var(--card-gradient); border: 1px solid var(--border); border-radius: var(--r-panel); box-shadow: var(--shadow-pop-sm);
@@ -121,8 +121,8 @@
   .title { font: var(--t-h1); margin: 0; display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
   .text p { margin: var(--s-2) 0 0; color: var(--text-2); }
   .cta { display: flex; flex-direction: column; gap: var(--s-2); }
-  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-5); align-items: start; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-5); align-items: start; }
+  .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-5); align-items: start; }
+  .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5); align-items: start; }
   .works, .note {
     display: flex; align-items: center; gap: var(--s-6); padding: var(--s-5); flex-wrap: wrap;
     background: var(--card-gradient); border: 1px solid var(--border); border-radius: var(--r-panel); box-shadow: var(--shadow-pop-sm);
@@ -135,7 +135,7 @@
   .error { color: var(--error-text); }
   .demo-note { margin: 0; color: var(--text-2); }
   @media (max-width: 1023px) {
-    .three, .two { grid-template-columns: 1fr; }
+    .three, .two { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 767px) {
     .page { padding: var(--s-4); }

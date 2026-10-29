@@ -26,3 +26,13 @@ test('turns an automation off and on', async ({ page }) => {
   await page.getByRole('button', { name: 'Activate' }).click();
   await expect(page.getByRole('heading', { name: /is live/ })).toBeVisible();
 });
+
+test('Q12 publish cards fit desktop and 390px mobile viewports', async ({ page }) => {
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/flows/flw_larkspur/publish');
+    await expect(page.getByRole('heading', { name: /Publish Larkspur Support/ })).toBeVisible({ timeout: 15_000 });
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  }
+});
