@@ -10,6 +10,8 @@ port = 8080
 cors_origins = []
 # Requests without a session use the local workspace (fine self-hosted). Set false on a public deploy.
 local_workspace = true
+# Behind a TLS proxy (Caddy, nginx): rate limits use the client address it appends to X-Forwarded-For.
+trust_proxy = false
 
 [auth.github]
 client_id = ""          # secret: GITHUB_CLIENT_SECRET
