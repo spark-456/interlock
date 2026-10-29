@@ -20,12 +20,28 @@ use super::{
 pub async fn for_flow(flow: &Flow, services: &Services) -> Result<Vec<Arc<dyn AgentTool>>, ToolError> {
     let mut tools: Vec<Arc<dyn AgentTool>> = Vec::new();
     let mut names = BTreeSet::new();
-    for node in flow.nodes.iter().filter(|node| node.node_type == "data.openapi" && !node.disabled) {
-        let reference =
-            node.settings["spec"].as_str().ok_or_else(|| ToolError::InvalidArguments("missing spec".into()))?;
-        let selected = node.settings["operationId"]
-            .as_str()
-            .ok_or_else(|| ToolError::InvalidArguments("missing operationId".into()))?;
+    let mut selections = Vec::new();
+    for node in flow.nodes.iter().filter(|node| !node.disabled) {
+        if node.node_type == "data.openapi" {
+            let reference =
+                node.settings["spec"].as_str().ok_or_else(|| ToolError::InvalidArguments("missing spec".into()))?;
+            let selected = node.settings["operationId"]
+                .as_str()
+                .ok_or_else(|| ToolError::InvalidArguments("missing operationId".into()))?;
+            selections.push((reference, selected, node.credentials.get("api"), node.settings["allowRisky"] == true));
+        } else if node.node_type == "ai.agent" && node.settings.get("apiTools").is_some() {
+            let api = &node.settings["apiTools"];
+            let reference = api["spec"].as_str().ok_or_else(|| ToolError::InvalidArguments("missing spec".into()))?;
+            let operations =
+                api["operations"].as_array().ok_or_else(|| ToolError::InvalidArguments("missing operations".into()))?;
+            for selected in operations {
+                let selected =
+                    selected.as_str().ok_or_else(|| ToolError::InvalidArguments("invalid operation".into()))?;
+                selections.push((reference, selected, node.credentials.get("api"), false));
+            }
+        }
+    }
+    for (reference, selected, credential_id, allow_risky) in selections {
         let document =
             source::load(reference, &services.http, services.files.as_ref()).await.map_err(ToolError::Failed)?;
         let operation = spec::parse(&document)
@@ -33,14 +49,13 @@ pub async fn for_flow(flow: &Flow, services: &Services) -> Result<Vec<Arc<dyn Ag
             .into_iter()
             .find(|operation| operation.id == selected)
             .ok_or_else(|| ToolError::InvalidArguments(format!("operation not found: {selected}")))?;
-        let allow_risky = node.settings["allowRisky"] == true;
         if operation.risky && !allow_risky {
             continue;
         }
         if !names.insert(operation.id.clone()) {
             continue;
         }
-        let credential = match node.credentials.get("api") {
+        let credential = match credential_id {
             Some(id) => Some(
                 services
                     .store
@@ -114,7 +129,7 @@ mod tests {
     use serde_json::json;
     use wiremock::{
         Mock, MockServer, ResponseTemplate,
-        matchers::{header, method, path},
+        matchers::{header, method, path, query_param},
     };
 
     use super::*;
@@ -188,5 +203,40 @@ mod tests {
         let mut destructive = operation;
         destructive.risky = true;
         assert!(ApiTool::new(destructive, SafeHttp::permissive_for_tests(), None, false).is_err());
+    }
+
+    #[tokio::test]
+    async fn r05_agent_declares_selected_openapi_tools_without_execution_edges() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/v1/customers"))
+            .and(query_param("email", "buyer@example.com"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"id":"cus_1"})))
+            .expect(1)
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/v1/customers/cus_1/invoices"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([{"id":"inv_1"}])))
+            .expect(1)
+            .mount(&server)
+            .await;
+        let fakes = FakeServices::default();
+        let mut spec: Value =
+            serde_json::from_str(include_str!("../../../../fixtures/apis/larkspur.openapi.json")).unwrap();
+        spec["servers"][0]["url"] = json!(format!("{}/v1", server.uri()));
+        let file = fakes.files.put("larkspur.openapi.json", "application/json", spec.to_string().into()).await.unwrap();
+        let flow: Flow = serde_json::from_value(json!({
+            "id":"flow_1","workspaceId":"ws_a","version":1,"name":"Support","kind":"app","edges":[],
+            "nodes":[{"id":"agent","type":"ai.agent","name":"Billing",
+                "settings":{"instructions":"Check invoices","apiTools":{"spec":file.id,
+                    "operations":["lookup_customer","list_invoices","delete_customer"]}}}]
+        }))
+        .unwrap();
+        let tools = for_flow(&flow, &fakes.services()).await.unwrap();
+        let names: Vec<_> = tools.iter().map(|tool| tool.name()).collect();
+        assert_eq!(names, ["lookup_customer", "list_invoices"]);
+        assert_eq!(tools[0].invoke(json!({"email":"buyer@example.com"})).await.unwrap()["id"], "cus_1");
+        assert_eq!(tools[1].invoke(json!({"customerId":"cus_1"})).await.unwrap()[0]["id"], "inv_1");
     }
 }

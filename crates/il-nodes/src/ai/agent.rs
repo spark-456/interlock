@@ -17,6 +17,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         .icon("bot")
     .status(NodeStatus::Ready)
         .cost(CostHint::Medium)
+        .credential(CredentialSpec { optional: true, ..cred("api", "openapi", CredentialKind::ApiKey, "API key", &[]) })
         .settings_schema(json!({
             "type": "object",
             "required": [
@@ -49,6 +50,16 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
                         "type": "string"
                     },
                     "default": []
+                },
+                "apiTools": {
+                    "type": "object",
+                    "title": "API tools",
+                    "description": "Operations from an uploaded OpenAPI spec, available to this agent without an execution edge.",
+                    "required": ["spec", "operations"],
+                    "properties": {
+                        "spec": {"type": "string", "title": "OpenAPI spec", "description": "URL or file id."},
+                        "operations": {"type": "array", "title": "Operations", "items": {"type": "string"}}
+                    }
                 },
                 "maxSteps": {
                     "type": "integer",
@@ -90,8 +101,10 @@ impl NodeExecutor for AiAgent {
     async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
         let bases: Vec<&str> =
             ctx.settings["knowledgeBases"].as_array().into_iter().flatten().filter_map(|v| v.as_str()).collect();
-        let selected: Vec<&str> =
+        let mut selected: Vec<&str> =
             ctx.settings["tools"].as_array().into_iter().flatten().filter_map(|v| v.as_str()).collect();
+        selected
+            .extend(ctx.settings["apiTools"]["operations"].as_array().into_iter().flatten().filter_map(|v| v.as_str()));
         let mut tools = Vec::new();
         for base in &bases {
             tools.push(ToolSpec {
@@ -247,5 +260,17 @@ mod tests {
         let out = harness.run().await.unwrap();
         assert_eq!(out.ports["out"][0].json["activity"][0]["result"]["status"], "paid");
         assert_eq!(harness.fakes.models.calls()[0].1.tools[0].name, "get_invoice");
+    }
+
+    #[tokio::test]
+    async fn r05_agent_uses_declared_api_operation_without_a_data_input() {
+        let mut harness = NodeHarness::new(super::AiAgent).settings(json!({
+            "instructions":"Check invoices",
+            "apiTools":{"spec":"file_api","operations":["get_invoice"]}
+        }));
+        harness.fakes.tools.push(std::sync::Arc::new(InvoiceTool));
+        harness.fakes.models.push_tool_call("get_invoice", json!({"id":"inv1"})).push_text("Invoice paid.");
+        let out = harness.run().await.unwrap();
+        assert_eq!(out.ports["out"][0].json["activity"][0]["tool"], "get_invoice");
     }
 }

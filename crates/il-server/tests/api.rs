@@ -279,6 +279,21 @@ async fn templates_are_listed_and_copied_into_the_workspace() {
 }
 
 #[tokio::test]
+async fn r05_support_template_seeds_openapi_spec_for_agent_tools() {
+    let templates = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/templates");
+    let state =
+        build_state(Config::from_value(json!({"server":{"templates_dir":templates.to_str().unwrap()}})).unwrap());
+    let app = app(state.clone());
+    let (status, body, _) = call(&app, "POST", "/api/templates/tpl_support_agent/use", None, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let flow: il_core::Flow = serde_json::from_value(body).unwrap();
+    let spec = flow.node("n_billing").unwrap().settings["apiTools"]["spec"].as_str().unwrap();
+    assert!(spec.starts_with("file_"));
+    let tools = state.services.flow_tools.for_flow(&flow.workspace_id, &flow).await.unwrap();
+    assert_eq!(tools.iter().map(|tool| tool.name()).collect::<Vec<_>>(), ["lookup_customer", "list_invoices"]);
+}
+
+#[tokio::test]
 async fn public_endpoints_are_limited_per_ip() {
     let config =
         Config::from_value(json!({"server":{"public_requests_per_minute":2,"demo_sessions_per_hour":1}})).unwrap();

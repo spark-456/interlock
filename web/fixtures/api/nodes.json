@@ -4,7 +4,16 @@
       "app": null,
       "category": "ai",
       "costHint": "medium",
-      "credentials": [],
+      "credentials": [
+        {
+          "app": "openapi",
+          "key": "api",
+          "kind": "apiKey",
+          "label": "API key",
+          "optional": true,
+          "scopes": []
+        }
+      ],
       "description": "An assistant that answers using knowledge bases and tools in a loop, returning the answer, sources and activity.",
       "dynamicOutputs": null,
       "examples": [
@@ -37,6 +46,29 @@
       ],
       "settingsSchema": {
         "properties": {
+          "apiTools": {
+            "description": "Operations from an uploaded OpenAPI spec, available to this agent without an execution edge.",
+            "properties": {
+              "operations": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Operations",
+                "type": "array"
+              },
+              "spec": {
+                "description": "URL or file id.",
+                "title": "OpenAPI spec",
+                "type": "string"
+              }
+            },
+            "required": [
+              "spec",
+              "operations"
+            ],
+            "title": "API tools",
+            "type": "object"
+          },
           "input": {
             "default": "{{ item.message }}",
             "title": "Input",
