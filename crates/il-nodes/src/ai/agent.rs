@@ -107,10 +107,20 @@ impl NodeExecutor for AiAgent {
             .extend(ctx.settings["apiTools"]["operations"].as_array().into_iter().flatten().filter_map(|v| v.as_str()));
         let mut tools = Vec::new();
         let mut activity = Vec::new();
+        let names = if bases.is_empty() {
+            Vec::new()
+        } else {
+            ctx.knowledge().list_bases(&ctx.run.workspace_id).await.unwrap_or_default()
+        };
         for base in &bases {
+            let name = names.iter().find(|b| b["id"] == *base).and_then(|b| b["name"].as_str()).unwrap_or(base);
             tools.push(ToolSpec {
                 name: format!("search_{base}"),
-                description: format!("Search knowledge base {base} for relevant sources"),
+                // The id means nothing to the model; the name and a nudge make it search before giving up.
+                description: format!(
+                    "Search the \"{name}\" knowledge base (the documents and help pages you were given). \
+                     Search it before answering a question, and before saying you don't know."
+                ),
                 parameters: json!({"type":"object","required":["query"],"properties":{"query":{"type":"string"}}}),
             });
         }

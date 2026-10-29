@@ -151,8 +151,25 @@ pub fn assemble(draft: &Draft, catalog: &Catalog, goal: &str) -> Flow {
         settings: FlowSettings::default(),
         meta: FlowMeta { created_by: Some("architect".into()), goal: Some(goal.into()) },
     };
+    drop_unknown_bases(&mut flow);
     crate::layout::apply(&mut flow);
     flow
+}
+
+/// Removes knowledge bases an agent names that are neither a knowledge step in the flow nor a saved
+/// base (`kb_` + ULID). Models invent ids like `kb_help_center`, and searching those finds nothing.
+fn drop_unknown_bases(flow: &mut Flow) {
+    let steps: Vec<String> =
+        flow.nodes.iter().filter(|n| n.node_type == "knowledge.base").map(|n| n.id.clone()).collect();
+    let saved = |id: &str| {
+        id.strip_prefix("kb_")
+            .is_some_and(|u| u.len() == 26 && u.chars().all(|c| c.is_ascii_digit() || c.is_ascii_uppercase()))
+    };
+    for node in flow.nodes.iter_mut().filter(|n| n.node_type == "ai.agent") {
+        if let Some(bases) = node.settings.get_mut("knowledgeBases").and_then(|b| b.as_array_mut()) {
+            bases.retain(|b| b.as_str().is_some_and(|id| steps.iter().any(|s| s == id) || saved(id)));
+        }
+    }
 }
 
 /// What compiling produced.
@@ -325,6 +342,24 @@ fn parse(content: &str) -> Result<Draft, serde_json::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn q11_agents_keep_only_real_knowledge_bases() {
+        let draft: Draft = serde_json::from_value(json!({
+            "name": "Help", "edges": [],
+            "nodes": [
+                {"id": "n_kb", "type": "knowledge.base", "name": "Docs", "settings": {}},
+                {"id": "n_agent", "type": "ai.agent", "name": "Agent", "settings": {
+                    "knowledgeBases": ["kb_help_center", "n_kb", "kb_01M64RCE581WKXW9XSECGGBPFK", "n_missing"]}}
+            ]
+        }))
+        .unwrap();
+        let flow = assemble(&draft, &Catalog::default(), "help");
+        assert_eq!(
+            flow.node("n_agent").unwrap().settings["knowledgeBases"],
+            json!(["n_kb", "kb_01M64RCE581WKXW9XSECGGBPFK"])
+        );
+    }
 
     #[test]
     fn q01_schema_leaves_settings_open_and_any_sample() {

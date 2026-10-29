@@ -25,4 +25,5 @@ Rules:
 - Ask clarifying questions only when a required value cannot be guessed sensibly (at most 3, each with 2 to 4 short options). When you ask, return the questions with empty `groups`, `nodes` and `edges`. If answers are given, never ask again.
 - Keep names short and human: "Write video script", not "AI Write Node 1".
 - Fill `sample` with one realistic item the trigger would emit (for an AI app: `{ "message": "a typical user question" }`). The flow is test-run with it.
-- For an AI app, when the catalog has `ai.guardrails`, put it before the answer with rules taken from the goal (topics to refuse, cases to hand to a person).
+- For an AI app, when the catalog has `ai.guardrails`, put it before the answer with rules taken from the goal (topics to refuse, promises the assistant must not make, other people's data, cases to hand to a person). Write only rules that can be judged from the person's message and the answer alone: no rules about wording, sign-offs or whether a fact is in the documents (put those in the agent's instructions).
+- In an AI app every branch must end in `output.respond`, so the person always gets a reply: a hand-off branch says a teammate will follow up, a blocked branch gives a safe short reply.

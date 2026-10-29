@@ -102,6 +102,9 @@ pub fn validate(flow: &Flow, catalog: &Catalog) -> Vec<Issue> {
             issues.push(Issue::new(&at, format!("`{}` has no input `{}`", e.to.node, e.to.port)));
         }
     }
+    if flow.kind == il_core::FlowKind::App {
+        issues.extend(silent_branches(flow, catalog));
+    }
     let before = ancestors(flow);
     if let Some(n) = flow.nodes.iter().find(|n| before[n.id.as_str()].contains(n.id.as_str())) {
         issues.push(Issue::new(
@@ -122,6 +125,50 @@ pub fn validate(flow: &Flow, catalog: &Catalog) -> Vec<Issue> {
         }
     }
     issues
+}
+
+/// In an AI app, a branch that ends without `output.respond` leaves the person with no reply.
+fn silent_branches(flow: &Flow, catalog: &Catalog) -> Vec<Issue> {
+    const RESPOND: &str = "output.respond";
+    let mut issues = Vec::new();
+    for n in &flow.nodes {
+        let outs = output_ports(n, catalog).unwrap_or_default();
+        let at = format!("nodes.{}", n.id);
+        // Every way out of a branching step must go somewhere.
+        if outs.len() > 1 && n.node_type != RESPOND {
+            for port in outs.iter().filter(|p| !flow.edges.iter().any(|e| e.from.node == n.id && &e.from.port == *p)) {
+                issues.push(Issue::new(
+                    &at,
+                    format!(
+                        "output `{port}` goes nowhere, so the person gets no reply; connect it to an `{RESPOND}` step"
+                    ),
+                ));
+            }
+        }
+        // A path that ends must have replied on the way. Side steps (a knowledge base) sit on no path.
+        let ends = flow.incoming(&n.id).next().is_some() && !flow.edges.iter().any(|e| e.from.node == n.id);
+        let replied = |id: &str| flow.node(id).is_some_and(|m| m.node_type == RESPOND);
+        if ends && !replied(&n.id) && !upstream(flow, &n.id).iter().any(|id| replied(id)) {
+            issues.push(Issue::new(
+                &at,
+                format!(
+                    "this branch ends without replying; put an `{RESPOND}` step on it (for a hand-off, say a teammate will follow up)"
+                ),
+            ));
+        }
+    }
+    issues
+}
+
+fn upstream<'a>(flow: &'a Flow, id: &'a str) -> BTreeSet<&'a str> {
+    let mut seen = BTreeSet::new();
+    let mut stack: Vec<&str> = flow.incoming(id).map(|e| e.from.node.as_str()).collect();
+    while let Some(p) = stack.pop() {
+        if seen.insert(p) {
+            stack.extend(flow.incoming(p).map(|e| e.from.node.as_str()));
+        }
+    }
+    seen
 }
 
 /// Output port names, including ports named by `dynamic_outputs` entries. `None` for unknown types.

@@ -53,7 +53,8 @@ pub async fn suite(models: &dyn ModelGateway, flow: &Flow, brief: &str) -> Resul
     let prompt = format!(
         "{brief}\n\nThe AI app \"{}\" was built for this. Write {MAX_CASES} test cases a real user would send: \
          questions its knowledge should answer and tasks that need its tools. For each, say in one sentence what a \
-         good answer does. Reply with JSON: {{\"cases\": [{{\"kind\": \"knowledge\" | \"tool\", \"input\": \"…\", \
+         good answer does. Don't invent account details (emails, ids, orders) and expect them to be found: a tool \
+         task should expect the app to try the lookup and either use what it finds or say honestly it found nothing. Reply with JSON: {{\"cases\": [{{\"kind\": \"knowledge\" | \"tool\", \"input\": \"…\", \
          \"expect\": \"…\"}}]}}",
         flow.name
     );

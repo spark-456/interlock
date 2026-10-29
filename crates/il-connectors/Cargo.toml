@@ -18,7 +18,6 @@ hmac = "0.12"
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_yaml = "0.9"
 sha2 = "0.10"
 tracing.workspace = true
 ulid.workspace = true

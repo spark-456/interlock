@@ -236,7 +236,8 @@ impl Inner {
         ev.stage("understand").await;
         ev.log("Reading your request.").await;
         let instructions = super::attach::instructions(&self.services, &req.attachments).await;
-        let mut brief = self.brief(ev, req, &instructions).await;
+        let apis = super::attach::api_specs(&self.services, &req.attachments).await;
+        let mut brief = self.brief(ev, req, &instructions, &apis).await;
         ev.log("Planning the steps. This can take a minute.").await;
         let mut compiled = if self.fake_templates {
             self.compile_template(ws, &req.goal).await?
@@ -268,7 +269,7 @@ impl Inner {
         if let Some(kind) = req.kind {
             flow.kind = kind;
         }
-        for line in super::attach::apply(&mut flow, &req.attachments, &instructions) {
+        for line in super::attach::apply(&mut flow, &req.attachments, &instructions, &apis) {
             ev.log(line).await;
         }
         self.stream(ev, &flow).await;
@@ -420,7 +421,13 @@ impl Inner {
     }
 
     /// The goal plus attachments and hints, with the text of each Instructions attachment.
-    async fn brief(&self, ev: &mut Events<'_>, req: &BuildRequest, instructions: &[(String, String)]) -> String {
+    async fn brief(
+        &self,
+        ev: &mut Events<'_>,
+        req: &BuildRequest,
+        instructions: &[(String, String)],
+        apis: &[super::attach::ApiSpec],
+    ) -> String {
         let mut brief = format!("Goal: {}", req.goal.trim());
         if let Some(kind) = req.kind {
             let _ = write!(
@@ -438,7 +445,30 @@ Apps and APIs to use: {}",
                 req.hints.join(", ")
             );
         }
-        for a in &req.attachments {
+        for api in apis {
+            let ops: Vec<String> = api
+                .operations
+                .iter()
+                .filter(|o| !o.risky)
+                .map(|o| format!("{} ({} {}): {}", o.id, o.method, o.path, o.description))
+                .collect();
+            let _ = write!(
+                brief,
+                "\nAPI the assistant can call ({}): give each `ai.agent` \"apiTools\": {{\"spec\": \"{}\", \"operations\": [ids]}} \
+                 choosing from these operations:\n  {}",
+                api.name,
+                api.reference,
+                ops.join("\n  ")
+            );
+            ev.log(format!(
+                "Read {} API action{} from {}.",
+                ops.len(),
+                if ops.len() == 1 { "" } else { "s" },
+                api.name
+            ))
+            .await;
+        }
+        for a in req.attachments.iter().filter(|a| a.kind != AttachmentKind::Api) {
             let role = match a.role {
                 AttachmentRole::Knowledge => "knowledge to answer from",
                 AttachmentRole::Instructions => "instructions to follow",

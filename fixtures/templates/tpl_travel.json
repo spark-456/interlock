@@ -121,6 +121,42 @@
       "credentials": {},
       "disabled": false,
       "notes": null
+    },
+    {
+      "typeVersion": 1,
+      "group": "g_answer",
+      "credentials": {},
+      "disabled": false,
+      "notes": null,
+      "type": "output.respond",
+      "id": "n_review",
+      "name": "Hand to travel desk",
+      "position": {
+        "x": 912.0,
+        "y": 360.0
+      },
+      "settings": {
+        "body": "That needs a quick check against our travel policy, so I've passed it to the travel desk. They'll follow up with you today.",
+        "includeSources": false
+      }
+    },
+    {
+      "typeVersion": 1,
+      "group": "g_answer",
+      "credentials": {},
+      "disabled": false,
+      "notes": null,
+      "type": "output.respond",
+      "id": "n_refuse",
+      "name": "Decline",
+      "position": {
+        "x": 912.0,
+        "y": 520.0
+      },
+      "settings": {
+        "body": "Sorry, I can't share other people's bookings or personal details. I'm happy to help with your own trip.",
+        "includeSources": false
+      }
     }
   ],
   "edges": [
@@ -165,6 +201,28 @@
       },
       "to": {
         "node": "n_respond",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_review",
+      "from": {
+        "node": "n_guard",
+        "port": "handoff"
+      },
+      "to": {
+        "node": "n_review",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_guard_refuse",
+      "from": {
+        "node": "n_guard",
+        "port": "blocked"
+      },
+      "to": {
+        "node": "n_refuse",
         "port": "in"
       }
     }
