@@ -5,7 +5,7 @@ mod fallback;
 mod gateway;
 pub mod providers;
 
-pub use config::{GatewayConfig, Roles};
+pub use config::{Fallback, GatewayConfig, Roles};
 pub use gateway::Gateway;
 
 /// Referenced by `il-server` so the linker keeps this crate's self-registrations.

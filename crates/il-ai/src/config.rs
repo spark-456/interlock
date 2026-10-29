@@ -2,10 +2,10 @@
 
 use std::collections::HashMap;
 
-use il_sdk::services::models::{ModelError, ModelRole, Usage};
+use il_sdk::services::models::{ModelRole, Usage};
 use serde::Deserialize;
 
-/// Provider, role → model id, prices and retry policy.
+/// Provider, role → model id, prices, retry policy and fallback providers.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct GatewayConfig {
@@ -19,6 +19,8 @@ pub struct GatewayConfig {
     pub retries: u32,
     /// First backoff; doubles on each retry.
     pub backoff_ms: u64,
+    /// Providers tried in order when the ones before can't answer (rate limit, outage, key, credit).
+    pub fallbacks: Vec<Fallback>,
 }
 
 impl Default for GatewayConfig {
@@ -30,6 +32,7 @@ impl Default for GatewayConfig {
             prices: HashMap::new(),
             retries: 3,
             backoff_ms: 500,
+            fallbacks: vec![],
         }
     }
 }
@@ -46,37 +49,51 @@ pub struct Roles {
     pub transcribe: Option<String>,
 }
 
-impl GatewayConfig {
-    /// The model id configured for `role`.
-    pub fn model(&self, role: ModelRole) -> Result<&str, ModelError> {
-        let id = match role {
-            ModelRole::Architect => &self.roles.architect,
-            ModelRole::Agent => &self.roles.agent,
-            ModelRole::Fast => &self.roles.fast,
-        };
-        if id.is_empty() {
-            return Err(ModelError::Config(format!("set models.roles.{}", role_name(role))));
-        }
-        Ok(id)
-    }
+/// A fallback provider with its own model ids and prices.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct Fallback {
+    /// Registered provider name (`groq`, `openrouter`).
+    pub provider: String,
+    /// Empty for the provider's default.
+    pub base_url: String,
+    /// Roles left empty are never sent to this provider.
+    pub roles: Roles,
+    /// USD per 1M tokens `[input, output]`, keyed by role name.
+    pub prices: HashMap<String, [f64; 2]>,
+}
 
-    /// Cost of `usage` at the prices configured for `role` (0 when unpriced).
-    pub fn cost(&self, role: &str, usage: &Usage) -> f64 {
-        let [input, output] = self.prices.get(role).copied().unwrap_or([0.0, 0.0]);
-        (f64::from(usage.prompt_tokens) * input + f64::from(usage.completion_tokens) * output) / 1_000_000.0
+impl Roles {
+    /// The chat model set for `role`.
+    pub fn chat(&self, role: ModelRole) -> Option<&str> {
+        let id = match role {
+            ModelRole::Architect => &self.architect,
+            ModelRole::Agent => &self.agent,
+            ModelRole::Fast => &self.fast,
+        };
+        (!id.is_empty()).then_some(id.as_str())
     }
 
     /// Every configured `(role, model id)`, for the startup check.
-    pub fn all_models(&self) -> Vec<(&'static str, &str)> {
-        let r = &self.roles;
-        let mut all =
-            vec![("architect", r.architect.as_str()), ("agent", &r.agent), ("fast", &r.fast), ("embed", &r.embed)];
-        if let Some(t) = &r.transcribe {
+    pub fn all(&self) -> Vec<(&'static str, &str)> {
+        let mut all = vec![
+            ("architect", self.architect.as_str()),
+            ("agent", &self.agent),
+            ("fast", &self.fast),
+            ("embed", &self.embed),
+        ];
+        if let Some(t) = &self.transcribe {
             all.push(("transcribe", t));
         }
         all.retain(|(_, id)| !id.is_empty());
         all
     }
+}
+
+/// Cost of `usage` at the `prices` for `role` (0 when unpriced).
+pub fn cost(prices: &HashMap<String, [f64; 2]>, role: &str, usage: &Usage) -> f64 {
+    let [input, output] = prices.get(role).copied().unwrap_or([0.0, 0.0]);
+    (f64::from(usage.prompt_tokens) * input + f64::from(usage.completion_tokens) * output) / 1_000_000.0
 }
 
 /// The config and price key for a role.

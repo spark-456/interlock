@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use futures::StreamExt;
-use il_ai::{Gateway, GatewayConfig, Roles};
+use il_ai::{Fallback, Gateway, GatewayConfig, Roles};
 use il_sdk::services::models::{
     ChatDelta, ChatMessage, ChatRequest, ChatResponse, ChatStream, ModelError, ModelGateway, ModelProvider, ModelRole,
     ToolSpec, Usage,
@@ -162,4 +162,69 @@ async fn transcription_needs_a_model() {
         preview_url: None,
     };
     assert!(matches!(gateway(&p).transcribe(&file, b"").await, Err(ModelError::Config(_))));
+}
+
+fn with_fallback(primary: &Arc<Scripted>, backup: &Arc<Scripted>, roles: Roles) -> Gateway {
+    let prices = HashMap::from([("agent".to_string(), [1.0, 1.0])]);
+    gateway(primary).with_fallback(backup.clone(), Fallback { roles, prices, ..Default::default() })
+}
+
+fn agent_only() -> Roles {
+    Roles { agent: "b-agent".into(), ..Default::default() }
+}
+
+#[tokio::test]
+async fn moves_to_the_fallback_when_the_provider_cannot_answer() {
+    let (p, b) = (Arc::new(Scripted::default()), Arc::new(Scripted::default()));
+    for _ in 0..4 {
+        p.push(Err(ModelError::RateLimited));
+    }
+    b.text("from backup");
+    let resp = with_fallback(&p, &b, agent_only()).chat(ModelRole::Agent, ask("x")).await.unwrap();
+    assert_eq!((resp.content.as_str(), resp.model.as_str()), ("from backup", "b-agent"));
+    assert!((resp.usage.cost_usd - 0.0015).abs() < 1e-12, "the fallback's own prices");
+
+    let (p, b) = (Arc::new(Scripted::default()), Arc::new(Scripted::default()));
+    p.push(Err(ModelError::Config("Token Factory rejected the API key".into())));
+    b.text("ok");
+    assert_eq!(with_fallback(&p, &b, agent_only()).chat(ModelRole::Agent, ask("x")).await.unwrap().content, "ok");
+}
+
+#[tokio::test]
+async fn fallbacks_only_take_their_roles_and_retryable_errors() {
+    let (p, b) = (Arc::new(Scripted::default()), Arc::new(Scripted::default()));
+    p.push(Err(ModelError::Config("no key".into())));
+    let gw = with_fallback(&p, &b, agent_only());
+    assert!(matches!(gw.chat(ModelRole::Fast, ask("x")).await, Err(ModelError::Config(_))));
+    assert!(b.seen().is_empty(), "the fallback has no fast model");
+
+    let (p, b) = (Arc::new(Scripted::default()), Arc::new(Scripted::default()));
+    p.push(Err(ModelError::Other("HTTP 400: bad request".into())));
+    let gw = with_fallback(&p, &b, agent_only());
+    assert!(matches!(gw.chat(ModelRole::Agent, ask("x")).await, Err(ModelError::Other(_))));
+    assert!(b.seen().is_empty(), "a bad request would fail anywhere");
+}
+
+#[tokio::test]
+async fn streams_from_the_fallback() {
+    let (p, b) = (Arc::new(Scripted::default()), Arc::new(Scripted::default()));
+    for _ in 0..4 {
+        p.push(Err(ModelError::Unavailable("out of credit".into())));
+    }
+    b.text("streamed");
+    let chunks: Vec<_> =
+        with_fallback(&p, &b, agent_only()).chat_stream(ModelRole::Agent, ask("x")).await.unwrap().collect().await;
+    assert!(matches!(&chunks[0], Ok(ChatDelta::Text(t)) if t == "streamed"));
+}
+
+#[test]
+fn starts_on_a_fallback_when_the_provider_cannot_start() {
+    let models = json!({
+        "provider": "missing",
+        "roles": {"agent": "a"},
+        "fallbacks": [{"provider": "also-missing"}, {"provider": "fake", "roles": {"agent": "f"}}]
+    });
+    assert!(Gateway::from_config(&models, false).is_ok());
+    let alone = json!({"provider": "missing", "fallbacks": [{"provider": "also-missing"}]});
+    assert!(matches!(Gateway::from_config(&alone, false), Err(ModelError::Config(_))));
 }
