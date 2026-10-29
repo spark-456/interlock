@@ -10,7 +10,7 @@
   let copied = $state(false);
 
   $effect(() => {
-    api.guide(flowId).then((g) => (markdown = g.markdown), () => (failed = true));
+    api.guide(flowId).then((g) => (markdown = g), () => (failed = true));
   });
 
   const size = $derived(markdown ? `${(new TextEncoder().encode(markdown).length / 1024).toFixed(1)} KB` : '');
