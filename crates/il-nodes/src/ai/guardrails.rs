@@ -29,7 +29,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
                     "action":{"type":"string","title":"If matched","enum":["block","handoff"],"x-widget":"select"}
                 }
             }},
-            "model":{"type":"string","title":"Model","enum":["architect","agent","fast"],"default":"fast","x-widget":"model-role"}
+            "model":{"type":"string","title":"Model","enum":["architect","agent","fast"],"default":"agent","x-widget":"model-role"}
         }
     }))
     .example("Refund policy", json!({
@@ -57,7 +57,8 @@ impl NodeExecutor for AiGuardrails {
             }
             names.push(name);
         }
-        let role = match ctx.settings["model"].as_str().unwrap_or("fast") {
+        // The fast model flagged good answers in testing; judging needs the agent model.
+        let role = match ctx.settings["model"].as_str().unwrap_or("agent") {
             "fast" => ModelRole::Fast,
             "agent" => ModelRole::Agent,
             "architect" => ModelRole::Architect,
