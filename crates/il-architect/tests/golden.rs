@@ -255,7 +255,8 @@ async fn asks_questions_then_builds_with_the_answers() {
 #[tokio::test]
 async fn a_build_that_cannot_be_repaired_fails_with_the_reason() {
     let fakes = FakeServices::default();
-    for _ in 0..=MAX_REPAIRS {
+    // The plan is tried twice (a fresh start after the repairs), each with its repairs.
+    for _ in 0..2 * (MAX_REPAIRS + 1) {
         fakes
             .models
             .push_json(json!({"name": "x", "nodes": [{"id": "n_a", "type": "nope", "name": "A"}], "edges": []}));
@@ -265,6 +266,7 @@ async fn a_build_that_cannot_be_repaired_fails_with_the_reason() {
     let evs = events(fakes.store.as_ref(), &id, ended).await;
     let BuildEventKind::Failed { error } = &evs.last().unwrap().kind else { panic!("{evs:#?}") };
     assert!(error.contains("unknown node type `nope`"), "{error}");
+    assert!(evs.iter().any(|e| matches!(&e.kind, BuildEventKind::Log { text } if text.contains("starting it again"))));
     assert!(
         evs.iter()
             .any(|e| matches!(&e.kind, BuildEventKind::Stage { status, .. } if format!("{status:?}") == "Failed"))

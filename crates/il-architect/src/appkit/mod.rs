@@ -90,6 +90,14 @@ pub async fn run(
             only: None,
         };
         let answer = match runner.invoke(req).await {
+            Ok(outcome) if outcome.response.is_empty() && outcome.run.error.is_some() => {
+                let error = outcome.run.error.unwrap_or_default();
+                failures.push(Failure {
+                    node_id: None,
+                    problem: format!("asked \"{}\", the run failed: {error}", case.input),
+                });
+                continue;
+            }
             Ok(outcome) => outcome.response.first().map(|i| answer_text(&i.json)).unwrap_or_default(),
             Err(e) => {
                 failures

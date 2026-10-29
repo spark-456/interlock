@@ -86,7 +86,9 @@ fn draft_schema() -> Json {
             "notes": {"type": "array", "items": text},
             "groups": {"type": "array", "items": {"type": "object", "required": ["id", "label"],
                 "properties": {"id": text, "label": text}}},
-            "nodes": {"type": "array", "items": {"type": "object", "required": ["id", "type", "name"],
+            // `settings` is required: under strict structured output the model sometimes leaves optional
+            // keys out, and a draft with no settings on any step can't be repaired.
+            "nodes": {"type": "array", "items": {"type": "object", "required": ["id", "type", "name", "settings"],
                 "properties": {"id": text, "type": text, "name": text, "group": text,
                     "settings": {"type": "object", "additionalProperties": true}}}},
             "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to"],
@@ -321,13 +323,31 @@ async fn draft_loop(
             return Err(CompileError::Invalid(issues));
         }
         repairs.push(issues.len());
+        let hints = settings_hints(&resp.content, &issues, catalog);
         messages.push(ChatMessage::assistant(resp.content));
         messages.push(ChatMessage::user(format!(
             "The flow has these problems. Fix them and reply with the whole corrected JSON object. Keep every \
              setting that was right, and fill each missing one with the keys the catalog lists for that step type.\n- {}",
             issues.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n- ")
-        )));
+        ) + &hints));
     }
+}
+
+/// For steps missing required settings, the settings their type takes (required marked `*`): a bare
+/// "is required" was not enough for the model to fill them.
+fn settings_hints(reply: &str, issues: &[Issue], catalog: &Catalog) -> String {
+    let Ok(draft) = parse(reply) else { return String::new() };
+    let mut types: Vec<&str> = issues
+        .iter()
+        .filter(|i| i.message == "is required" && i.path.contains(".settings/"))
+        .filter_map(|i| i.path.strip_prefix("nodes.")?.split('.').next())
+        .filter_map(|id| draft.nodes.iter().find(|n| n.id == id).map(|n| n.node_type.as_str()))
+        .collect();
+    types.sort_unstable();
+    types.dedup();
+    let lines: Vec<String> =
+        types.iter().filter_map(|t| catalog.settings_of(t).map(|s| format!("- `{t}` settings: {s}"))).collect();
+    if lines.is_empty() { String::new() } else { format!("\n\nFill these settings:\n{}", lines.join("\n")) }
 }
 
 /// Parses a draft, tolerating text or code fences around the JSON object.
@@ -342,6 +362,19 @@ fn parse(content: &str) -> Result<Draft, serde_json::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn q11_repairs_name_the_settings_a_step_needs() {
+        let manifest = il_core::NodeManifest::new("ai.classify", il_core::Category::Ai, "Classify", "Sorts items")
+            .settings_schema(json!({"type": "object", "required": ["labels"],
+                "properties": {"labels": {"type": "array"}, "input": {"type": "string"}}}));
+        let catalog = Catalog::new([manifest]);
+        let reply = r#"{"name": "x", "edges": [], "nodes": [{"id": "n_c", "type": "ai.classify", "name": "Sort", "settings": {}}]}"#;
+        let issues = [Issue { path: "nodes.n_c.settings/labels".into(), message: "is required".into() }];
+        let hints = settings_hints(reply, &issues, &catalog);
+        assert!(hints.contains("`ai.classify` settings:") && hints.contains("labels*"), "{hints}");
+        assert_eq!(settings_hints(reply, &[], &catalog), "");
+    }
 
     #[test]
     fn q11_agents_keep_only_real_knowledge_bases() {
@@ -365,6 +398,7 @@ mod tests {
     fn q01_schema_leaves_settings_open_and_any_sample() {
         let schema = draft_schema();
         assert_eq!(schema["properties"]["nodes"]["items"]["properties"]["settings"]["additionalProperties"], true);
+        assert!(schema["properties"]["nodes"]["items"]["required"].as_array().unwrap().contains(&json!("settings")));
         let draft = json!({
             "name": "Triage", "edges": [],
             "nodes": [{"id": "n_slack", "type": "app.slack.send", "name": "Post", "settings": {"channel": "#support"}}],
