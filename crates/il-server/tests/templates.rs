@@ -98,7 +98,8 @@ async fn every_template_test_runs_end_to_end_in_fake_mode() {
         }
         let run = call(&app, "POST", &format!("/api/flows/{}/test", flow["id"].as_str().unwrap())).await;
         let mut detail = serde_json::Value::Null;
-        for _ in 0..200 {
+        // Up to two minutes: with ffmpeg present, the promos template's media steps take ~15 s on Windows.
+        for _ in 0..4800 {
             detail = call(&app, "GET", &format!("/api/runs/{}", run["runId"].as_str().unwrap())).await;
             if !["queued", "running"].contains(&detail["run"]["status"].as_str().unwrap()) {
                 break;
