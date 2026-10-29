@@ -57,7 +57,9 @@ impl NodeExecutor for AppSlackSend {
             .ok_or_else(|| NodeError::Failed("Slack access token is missing".into()))?
             .to_owned();
         let base = super::api_base(&ctx.settings);
-        super::post_message(ctx.http(), &base, &token, channel, text, None).await?;
+        // Once per run and item, so a retry or a resumed run never posts twice.
+        crate::rest::once(ctx, "slack:send", super::post_message(ctx.http(), &base, &token, channel, text, None))
+            .await?;
         Ok(NodeOutput::out(input.main().to_vec()))
     }
 }

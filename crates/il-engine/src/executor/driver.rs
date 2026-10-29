@@ -8,6 +8,7 @@ use il_core::{Flow, Item, Node, NodeRun, Run, RunEventKind, RunStatus};
 use il_sdk::Services;
 use il_sdk::ctx::RunInfo;
 use il_sdk::services::store::{SpendEntry, SpendScope};
+use il_sdk::services::{AgentTool, ToolError};
 use serde_json::{Map, Value, json};
 use tokio::task::JoinSet;
 
@@ -40,7 +41,8 @@ pub(crate) async fn drive(
         ..Default::default()
     };
 
-    let services = run_services(&inner, &flow, &run.workspace_id).await;
+    let test = run.trigger == "test" || run.replay;
+    let services = run_services(&inner, &flow, &run.workspace_id, test).await;
     let mut tasks: JoinSet<(String, CallResult)> = JoinSet::new();
     let mut running: BTreeSet<String> = BTreeSet::new();
     if let Some((node_id, r)) = resume
@@ -172,7 +174,7 @@ fn partial_announced(cp: &Checkpoint, node_id: &str, approval_id: &str) -> bool 
 }
 
 /// The services a run's steps see: the engine's, plus the flow's own tools for its agents.
-async fn run_services(inner: &Inner, flow: &Flow, workspace_id: &str) -> Services {
+async fn run_services(inner: &Inner, flow: &Flow, workspace_id: &str, test: bool) -> Services {
     let mut services = inner.services.clone();
     if caps::is_demo(workspace_id) {
         let allowed = inner.config.caps.demo_models.clone();
@@ -180,11 +182,38 @@ async fn run_services(inner: &Inner, flow: &Flow, workspace_id: &str) -> Service
     }
     if flow.nodes.iter().any(|n| n.node_type == "ai.agent") {
         match services.flow_tools.for_flow(workspace_id, flow).await {
+            // Test runs never send or post: tools that change things answer with a preview.
+            Ok(tools) if test => services.tools.extend(
+                tools
+                    .into_iter()
+                    .map(|t| if t.changes_things() { Arc::new(PreviewTool(t)) as Arc<dyn AgentTool> } else { t }),
+            ),
             Ok(tools) => services.tools.extend(tools),
             Err(e) => tracing::warn!(flow_id = %flow.id, error = %e, "could not load the flow's tools"),
         }
     }
     services
+}
+
+/// A tool that, in a test run, reports the call it would make instead of making it.
+struct PreviewTool(Arc<dyn AgentTool>);
+
+#[async_trait::async_trait]
+impl AgentTool for PreviewTool {
+    fn name(&self) -> &str {
+        self.0.name()
+    }
+    fn description(&self) -> &str {
+        self.0.description()
+    }
+    fn schema(&self) -> Value {
+        self.0.schema()
+    }
+    async fn invoke(&self, args: Value) -> Result<Value, ToolError> {
+        Ok(
+            json!({ "skipped": "Test runs don't call tools that change things.", "would": { "tool": self.0.name(), "arguments": args } }),
+        )
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

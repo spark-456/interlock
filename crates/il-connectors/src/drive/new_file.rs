@@ -64,10 +64,8 @@ struct DrivePoller;
 #[async_trait]
 impl Poller for DrivePoller {
     async fn poll(&self, ctx: &TriggerCtx, cursor: Option<Value>) -> Result<(Vec<Item>, Option<Value>), NodeError> {
-        let credential = ctx.credential("google").await?;
-        let token = credential.secret["access_token"]
-            .as_str()
-            .ok_or_else(|| NodeError::Failed("missing Google access token".into()))?;
+        let token = crate::oauth::google_token(&ctx.services, &ctx.workspace_id, &ctx.credential_ids).await?;
+        let token = token.as_str();
         #[cfg(test)]
         let base = ctx.settings["_base"].as_str().unwrap_or("https://www.googleapis.com");
         #[cfg(not(test))]

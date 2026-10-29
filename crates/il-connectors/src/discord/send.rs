@@ -79,7 +79,9 @@ impl NodeExecutor for AppDiscordSend {
         } else {
             return Err(NodeError::Failed("Discord webhook URL or bot token missing".into()));
         };
-        super::send(ctx, &url, bot_token, content, &ctx.settings["attachments"]).await?;
+        // Once per run and item, so a retry or a resumed run never posts twice.
+        let send = super::send(ctx, &url, bot_token, content, &ctx.settings["attachments"]);
+        crate::rest::once(ctx, "discord:send", async { send.await.map(Value::from) }).await?;
         Ok(NodeOutput::out(input.main().to_vec()))
     }
 }

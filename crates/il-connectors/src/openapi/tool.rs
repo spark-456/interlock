@@ -101,6 +101,9 @@ impl AgentTool for ApiTool {
     fn description(&self) -> &str {
         &self.operation.description
     }
+    fn changes_things(&self) -> bool {
+        !["get", "head"].contains(&self.operation.method.to_ascii_lowercase().as_str())
+    }
     fn schema(&self) -> Value {
         let mut properties = Map::new();
         let mut required = Vec::new();

@@ -23,6 +23,10 @@ pub trait AgentTool: Send + Sync {
     fn description(&self) -> &str;
     /// JSON Schema of the arguments.
     fn schema(&self) -> Value;
+    /// Whether calling it changes something outside Interlock; such tools only preview in test runs.
+    fn changes_things(&self) -> bool {
+        true
+    }
     /// Calls the tool.
     async fn invoke(&self, args: Value) -> Result<Value, ToolError>;
 }

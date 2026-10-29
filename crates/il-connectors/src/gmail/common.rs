@@ -16,11 +16,7 @@ pub fn endpoint(ctx: &NodeCtx, path: &str) -> String {
 }
 
 pub async fn token(ctx: &NodeCtx) -> Result<String, NodeError> {
-    let credential = ctx.credential("google").await?;
-    credential.secret["access_token"]
-        .as_str()
-        .map(str::to_owned)
-        .ok_or_else(|| NodeError::Failed("Google credential has no access token".into()))
+    crate::oauth::google_token(&ctx.services, &ctx.run.workspace_id, &ctx.credential_ids).await
 }
 
 pub fn header(value: &str) -> Result<&str, NodeError> {
