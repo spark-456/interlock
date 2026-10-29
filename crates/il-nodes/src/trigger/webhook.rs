@@ -3,9 +3,9 @@
 //! the Respond output). The route group self-registers here.
 
 use axum::extract::{Path, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::{HeaderMap, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::post;
+use axum::routing::any;
 use axum::{Json, Router};
 use il_core::ApiError;
 use il_sdk::prelude::*;
@@ -113,7 +113,7 @@ impl TriggerNode for TriggerWebhook {
 inventory::submit! { NodeFactory::new(|| Box::new(TriggerWebhook)) }
 
 fn routes(ctx: &RouteCtx) -> Router {
-    Router::new().route("/hooks/{flow_id}/{token}", post(receive).get(receive)).with_state(ctx.clone())
+    Router::new().route("/hooks/{flow_id}/{token}", any(receive)).with_state(ctx.clone())
 }
 
 inventory::submit! { RouteFactory { name: "webhooks", make: routes } }
@@ -129,6 +129,7 @@ fn failed(message: String) -> Response {
 async fn receive(
     State(ctx): State<RouteCtx>,
     Path((flow_id, token)): Path<(String, String)>,
+    method: Method,
     headers: HeaderMap,
     body: String,
 ) -> Response {
@@ -145,6 +146,9 @@ async fn receive(
         }
     }
     let Some(node) = matched else { return not_found() };
+    if node.settings.get("method").and_then(Value::as_str).unwrap_or("POST") != method.as_str() {
+        return StatusCode::METHOD_NOT_ALLOWED.into_response();
+    }
     let json_body: Value =
         if body.trim().is_empty() { json!({}) } else { serde_json::from_str(&body).unwrap_or_else(|_| json!(body)) };
     let content_type = headers.get("content-type").and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
@@ -197,7 +201,7 @@ mod tests {
         il_sdk::testkit::assert_manifest_valid(&TriggerWebhook);
     }
 
-    fn flow(respond: &str) -> Flow {
+    fn flow(respond: &str, method: &str) -> Flow {
         Flow {
             id: "flw_hook".into(),
             workspace_id: "ws".into(),
@@ -211,7 +215,7 @@ mod tests {
                 name: "Webhook".into(),
                 position: Default::default(),
                 group: None,
-                settings: json!({ "method": "POST", "respond": respond }),
+                settings: json!({ "method": method, "respond": respond }),
                 credentials: Default::default(),
                 disabled: false,
                 notes: None,
@@ -223,10 +227,10 @@ mod tests {
         }
     }
 
-    async fn setup(respond: &str, active: bool) -> (Router, Arc<FakeRunner>, String) {
+    async fn setup(respond: &str, active: bool, method: &str) -> (Router, Arc<FakeRunner>, String) {
         let fakes = FakeServices::default();
         let runner = Arc::new(FakeRunner::default());
-        let f = flow(respond);
+        let f = flow(respond, method);
         fakes.store.put_flow(&f).await.unwrap();
         fakes.store.set_flow_active("flw_hook", active).await.unwrap();
         let tctx = TriggerCtx {
@@ -252,9 +256,13 @@ mod tests {
         (routes(&rctx), runner, token)
     }
 
-    async fn send(app: Router, path: &str, body: &str) -> (StatusCode, Value) {
-        let req =
-            Request::post(path).header("content-type", "application/json").body(Body::from(body.to_string())).unwrap();
+    async fn send(app: Router, method: Method, path: &str, body: &str) -> (StatusCode, Value) {
+        let req = Request::builder()
+            .method(method)
+            .uri(path)
+            .header("content-type", "application/json")
+            .body(Body::from(body.to_string()))
+            .unwrap();
         let resp = app.oneshot(req).await.unwrap();
         let status = resp.status();
         let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
@@ -263,9 +271,9 @@ mod tests {
 
     #[tokio::test]
     async fn valid_token_starts_a_run() {
-        let (app, runner, token) = setup("immediately", true).await;
+        let (app, runner, token) = setup("immediately", true, "POST").await;
         assert!(token.len() > 40, "token is long and random");
-        let (status, body) = send(app, &webhook_path("flw_hook", &token), r#"{"order": 42}"#).await;
+        let (status, body) = send(app, Method::POST, &webhook_path("flw_hook", &token), r#"{"order": 42}"#).await;
         assert_eq!(status, StatusCode::ACCEPTED);
         assert!(body["runId"].is_string());
         let started = runner.started();
@@ -275,23 +283,32 @@ mod tests {
 
     #[tokio::test]
     async fn wrong_token_or_inactive_flow_is_not_found() {
-        let (app, runner, _) = setup("immediately", true).await;
-        let (status, body) = send(app, "/hooks/flw_hook/whkwrong", "{}").await;
+        let (app, runner, _) = setup("immediately", true, "POST").await;
+        let (status, body) = send(app, Method::POST, "/hooks/flw_hook/whkwrong", "{}").await;
         assert_eq!(status, StatusCode::NOT_FOUND);
         assert_eq!(body["error"]["code"], "not_found");
         assert!(runner.started().is_empty());
 
-        let (app, runner, token) = setup("immediately", false).await;
-        let (status, _) = send(app, &webhook_path("flw_hook", &token), "{}").await;
+        let (app, runner, token) = setup("immediately", false, "POST").await;
+        let (status, _) = send(app, Method::POST, &webhook_path("flw_hook", &token), "{}").await;
         assert_eq!(status, StatusCode::NOT_FOUND);
         assert!(runner.started().is_empty());
     }
 
     #[tokio::test]
     async fn respond_last_node_returns_the_response() {
-        let (app, _, token) = setup("lastNode", true).await;
-        let (status, body) = send(app, &webhook_path("flw_hook", &token), r#"{"q": "hi"}"#).await;
+        let (app, _, token) = setup("lastNode", true, "POST").await;
+        let (status, body) = send(app, Method::POST, &webhook_path("flw_hook", &token), r#"{"q": "hi"}"#).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["body"]["q"], "hi", "FakeRunner echoes the input as the response");
+    }
+
+    #[tokio::test]
+    async fn n02_webhook_only_accepts_its_configured_method() {
+        let (app, runner, token) = setup("immediately", true, "PUT").await;
+        let path = webhook_path("flw_hook", &token);
+        assert_eq!(send(app.clone(), Method::POST, &path, "{}").await.0, StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(send(app, Method::PUT, &path, "{}").await.0, StatusCode::ACCEPTED);
+        assert_eq!(runner.started().len(), 1);
     }
 }

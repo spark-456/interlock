@@ -14,7 +14,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
     )
     .icon("shield")
     .status(NodeStatus::Ready)
-    .outputs(&["pass", "blocked"])
+    .outputs(&["pass", "blocked", "handoff"])
     .cost(CostHint::Low)
     .settings_schema(json!({
         "type":"object",
@@ -100,7 +100,7 @@ impl NodeExecutor for AiGuardrails {
         let action = rule["action"].as_str().ok_or_else(|| NodeError::Failed("rule action is required".into()))?;
         item.json["guardrails"] =
             json!({"decision":"blocked","rule":matched,"action":action,"handoff":action == "handoff"});
-        Ok(NodeOutput::port("blocked", vec![item]))
+        Ok(NodeOutput::port(if action == "handoff" { "handoff" } else { "blocked" }, vec![item]))
     }
 }
 
@@ -132,7 +132,7 @@ mod tests {
             .input_json(vec![json!({"answer":"Refund $150"})]);
         harness.fakes.models.push_json(json!({"rule":"refund"}));
         let output = harness.run().await.unwrap();
-        assert_eq!(output.ports["blocked"][0].json["guardrails"]["handoff"], true);
+        assert_eq!(output.ports["handoff"][0].json["guardrails"]["handoff"], true);
         assert!(harness.fakes.models.calls()[0].1.json_schema.is_some());
     }
 

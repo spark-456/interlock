@@ -736,6 +736,10 @@
         {
           "label": null,
           "name": "blocked"
+        },
+        {
+          "label": null,
+          "name": "handoff"
         }
       ],
       "settingsSchema": {
@@ -922,11 +926,6 @@
             "title": "Audio",
             "type": "string",
             "x-widget": "file"
-          },
-          "language": {
-            "description": "Leave empty to detect.",
-            "title": "Language",
-            "type": "string"
           },
           "markAs": {
             "default": "none",
@@ -3540,6 +3539,11 @@
             "type": "string",
             "x-widget": "expression"
           },
+          "file": {
+            "title": "File",
+            "type": "string",
+            "x-widget": "file"
+          },
           "knowledgeBase": {
             "title": "Knowledge base",
             "type": "string"
@@ -3561,8 +3565,7 @@
           }
         },
         "required": [
-          "knowledgeBase",
-          "content"
+          "knowledgeBase"
         ],
         "type": "object"
       },
@@ -4544,14 +4547,42 @@
       "app": null,
       "category": "output",
       "costHint": "free",
-      "credentials": [],
-      "description": "Sends a short notification in the app or to a channel set in settings.",
+      "credentials": [
+        {
+          "app": "slack",
+          "key": "slack",
+          "kind": "oAuth2",
+          "label": "Slack workspace",
+          "optional": true,
+          "scopes": [
+            "chat:write"
+          ]
+        },
+        {
+          "app": "discord",
+          "key": "discord",
+          "kind": "webhook",
+          "label": "Discord webhook",
+          "optional": true,
+          "scopes": []
+        },
+        {
+          "app": "telegram",
+          "key": "telegram",
+          "kind": "botToken",
+          "label": "Telegram bot",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Sends a short notification to a connected channel.",
       "dynamicOutputs": null,
       "examples": [
         {
           "settings": {
-            "channel": "inapp",
+            "channel": "slack",
             "message": "{{ items | length }} posts went out.",
+            "target": "#team",
             "title": "Promos posted"
           },
           "title": "Tell the team"
@@ -4574,10 +4605,8 @@
       "settingsSchema": {
         "properties": {
           "channel": {
-            "default": "inapp",
+            "default": "slack",
             "enum": [
-              "inapp",
-              "email",
               "slack",
               "discord",
               "telegram"

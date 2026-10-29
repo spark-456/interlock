@@ -56,6 +56,18 @@ pub(super) fn tools(flow: &Flow, available: &[Arc<dyn AgentTool>]) -> Vec<Tool> 
     }
     let selected = selected_tools(flow);
     let mut seen: BTreeSet<String> = tools.iter().map(|tool| tool.name.to_string()).collect();
+    for node in flow.nodes.iter().filter(|node| node.node_type == "trigger.mcp_call" && !node.disabled) {
+        let Some(name) = node.settings.get("toolName").and_then(Value::as_str).filter(|name| !name.is_empty()) else {
+            continue;
+        };
+        if seen.insert(name.to_owned()) {
+            let description = node.settings.get("toolDescription").and_then(Value::as_str).unwrap_or("Run this flow");
+            let schema = node.settings.get("inputSchema").filter(|value| value.is_object()).cloned().unwrap_or_else(
+                || json!({"type":"object","properties":{"message":{"type":"string"}},"required":["message"]}),
+            );
+            tools.push(tool(name, description, schema));
+        }
+    }
     for agent_tool in available {
         if selected.contains(agent_tool.name()) && seen.insert(agent_tool.name().to_owned()) {
             tools.push(tool(agent_tool.name(), agent_tool.description(), agent_tool.schema()));
@@ -92,6 +104,25 @@ pub(super) async fn call(
             .map_err(|e| e.to_string())?;
         return Ok(json!({"run_id":outcome.run.id,"response":outcome.response}));
     }
+    if let Some(node) = flow.nodes.iter().find(|node| {
+        node.node_type == "trigger.mcp_call"
+            && !node.disabled
+            && node.settings.get("toolName").and_then(Value::as_str) == Some(name)
+    }) {
+        let outcome = ctx
+            .runner
+            .invoke(StartRun {
+                flow_id: flow.id.clone(),
+                version: None,
+                trigger: "mcp".into(),
+                items: vec![Item::json(Value::Object(arguments.clone()))],
+                trigger_node: Some(node.id.clone()),
+                only: None,
+            })
+            .await
+            .map_err(|e| e.to_string())?;
+        return Ok(json!({"run_id":outcome.run.id,"response":outcome.response}));
+    }
     let selected = selected_tools(flow);
     let knowledge_name = name.strip_prefix("search_").is_some_and(|id| bases(flow).contains(id));
     if let Some(agent_tool) =
@@ -110,4 +141,37 @@ pub(super) async fn call(
     let top_k = arguments.get("top_k").and_then(Value::as_u64).unwrap_or(5).clamp(1, 20) as usize;
     let hits = ctx.services.knowledge.search(kb_id, query, top_k).await.map_err(|e| e.to_string())?;
     Ok(json!({"hits":hits}))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use il_sdk::testkit::{FakeArchitect, FakeRunner, FakeServices};
+
+    #[tokio::test]
+    async fn n02_mcp_trigger_uses_configured_name_description_and_schema() {
+        let flow: Flow = serde_json::from_value(json!({"id":"flow_1","workspaceId":"ws","version":1,
+            "name":"Invoices","kind":"app","nodes":[{"id":"n_mcp","type":"trigger.mcp_call","name":"MCP",
+            "settings":{"toolName":"lookup_invoice","toolDescription":"Look up an invoice",
+                "inputSchema":{"type":"object","properties":{"invoiceId":{"type":"string"}},"required":["invoiceId"]}}}],"edges":[]})).unwrap();
+        let listed = tools(&flow, &[]);
+        let configured = listed.iter().find(|tool| tool.name == "lookup_invoice").unwrap();
+        let details = serde_json::to_value(configured).unwrap();
+        assert_eq!(details["description"], "Look up an invoice");
+        assert_eq!(details["inputSchema"]["required"], json!(["invoiceId"]));
+
+        let fakes = FakeServices::default();
+        let runner = Arc::new(FakeRunner::default());
+        let ctx = RouteCtx {
+            services: fakes.services(),
+            runner: runner.clone(),
+            architect: Arc::new(FakeArchitect),
+            flow_tools: Arc::new(il_sdk::services::NoFlowTools),
+            config: Value::Null,
+        };
+        let args = serde_json::from_value(json!({"invoiceId":"inv_1"})).unwrap();
+        let response = call(&ctx, "ws", &flow, "lookup_invoice", &args, &[]).await.unwrap();
+        assert_eq!(response["response"][0]["json"]["invoiceId"], "inv_1");
+        assert_eq!(runner.started()[0].trigger_node.as_deref(), Some("n_mcp"));
+    }
 }
