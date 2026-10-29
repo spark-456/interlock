@@ -9,6 +9,7 @@
   import Input from '$lib/design/Input.svelte';
   import { toast } from '$lib/design/toasts.svelte';
   import { appRows, connectHref, keyFields, takesKey, type AppRow } from './connections';
+  import CardSkeleton from '$lib/design/CardSkeleton.svelte';
 
   let rows = $state.raw<AppRow[] | null>(null);
   let failed = $state(false);
@@ -80,8 +81,12 @@
             <StatusPill tone={STATUS[row.status][0]} label={STATUS[row.status][1]} />
           </button>
         </li>
+      {:else}
+        <li class="none">No apps to connect yet.</li>
       {/each}
     </ul>
+  {:else}
+    <CardSkeleton count={6} label="Loading apps" />
   {/if}
 </div>
 
