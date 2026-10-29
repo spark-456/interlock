@@ -87,10 +87,11 @@ fn draft_schema() -> Json {
             "groups": {"type": "array", "items": {"type": "object", "required": ["id", "label"],
                 "properties": {"id": text, "label": text}}},
             "nodes": {"type": "array", "items": {"type": "object", "required": ["id", "type", "name"],
-                "properties": {"id": text, "type": text, "name": text, "group": text, "settings": {"type": "object"}}}},
+                "properties": {"id": text, "type": text, "name": text, "group": text,
+                    "settings": {"type": "object", "additionalProperties": true}}}},
             "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to"],
                 "properties": {"from": text, "to": text, "fromPort": text, "toPort": text}}},
-            "sample": {"type": "object"}
+            "sample": {}
         }
     })
 }
@@ -305,7 +306,8 @@ async fn draft_loop(
         repairs.push(issues.len());
         messages.push(ChatMessage::assistant(resp.content));
         messages.push(ChatMessage::user(format!(
-            "The flow has these problems. Fix them and reply with the whole corrected JSON object.\n- {}",
+            "The flow has these problems. Fix them and reply with the whole corrected JSON object. Keep every \
+             setting that was right, and fill each missing one with the keys the catalog lists for that step type.\n- {}",
             issues.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n- ")
         )));
     }
@@ -318,4 +320,21 @@ fn parse(content: &str) -> Result<Draft, serde_json::Error> {
         _ => content,
     };
     serde_json::from_str(body)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn q01_schema_leaves_settings_open_and_any_sample() {
+        let schema = draft_schema();
+        assert_eq!(schema["properties"]["nodes"]["items"]["properties"]["settings"]["additionalProperties"], true);
+        let draft = json!({
+            "name": "Triage", "edges": [],
+            "nodes": [{"id": "n_slack", "type": "app.slack.send", "name": "Post", "settings": {"channel": "#support"}}],
+            "sample": [{"subject": "Refund?"}]
+        });
+        assert!(il_sdk::validate::validate_json(&schema, &draft).is_ok());
+    }
 }

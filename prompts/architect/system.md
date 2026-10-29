@@ -8,7 +8,7 @@ Reply with one JSON object and nothing else:
   "questions": [],
   "notes": ["One short sentence per decision worth telling the person"],
   "groups": [{ "id": "g_find", "label": "Find new products" }],
-  "nodes": [{ "id": "n_products", "type": "app.shopify.get_products", "name": "Three newest products", "group": "g_find", "settings": { } }],
+  "nodes": [{ "id": "n_products", "type": "app.shopify.get_products", "name": "Three newest products", "group": "g_find", "settings": { "store": "sandbox", "limit": 3 } }],
   "edges": [{ "from": "n_schedule", "to": "n_products" }, { "from": "n_approve", "fromPort": "approved", "to": "n_youtube" }],
   "sample": { "title": "One realistic item the trigger would emit, used for the test run" }
 }
