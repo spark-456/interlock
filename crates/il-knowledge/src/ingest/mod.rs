@@ -1,5 +1,6 @@
 //! Knowledge ingestion backed by SQLite, stored files and the model gateway.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -15,6 +16,9 @@ use crate::crawl::Tavily;
 use crate::parse::{self, ParsedDocument, Section};
 use crate::search;
 
+/// Documents ready to chunk: each with its source URL and role (`knowledge`, `instructions`).
+type Prepared = Vec<(ParsedDocument, Option<String>, &'static str)>;
+
 /// Production knowledge service. All model and file operations use SDK traits.
 #[derive(Clone)]
 pub struct Knowledge {
@@ -22,6 +26,8 @@ pub struct Knowledge {
     files: Arc<dyn FileStore>,
     models: Arc<dyn ModelGateway>,
     tavily: Option<Tavily>,
+    /// Pages for `.example` sites, which can never exist online: the demo templates' help centers.
+    recorded: Option<PathBuf>,
 }
 
 impl Knowledge {
@@ -32,16 +38,25 @@ impl Knowledge {
         models: Arc<dyn ModelGateway>,
         tavily: Option<Tavily>,
     ) -> Self {
-        Self { store, files, models, tavily }
+        Self { store, files, models, tavily, recorded: None }
     }
 
-    async fn prepare(
-        &self,
-        source: SourceInput,
-    ) -> Result<Vec<(ParsedDocument, Option<String>, &'static str)>, KnowledgeError> {
+    /// Serves `.example` sites from the Markdown pages in `dir` instead of crawling them.
+    pub fn with_recorded_sites(mut self, dir: PathBuf) -> Self {
+        self.recorded = Some(dir);
+        self
+    }
+
+    async fn prepare(&self, source: SourceInput) -> Result<Prepared, KnowledgeError> {
         match source {
             SourceInput::Text { title, text } => Ok(vec![(plain(title, text), None, "knowledge")]),
             SourceInput::InstructionsText { title, text } => Ok(vec![(plain(title, text), None, "instructions")]),
+            SourceInput::Url { url, crawl_limit } if self.recorded.is_some() && is_example(&url) => {
+                let dir = self.recorded.clone().unwrap_or_default();
+                tokio::task::spawn_blocking(move || recorded_pages(&dir, &url, crawl_limit))
+                    .await
+                    .map_err(|e| KnowledgeError::Ingest(e.to_string()))?
+            }
             SourceInput::Url { url, crawl_limit } => {
                 let tavily =
                     self.tavily.as_ref().ok_or_else(|| KnowledgeError::Other("Tavily is not configured".into()))?;
@@ -62,12 +77,7 @@ impl Knowledge {
         }
     }
 
-    async fn prepare_file(
-        &self,
-        file_id: &str,
-        name: &str,
-        role: &'static str,
-    ) -> Result<Vec<(ParsedDocument, Option<String>, &'static str)>, KnowledgeError> {
+    async fn prepare_file(&self, file_id: &str, name: &str, role: &'static str) -> Result<Prepared, KnowledgeError> {
         let (file, bytes) = self.files.get(file_id).await.map_err(|e| KnowledgeError::Ingest(e.to_string()))?;
         let document = if file.mime.starts_with("audio/") {
             let transcript =
@@ -127,6 +137,32 @@ impl Knowledge {
             .map_err(knowledge)?;
         Ok(source_id)
     }
+}
+
+fn is_example(url: &str) -> bool {
+    reqwest::Url::parse(url).ok().and_then(|u| u.host_str().map(|h| h == "example" || h.ends_with(".example")))
+        == Some(true)
+}
+
+/// The recorded Markdown pages as if crawled from `url`, one page per file.
+fn recorded_pages(dir: &std::path::Path, url: &str, limit: u32) -> Result<Prepared, KnowledgeError> {
+    let read = |e: std::io::Error| KnowledgeError::Ingest(format!("recorded site: {e}"));
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(dir)
+        .map_err(read)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "md"))
+        .collect();
+    paths.sort();
+    paths
+        .into_iter()
+        .take(limit as usize)
+        .map(|path| {
+            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let doc = parse::parse(&name, "text/markdown", &std::fs::read(&path).map_err(read)?)?;
+            let stem = name.trim_end_matches(".md");
+            Ok((doc, Some(format!("{}/{stem}", url.trim_end_matches('/'))), "knowledge"))
+        })
+        .collect()
 }
 
 fn plain(title: String, text: String) -> ParsedDocument {
@@ -251,14 +287,21 @@ impl KnowledgeService for Knowledge {
 
     async fn parse(&self, file_id: &str, format: Option<&str>) -> Result<Value, KnowledgeError> {
         let (file, bytes) = self.files.get(file_id).await.map_err(|e| KnowledgeError::Ingest(e.to_string()))?;
-        let name = file.name.clone();
-        let mime = format.unwrap_or(&file.mime).to_owned();
+        // A chosen format (`pdf`, `docx`, `md`…) picks the parser by extension, whatever the file is called.
+        let name = format.map_or_else(|| file.name.clone(), |f| format!("{}.{f}", file.name));
+        let mime = if format.is_some() { String::new() } else { file.mime.clone() };
         let doc = tokio::task::spawn_blocking(move || parse::parse(&name, &mime, &bytes))
             .await
             .map_err(|e| KnowledgeError::Ingest(e.to_string()))??;
-        Ok(
-            json!({"title":doc.title,"sections":doc.sections.iter().map(|section| json!({"heading":section.heading,"text":section.text})).collect::<Vec<_>>() }),
-        )
+        let text = doc.sections.iter().map(|s| s.text.trim()).filter(|t| !t.is_empty()).collect::<Vec<_>>().join(
+            "
+
+",
+        );
+        let sections: Vec<Value> =
+            doc.sections.iter().map(|section| json!({"heading": section.heading, "text": section.text})).collect();
+        let title = if format.is_some() { file.name } else { doc.title };
+        Ok(json!({"title": title, "text": text, "sections": sections}))
     }
 }
 
@@ -360,5 +403,29 @@ mod tests {
         assert_eq!(role, "instructions");
         assert_eq!(content, "Use concise answers");
         assert!(service.search(&kb, "concise", 5).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn k03_parse_uses_the_chosen_format_and_returns_text() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Arc::new(SqliteStore::open(dir.path().join("knowledge.sqlite")).unwrap());
+        let files = Arc::new(FakeFiles::default());
+        let doc = files
+            .put(
+                "notes",
+                "application/octet-stream",
+                "# Refunds
+
+Within 30 days."
+                    .into(),
+            )
+            .await
+            .unwrap();
+        let service = Knowledge::new(store, files, Arc::new(FakeGateway::default()), None);
+        assert!(service.parse(&doc.id, None).await.is_err(), "no extension and an unknown type");
+        let parsed = service.parse(&doc.id, Some("md")).await.unwrap();
+        assert_eq!(parsed["title"], "notes");
+        assert!(parsed["text"].as_str().unwrap().contains("Within 30 days."));
+        assert!(!parsed["sections"].as_array().unwrap().is_empty());
     }
 }

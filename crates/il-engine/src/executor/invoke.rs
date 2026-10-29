@@ -83,14 +83,15 @@ pub(crate) async fn run_node(
             NodeInput::items(main.get(idx).cloned().into_iter().collect())
         };
         let current = node_input.main().first().map(Item::scope_json).unwrap_or(Value::Null);
+        let nodes = nodes_scopes.get(idx).cloned().unwrap_or(Value::Null);
         let scope = Scope::new()
             .item(current)
             .items(all_json.clone())
-            .var("nodes", nodes_scopes.get(idx).cloned().unwrap_or(Value::Null))
+            .var("nodes", nodes.clone())
             .var("run", json!({ "id": base.run_id, "flowId": base.flow_id, "trigger": base.trigger }))
             .var("now", json!(inner.services.clock.now().to_rfc3339()));
         let settings = match render_value(&node.settings, &scope) {
-            Ok(s) => s,
+            Ok(s) => knowledge_ids(s, &nodes),
             Err(e) => return CallResult::Failed { error: e.to_string(), retryable: false, input: main },
         };
         // Test runs never send or post: steps with outside effects pass their items on with a
@@ -143,6 +144,22 @@ pub(crate) async fn run_node(
     }
     let ms = started.elapsed().as_millis() as u64;
     CallResult::Done { ports: partial.merged(), cost_usd: partial.cost_usd, ms, input: main }
+}
+
+/// Knowledge bases named by the step that builds them (`"n_kb"`) become that step's base id.
+fn knowledge_ids(mut settings: Value, nodes: &Value) -> Value {
+    let base = |v: &Value| v.as_str().and_then(|step| nodes[step]["json"]["knowledgeBase"].as_str()).map(Value::from);
+    for v in settings.get_mut("knowledgeBases").and_then(Value::as_array_mut).into_iter().flatten() {
+        if let Some(id) = base(v) {
+            *v = id;
+        }
+    }
+    if let Some(v) = settings.get_mut("knowledgeBase")
+        && let Some(id) = base(v)
+    {
+        *v = id;
+    }
+    settings
 }
 
 /// What a skipped outside-effect step outputs in a test run: its items on its first output, each

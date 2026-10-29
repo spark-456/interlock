@@ -72,7 +72,7 @@ pub fn link_all() {
 pub fn build_state(config: Config) -> AppState {
     link_all();
     let fakes = FakeServices::default();
-    finish_state(config, fakes.services())
+    finish_state(config, fakes.services(), None)
 }
 
 /// Builds the normal server with SQLite and disk files; fake providers remain available offline.
@@ -84,18 +84,23 @@ pub async fn build_state_persistent(config: Config) -> anyhow::Result<AppState> 
     let db_path = root.join("interlock.db");
     let store = tokio::task::spawn_blocking(move || SqliteStore::open(db_path)).await??;
     let files = DiskFileStore::new(store.clone(), root.join("files")).await?;
+    let store = Arc::new(store);
     let mut services = FakeServices::default().services();
-    services.store = Arc::new(store);
+    services.store = store.clone();
     services.files = Arc::new(files);
-    Ok(finish_state(config, services))
+    Ok(finish_state(config, services, Some(store)))
 }
 
-fn finish_state(config: Config, mut services: Services) -> AppState {
+/// Wires the real services; `store` (the SQLite store) also backs knowledge bases.
+fn finish_state(config: Config, mut services: Services, store: Option<Arc<SqliteStore>>) -> AppState {
     services.clock = Arc::new(SystemClock);
     if let Ok(http) = il_sdk::SafeHttp::new() {
         services.http = http;
     }
     wire_models(&mut services, &config);
+    if let Some(store) = store {
+        wire_knowledge(&mut services, store, &config);
+    }
     services.flow_tools = Arc::new(PublishedFlowTools { services: services.clone() });
     services.notifier =
         Arc::new(il_connectors::slack::MessagingNotifier::new(services.clone(), services.notifier.clone()));
@@ -156,6 +161,22 @@ pub async fn recover_startup(state: &AppState) -> anyhow::Result<()> {
         }
     });
     Ok(())
+}
+
+/// Knowledge bases on the SQLite store, embedded with the model gateway. Web crawling needs `TAVILY_API_KEY`
+/// and stays off in fake mode; the templates' `.example` sites come from `<templates_dir>/../docs`.
+fn wire_knowledge(services: &mut Services, store: Arc<SqliteStore>, config: &Config) {
+    let tavily = match (config.providers == "fake", il_sdk::SafeHttp::new()) {
+        (false, Ok(http)) => il_knowledge::crawl::Tavily::from_env(http)
+            .inspect_err(|e| tracing::info!(error = %e, "web crawling off"))
+            .ok(),
+        _ => None,
+    };
+    let fixtures = std::path::Path::new(&config.server.templates_dir).parent().unwrap_or(std::path::Path::new("."));
+    let knowledge =
+        il_knowledge::ingest::Knowledge::new(store, services.files.clone(), services.models.clone(), tavily)
+            .with_recorded_sites(fixtures.join("docs"));
+    services.knowledge = Arc::new(knowledge);
 }
 
 /// The real model gateway, with its model check run in the background. Keeps the fake (and says so)
