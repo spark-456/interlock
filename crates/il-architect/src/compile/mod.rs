@@ -3,6 +3,7 @@
 
 mod attach;
 mod build;
+mod progress;
 
 use std::collections::BTreeMap;
 
