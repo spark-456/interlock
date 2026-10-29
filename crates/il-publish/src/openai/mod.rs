@@ -55,7 +55,8 @@ async fn workspace(ctx: &RouteCtx, headers: &HeaderMap) -> Result<String, (Statu
         .ok_or((StatusCode::UNAUTHORIZED, "invalid API key"))
 }
 
-async fn published(ctx: &RouteCtx, workspace_id: &str) -> Result<Vec<Flow>, (StatusCode, &'static str)> {
+/// The workspace's active AI apps (what the API and MCP servers answer for).
+pub(crate) async fn published(ctx: &RouteCtx, workspace_id: &str) -> Result<Vec<Flow>, (StatusCode, &'static str)> {
     let flows = ctx
         .services
         .store
