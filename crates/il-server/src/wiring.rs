@@ -138,6 +138,16 @@ fn finish_state(config: Config, mut services: Services, store: Option<Arc<Sqlite
 
 /// Restarts nonterminal runs and active triggers from the configured store.
 pub async fn recover_startup(state: &AppState) -> anyhow::Result<()> {
+    reset_expired_demos(state).await?;
+    let demos = state.clone();
+    tokio::spawn(async move {
+        loop {
+            demos.services.clock.sleep(std::time::Duration::from_secs(3600)).await;
+            if let Err(error) = reset_expired_demos(&demos).await {
+                tracing::error!(error = %error, "demo reset scan failed");
+            }
+        }
+    });
     let runs = state.services.store.recoverable_runs().await?;
     for run in runs {
         if matches!(run.status, il_core::RunStatus::Running | il_core::RunStatus::Queued)
@@ -179,6 +189,21 @@ fn wire_knowledge(services: &mut Services, store: Arc<SqliteStore>, config: &Con
     services.knowledge = Arc::new(knowledge);
 }
 
+async fn reset_expired_demos(state: &AppState) -> anyhow::Result<()> {
+    let cutoff = state.services.clock.now() - chrono::Duration::hours(24);
+    for workspace_id in state.services.store.expired_demo_workspaces(cutoff).await? {
+        for flow in state.services.store.list_flows(&workspace_id).await? {
+            if state.services.store.is_flow_active(&flow.id).await? {
+                state.triggers.deactivate(&flow.id).await?;
+            }
+        }
+        state.services.files.delete_workspace_files(&workspace_id).await?;
+        state.services.store.delete_demo_workspace(&workspace_id).await?;
+        tracing::info!(workspace_id, "expired demo workspace reset");
+    }
+    Ok(())
+}
+
 /// The real model gateway, with its model check run in the background. Keeps the fake (and says so)
 /// when the gateway can't start, e.g. without `NEBIUS_API_KEY`, so the UI still serves.
 fn wire_models(services: &mut Services, config: &Config) {
@@ -200,12 +225,38 @@ fn wire_models(services: &mut Services, config: &Config) {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use il_core::Flow;
-    use il_sdk::services::{FileStore, FlowToolProvider};
-    use il_sdk::testkit::FakeServices;
+    use il_sdk::services::{Clock, FileStore, FlowToolProvider};
+    use il_sdk::testkit::{FakeClock, FakeServices};
     use serde_json::json;
 
-    use super::PublishedFlowTools;
+    use super::{PublishedFlowTools, build_state, reset_expired_demos};
+
+    #[tokio::test]
+    async fn q04_demo_reset_uses_fake_clock_and_keeps_fresh_workspace() {
+        let mut state = build_state(crate::Config::from_value(json!({})).unwrap());
+        let clock = std::sync::Arc::new(FakeClock::default());
+        state.services.clock = clock.clone();
+        let start = clock.now();
+        state.services.store.register_demo_workspace("ws_demo_old", start).await.unwrap();
+        state.services.store.register_demo_workspace("ws_demo_new", start + chrono::Duration::hours(2)).await.unwrap();
+        let mut old: Flow = serde_json::from_value(json!({"id":"old","workspaceId":"ws_demo_old","version":0,
+            "name":"Old","kind":"automation","nodes":[],"edges":[]}))
+        .unwrap();
+        state.services.store.put_flow(&old).await.unwrap();
+        old.id = "new".into();
+        old.workspace_id = "ws_demo_new".into();
+        state.services.store.put_flow(&old).await.unwrap();
+        let file =
+            state.services.files.put_for_workspace("ws_demo_old", "old.txt", "text/plain", "old".into()).await.unwrap();
+        clock.advance(Duration::from_secs(25 * 3600));
+        reset_expired_demos(&state).await.unwrap();
+        assert!(state.services.store.get_flow("old").await.unwrap().is_none());
+        assert!(state.services.store.get_flow("new").await.unwrap().is_some());
+        assert!(state.services.files.get(&file.id).await.is_err());
+    }
 
     #[tokio::test]
     async fn p01_published_flow_tools_include_selected_openapi_operations_only_for_owner() {

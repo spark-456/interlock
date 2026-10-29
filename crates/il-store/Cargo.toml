@@ -24,4 +24,5 @@ tokio.workspace = true
 ulid.workspace = true
 
 [dev-dependencies]
+il-sdk = { workspace = true, features = ["testkit"] }
 tempfile = "3"

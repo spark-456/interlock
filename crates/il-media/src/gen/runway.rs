@@ -125,7 +125,11 @@ impl MediaGen for Runway {
                         MediaKind::Image => ("generated.png", "image/png"),
                     };
                     let bytes = download.bytes().await.map_err(|e| MediaError::Provider(e.to_string()))?;
-                    let file = self.files.put(name, mime, bytes).await.map_err(|e| MediaError::Other(e.to_string()))?;
+                    let file = self
+                        .files
+                        .put_for_workspace(&req.workspace_id, name, mime, bytes)
+                        .await
+                        .map_err(|e| MediaError::Other(e.to_string()))?;
                     let credits =
                         credits(&task).or(cost).ok_or_else(|| MediaError::Provider("Runway cost missing".into()))?;
                     return Ok(MediaResult { file, cost_usd: credits * 0.01, provider: "runway".into() });

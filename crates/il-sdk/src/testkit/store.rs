@@ -12,6 +12,7 @@ use crate::services::store::{Credential, CredentialInfo, SpendEntry, SpendScope,
 
 #[derive(Default)]
 struct Inner {
+    demo_workspaces: HashMap<String, DateTime<Utc>>,
     flows: HashMap<String, Vec<Flow>>,
     active: HashSet<String>,
     runs: HashMap<String, Run>,
@@ -47,6 +48,44 @@ impl MemoryStore {
 
 #[async_trait]
 impl Store for MemoryStore {
+    async fn register_demo_workspace(&self, workspace_id: &str, created_at: DateTime<Utc>) -> StoreResult<()> {
+        self.lock()?.demo_workspaces.insert(workspace_id.into(), created_at);
+        Ok(())
+    }
+    async fn expired_demo_workspaces(&self, cutoff: DateTime<Utc>) -> StoreResult<Vec<String>> {
+        let mut ids: Vec<_> =
+            self.lock()?.demo_workspaces.iter().filter(|(_, at)| **at < cutoff).map(|(id, _)| id.clone()).collect();
+        ids.sort();
+        Ok(ids)
+    }
+    async fn delete_demo_workspace(&self, workspace_id: &str) -> StoreResult<()> {
+        let mut g = self.lock()?;
+        if g.demo_workspaces.remove(workspace_id).is_none() {
+            return Ok(());
+        }
+        let flow_ids: HashSet<_> = g
+            .flows
+            .iter()
+            .filter(|(_, versions)| versions.last().is_some_and(|f| f.workspace_id == workspace_id))
+            .map(|(id, _)| id.clone())
+            .collect();
+        g.flows.retain(|id, _| !flow_ids.contains(id));
+        g.active.retain(|id| !flow_ids.contains(id));
+        let run_ids: HashSet<_> =
+            g.runs.iter().filter(|(_, run)| run.workspace_id == workspace_id).map(|(id, _)| id.clone()).collect();
+        g.runs.retain(|id, _| !run_ids.contains(id));
+        g.node_runs.retain(|id, _| !run_ids.contains(id));
+        g.run_events.retain(|id, _| !run_ids.contains(id));
+        g.approvals.retain(|_, a| a.workspace_id != workspace_id);
+        g.credential_workspaces.retain(|_, ws| ws != workspace_id);
+        let kept: HashSet<_> = g.credential_workspaces.keys().cloned().collect();
+        g.credentials.retain(|id, _| kept.contains(id));
+        g.kv.retain(|key, value| {
+            !(key.starts_with("ws:session:") && value.get("workspaceId").and_then(Value::as_str) == Some(workspace_id))
+        });
+        g.spend.retain(|e| e.workspace_id != workspace_id);
+        Ok(())
+    }
     async fn get_flow(&self, id: &str) -> StoreResult<Option<Flow>> {
         Ok(self.lock()?.flows.get(id).and_then(|v| v.last().cloned()))
     }

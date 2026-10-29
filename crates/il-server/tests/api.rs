@@ -132,6 +132,19 @@ async fn demo_sessions_are_isolated_workspaces() {
 }
 
 #[tokio::test]
+async fn q04_reset_demo_session_cannot_access_local_workspace() {
+    let state = build_state(Config::from_value(json!({})).unwrap());
+    let app = app(state.clone());
+    let (_, me, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
+    let id = me["workspaceId"].as_str().unwrap();
+    let pair = cookie.unwrap().split(';').next().unwrap().to_string();
+    state.services.files.delete_workspace_files(id).await.unwrap();
+    state.services.store.delete_demo_workspace(id).await.unwrap();
+    let (status, _, _) = call(&app, "GET", "/api/me", None, Some(&pair)).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
 async fn activate_and_deactivate() {
     let app = server();
     let body = json!({

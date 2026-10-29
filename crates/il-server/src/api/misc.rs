@@ -33,6 +33,12 @@ async fn me(ws: Ws) -> Json<Me> {
 async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
     let token = format!("{}{}", il_sdk::id("ses"), il_sdk::id("")).replace('_', "");
     let session = Session { workspace_id: il_sdk::id("ws_demo"), user: None, demo: true };
+    state
+        .services
+        .store
+        .register_demo_workspace(&session.workspace_id, state.services.clock.now())
+        .await
+        .map_err(ApiErr::internal)?;
     super::templates::seed(&state, &session.workspace_id).await?;
     let value = serde_json::to_value(&session).map_err(ApiErr::internal)?;
     state.services.store.kv_put(&session_key(&token), &value).await.map_err(ApiErr::internal)?;
@@ -49,7 +55,7 @@ async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
 /// Multipart upload: every file part is stored; returns their `FileRef`s.
 async fn upload(
     State(state): State<AppState>,
-    _ws: Ws,
+    ws: Ws,
     mut form: Multipart,
 ) -> ApiResult<(StatusCode, Json<Vec<FileRef>>)> {
     let mut out = Vec::new();
@@ -66,7 +72,7 @@ async fn upload(
                 il_core::ApiError::new("too_large", "Files must be 50 MB or smaller."),
             ));
         }
-        out.push(state.services.files.put(&name, &mime, bytes).await.map_err(ApiErr::internal)?);
+        out.push(state.services.files.put_for_workspace(ws.id(), &name, &mime, bytes).await.map_err(ApiErr::internal)?);
     }
     if out.is_empty() {
         return Err(ApiErr::bad_request("Attach at least one file."));

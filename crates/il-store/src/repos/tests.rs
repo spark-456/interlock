@@ -1,6 +1,8 @@
 use chrono::Utc;
 use il_core::{Approval, BuildEvent, Flow, NodeRun, Run, RunEvent};
 use il_sdk::services::store::{Credential, SpendEntry, SpendScope, Store, StoreError};
+use il_sdk::services::{Clock, FileStore};
+use il_sdk::testkit::FakeClock;
 use serde_json::json;
 
 use super::{BuildRecord, ScheduleRecord, UserRecord, WorkspaceRecord};
@@ -23,6 +25,78 @@ fn run() -> Run {
         "flowVersion":1,"status":"running","trigger":"test","startedAt":Utc::now(),
         "finishedAt":null,"costUsd":0,"error":null}))
     .unwrap()
+}
+
+#[tokio::test]
+async fn q04_expired_demo_reset_removes_only_its_workspace_data() {
+    let (dir, store) = setup();
+    let files = crate::files::DiskFileStore::new(store.clone(), dir.path().join("files")).await.unwrap();
+    let clock = FakeClock::default();
+    let started = clock.now();
+    store.register_demo_workspace("ws_demo_old", started).await.unwrap();
+    store.register_demo_workspace("ws_demo_new", started + chrono::Duration::hours(2)).await.unwrap();
+    let mut old = flow();
+    old.id = "fl_old".into();
+    old.workspace_id = "ws_demo_old".into();
+    store.put_flow(&old).await.unwrap();
+    let mut keep = flow();
+    keep.id = "fl_keep".into();
+    keep.workspace_id = "ws_demo_new".into();
+    store.put_flow(&keep).await.unwrap();
+    store.kv_put("ws:session:old", &json!({"workspaceId":"ws_demo_old","demo":true})).await.unwrap();
+    store.kv_put("ws:session:new", &json!({"workspaceId":"ws_demo_new","demo":true})).await.unwrap();
+    store.with_conn(|c| {
+        c.execute_batch("INSERT INTO rn_runs VALUES ('run_old','fl_old','ws_demo_old','succeeded','2026-01-01','{}');
+            INSERT INTO rn_events VALUES ('run_old',1,'{}');
+            INSERT INTO rn_node_runs VALUES ('run_old','node','{}');
+            INSERT INTO rn_approvals VALUES ('approval_old','ws_demo_old','Pending','2026-01-01','{}');
+            INSERT INTO bd_builds VALUES ('build_old','ws_demo_old','done','2026-01-01','{}');
+            INSERT INTO bd_events VALUES ('build_old',1,'{}');
+            INSERT INTO cn_credentials VALUES ('cred_old','ws_demo_old','x',x'00',x'00','{}');
+            INSERT INTO kb_bases VALUES ('kb_old','ws_demo_old','old','2026-01-01');
+            INSERT INTO kb_sources VALUES ('source_old','kb_old','old',NULL,'file','text','2026-01-01');
+            INSERT INTO kb_chunks (kb_id,source_id,title,section,date,text) VALUES ('kb_old','source_old','old',NULL,'2026-01-01','text');
+            INSERT INTO us_ledger (workspace_id,role,cost_usd,at) VALUES ('ws_demo_old','agent',1,'2026-01-01');")
+            .map_err(crate::db::backend)?;
+        Ok(())
+    }).await.unwrap();
+    let old_file = files.put_for_workspace("ws_demo_old", "old.txt", "text/plain", "old".into()).await.unwrap();
+    let keep_file = files.put_for_workspace("ws_demo_new", "keep.txt", "text/plain", "keep".into()).await.unwrap();
+    clock.advance(std::time::Duration::from_secs(25 * 3600));
+    let cutoff = clock.now() - chrono::Duration::hours(24);
+    assert_eq!(store.expired_demo_workspaces(cutoff).await.unwrap(), vec!["ws_demo_old"]);
+    files.delete_workspace_files("ws_demo_old").await.unwrap();
+    store.delete_demo_workspace("ws_demo_old").await.unwrap();
+    assert!(store.get_flow("fl_old").await.unwrap().is_none());
+    assert!(store.get_flow("fl_keep").await.unwrap().is_some());
+    assert!(store.kv_get("ws:session:old").await.unwrap().is_none());
+    assert!(store.kv_get("ws:session:new").await.unwrap().is_some());
+    store
+        .with_conn(|c| {
+            for table in [
+                "rn_runs",
+                "rn_events",
+                "rn_node_runs",
+                "rn_approvals",
+                "bd_builds",
+                "bd_events",
+                "cn_credentials",
+                "kb_bases",
+                "kb_sources",
+                "kb_chunks",
+                "us_ledger",
+            ] {
+                let count: i64 = c
+                    .query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row.get(0))
+                    .map_err(crate::db::backend)?;
+                assert_eq!(count, 0, "{table}");
+            }
+            Ok(())
+        })
+        .await
+        .unwrap();
+    assert!(files.get(&old_file.id).await.is_err());
+    assert!(files.get(&keep_file.id).await.is_ok());
 }
 
 #[tokio::test]
