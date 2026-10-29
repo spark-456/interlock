@@ -72,14 +72,15 @@
    "name": "Billing agent",
    "group": "g_agents",
    "settings": {
-    "instructions": "You are Larkspur's billing assistant. Look up the customer's invoice before discussing it, quote refund windows from the newest policy, and never promise a refund above $100.",
+    "instructions": "You are Larkspur's billing assistant. Use lookup_customer and list_invoices before discussing an invoice, quote refund windows from the newest policy, and never promise a refund above $100.",
     "input": "{{ nodes.n_chat.json.message }}",
     "knowledgeBases": [
      "n_kb"
     ],
-    "tools": [
-     "getInvoice"
-    ]
+    "apiTools": {
+     "spec": "@fixture/larkspur.openapi.json",
+     "operations": ["lookup_customer", "list_invoices"]
+    }
    }
   },
   {
