@@ -86,7 +86,9 @@ fn draft_schema() -> Json {
             "notes": {"type": "array", "items": text},
             "groups": {"type": "array", "items": {"type": "object", "required": ["id", "label"],
                 "properties": {"id": text, "label": text}}},
-            "nodes": {"type": "array", "items": {"type": "object", "required": ["id", "type", "name"],
+            // `settings` is required: under strict structured output the model sometimes leaves optional
+            // keys out, and a draft with no settings on any step can't be repaired.
+            "nodes": {"type": "array", "items": {"type": "object", "required": ["id", "type", "name", "settings"],
                 "properties": {"id": text, "type": text, "name": text, "group": text,
                     "settings": {"type": "object", "additionalProperties": true}}}},
             "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to"],
@@ -396,6 +398,7 @@ mod tests {
     fn q01_schema_leaves_settings_open_and_any_sample() {
         let schema = draft_schema();
         assert_eq!(schema["properties"]["nodes"]["items"]["properties"]["settings"]["additionalProperties"], true);
+        assert!(schema["properties"]["nodes"]["items"]["required"].as_array().unwrap().contains(&json!("settings")));
         let draft = json!({
             "name": "Triage", "edges": [],
             "nodes": [{"id": "n_slack", "type": "app.slack.send", "name": "Post", "settings": {"channel": "#support"}}],
