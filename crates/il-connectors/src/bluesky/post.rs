@@ -69,7 +69,9 @@ impl NodeExecutor for AppBlueskyPost {
         let pds = credential.meta["pds_url"].as_str().unwrap_or("https://bsky.social");
         let media = &ctx.settings["media"];
         let alt = ctx.settings["altText"].as_str().unwrap_or("");
-        super::post(ctx, pds, identifier, password, text, media, alt).await?;
+        // Once per run and item, so a retry or a resumed run never posts twice.
+        let post = super::post(ctx, pds, identifier, password, text, media, alt);
+        crate::rest::once(ctx, "bluesky:post", async { post.await.map(Value::from) }).await?;
         Ok(NodeOutput::out(input.main().to_vec()))
     }
 }

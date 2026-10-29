@@ -65,7 +65,9 @@ impl NodeExecutor for AppTelegramSend {
             .as_str()
             .ok_or_else(|| NodeError::Failed("Telegram bot token is missing".into()))?
             .to_owned();
-        super::send(ctx, &token, chat_id, text, &ctx.settings["media"]).await?;
+        // Once per run and item, so a retry or a resumed run never posts twice.
+        let send = super::send(ctx, &token, chat_id, text, &ctx.settings["media"]);
+        crate::rest::once(ctx, "telegram:send", async { send.await.map(Value::from) }).await?;
         Ok(NodeOutput::out(input.main().to_vec()))
     }
 }
@@ -106,7 +108,9 @@ mod tests {
             meta: json!({}),
         });
         assert!(harness.run().await.is_ok());
+        assert!(harness.run().await.is_ok(), "a retry of the same run and item doesn't send again");
         let requests = server.received_requests().await.unwrap();
+        assert_eq!(requests.len(), 1);
         assert!(String::from_utf8_lossy(&requests[0].body).contains("pic.png"));
     }
 }

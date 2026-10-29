@@ -2,11 +2,12 @@
 
 mod routes;
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use chrono::Utc;
 use il_sdk::{
-    SafeHttp,
+    NodeError, SafeHttp, Services,
     services::{Credential, Store},
 };
 use serde_json::{Value, json};
@@ -162,6 +163,56 @@ impl Broker {
     }
 }
 
+/// Seconds before expiry at which a token is refreshed.
+const REFRESH_EARLY_SECS: i64 = 60;
+
+/// The step's Google access token, refreshed first when it expires within a minute.
+pub async fn google_token(
+    services: &Services,
+    workspace_id: &str,
+    credential_ids: &BTreeMap<String, String>,
+) -> Result<String, NodeError> {
+    let id = credential_ids.get("google").ok_or_else(|| NodeError::MissingCredential("google".into()))?;
+    let broker = |app: &str| Broker::from_env(app, services.store.clone(), services.http.clone());
+    fresh_token(services.store.as_ref(), workspace_id, id, broker).await
+}
+
+/// `credential`'s access token, refreshed through `broker` when it is about to expire. Without a
+/// broker (no client secret configured) the saved token is used as it is.
+async fn fresh_token(
+    store: &dyn Store,
+    workspace_id: &str,
+    credential_id: &str,
+    broker: impl FnOnce(&str) -> Result<Broker, String>,
+) -> Result<String, NodeError> {
+    let load = async || {
+        store
+            .credential(workspace_id, credential_id)
+            .await
+            .map_err(|e| NodeError::Failed(e.to_string()))?
+            .ok_or_else(|| NodeError::MissingCredential(credential_id.into()))
+    };
+    let mut credential = load().await?;
+    let expires_at = credential.secret["expires_at"].as_i64().unwrap_or(i64::MAX);
+    if expires_at - Utc::now().timestamp() <= REFRESH_EARLY_SECS {
+        match broker(&credential.app) {
+            Ok(broker) => {
+                broker.refresh(workspace_id, credential_id).await.map_err(|e| {
+                    NodeError::Failed(format!(
+                        "Google sign-in expired and could not be renewed ({e}); reconnect it on Connections"
+                    ))
+                })?;
+                credential = load().await?;
+            }
+            Err(e) => tracing::warn!(credential_id, error = %e, "can't refresh an expiring token"),
+        }
+    }
+    credential.secret["access_token"]
+        .as_str()
+        .map(str::to_string)
+        .ok_or_else(|| NodeError::Failed("missing Google access token".into()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -210,5 +261,59 @@ mod tests {
         assert!(broker.callback(&state, "code").await.is_err());
         broker.refresh("ws_1", &id).await.unwrap();
         assert_eq!(store.credential("ws_1", &id).await.unwrap().unwrap().secret["refresh_token"], "r1");
+    }
+
+    #[tokio::test]
+    async fn c07_tokens_are_refreshed_shortly_before_they_expire() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({"access_token":"fresh","expires_in":3600})))
+            .expect(1)
+            .mount(&server)
+            .await;
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::default());
+        let make = |id: &str, expires_at: i64| Credential {
+            id: id.into(),
+            app: "test".into(),
+            secret: json!({"access_token":"old","refresh_token":"r1","expires_at":expires_at}),
+            meta: json!({}),
+        };
+        let now = Utc::now().timestamp();
+        store.put_credential("ws_1", &make("cred_soon", now + 30)).await.unwrap();
+        store.put_credential("ws_1", &make("cred_later", now + 3000)).await.unwrap();
+        let broker = |_: &str| {
+            Ok(Broker {
+                provider: Provider {
+                    id: "test",
+                    auth_url: format!("{}/auth", server.uri()),
+                    token_url: format!("{}/token", server.uri()),
+                    scopes: vec![],
+                    client_id_env: "",
+                    client_secret_env: "",
+                    redirect_uri_env: "",
+                },
+                store: store.clone(),
+                http: SafeHttp::permissive_for_tests(),
+                client_id: "client".into(),
+                client_secret: "secret".into(),
+                redirect_uri: String::new(),
+            })
+        };
+        assert_eq!(fresh_token(store.as_ref(), "ws_1", "cred_soon", broker).await.unwrap(), "fresh");
+        let saved = store.credential("ws_1", "cred_soon").await.unwrap().unwrap();
+        assert_eq!(
+            (saved.secret["access_token"].as_str(), saved.secret["refresh_token"].as_str()),
+            (Some("fresh"), Some("r1"))
+        );
+        assert_eq!(fresh_token(store.as_ref(), "ws_1", "cred_later", broker).await.unwrap(), "old", "not yet due");
+        let no_broker = |_: &str| Err("GOOGLE_CLIENT_SECRET is unset".to_string());
+        let other = make("cred_kept", now);
+        store.put_credential("ws_1", &other).await.unwrap();
+        assert_eq!(
+            fresh_token(store.as_ref(), "ws_1", "cred_kept", no_broker).await.unwrap(),
+            "old",
+            "no client secret"
+        );
     }
 }

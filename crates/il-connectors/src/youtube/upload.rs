@@ -104,10 +104,8 @@ impl NodeExecutor for AppYoutubeUpload {
         if !file.mime.starts_with("video/") {
             return Err(NodeError::Failed("file is not a video".into()));
         }
-        let credential = ctx.credential("google").await?;
-        let token = credential.secret["access_token"]
-            .as_str()
-            .ok_or_else(|| NodeError::Failed("missing Google access token".into()))?;
+        let token = crate::oauth::google_token(&ctx.services, &ctx.run.workspace_id, &ctx.credential_ids).await?;
+        let token = token.as_str();
         #[cfg(test)]
         let base = ctx.settings["_base"].as_str().unwrap_or("https://www.googleapis.com");
         #[cfg(not(test))]

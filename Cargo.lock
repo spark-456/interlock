@@ -1259,6 +1259,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tower",
+ "tracing",
  "ulid",
  "url",
  "wiremock",

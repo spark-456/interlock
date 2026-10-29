@@ -516,7 +516,11 @@ impl il_sdk::NodeExecutor for ListTools {
         _input: il_sdk::NodeInput,
     ) -> Result<il_sdk::NodeOutput, il_sdk::NodeError> {
         let names: Vec<_> = ctx.tools().iter().map(|t| t.name().to_string()).collect();
-        Ok(il_sdk::NodeOutput::out(vec![il_core::Item::json(json!({ "tools": names }))]))
+        let mut results = Vec::new();
+        for tool in ctx.tools() {
+            results.push(tool.invoke(json!({ "id": 7 })).await.unwrap_or_default());
+        }
+        Ok(il_sdk::NodeOutput::out(vec![il_core::Item::json(json!({ "tools": names, "results": results }))]))
     }
 }
 
@@ -564,6 +568,24 @@ async fn agents_get_the_flows_own_tools_when_a_run_starts() {
     let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
     assert_eq!(run.status, RunStatus::Succeeded);
     assert_eq!(outputs(&run, "a", "out")[0]["tools"], json!(["lookup_customer"]));
+}
+
+#[tokio::test]
+async fn c07_test_runs_preview_tools_that_change_things() {
+    let (fakes, mut svc) = services();
+    svc.flow_tools = std::sync::Arc::new(WorkspaceTools);
+    let (lookup, _) = lookup();
+    let lookup = lookup.with(std::sync::Arc::new(ListTools(m("ai.agent"))));
+    let engine = Engine::new(svc, lookup, config());
+    let f = flow(&[("t", "test.trigger", json!({})), ("a", "ai.agent", json!({}))], &[("t", "out", "a", "in")]);
+    fakes.store.put_flow(&f).await.unwrap();
+    let id = engine.start(StartRun { trigger: "test".into(), ..start(items(&[1])) }).await.unwrap();
+    engine.wait(&id).await;
+    let test = fakes.store.get_run(&id).await.unwrap().unwrap();
+    let preview = &outputs(&test, "a", "out")[0]["results"][0];
+    assert_eq!(preview["would"], json!({ "tool": "lookup_customer", "arguments": { "id": 7 } }));
+    let (live, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(outputs(&live, "a", "out")[0]["results"][0], json!({}), "other runs call the tool");
 }
 
 #[tokio::test]
