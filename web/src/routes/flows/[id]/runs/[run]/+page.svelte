@@ -12,8 +12,10 @@
   import { flowCards, flowEdges, groupViews } from '$lib/canvas/views';
   import { clock, usd } from '$lib/design/format';
   import Banner from '$lib/design/Banner.svelte';
+  import Button from '$lib/design/Button.svelte';
   import StatusPill, { type PillTone } from '$lib/design/StatusPill.svelte';
   import TopBar from '$lib/design/TopBar.svelte';
+  import { toast } from '$lib/design/toasts.svelte';
   import FriendlyError from '$lib/errors/FriendlyError.svelte';
   import ApprovalCard from '../../../../approvals/ApprovalCard.svelte';
   import { emptyView, reduceView, type StepStatus } from './run';
@@ -31,10 +33,23 @@
 
   api.flow(flowId).then((f) => (flow = f), () => {});
   api.nodes().then((c) => (manifests = c.nodes), () => {});
+  let missing = $state(false);
+  let cancelling = $state(false);
   const sub = runEvents(runId, (e) => {
     run = reduceRun(run, e);
     view = reduceView(view, e);
-  }, { speed });
+  }, { speed, onError: () => (missing = true) });
+
+  async function cancel() {
+    cancelling = true;
+    try {
+      await api.cancelRun(runId);
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    } finally {
+      cancelling = false;
+    }
+  }
   onDestroy(() => sub.close());
 
   // The approval this run is (or was) waiting on, for its card.
@@ -55,13 +70,14 @@
 
   const RUN: Record<typeof view.status, [PillTone, string]> = {
     running: ['building', 'Running'],
+    waiting: ['warning', 'Waiting for approval'],
     succeeded: ['ready', 'Succeeded'],
     failed: ['failed', 'Failed'],
     capped: ['warning', 'Cap reached']
   };
   const STEP: Record<StepStatus, [PillTone, string]> = {
     running: ['building', 'Running'],
-    waiting: ['warning', 'Waiting'],
+    waiting: ['warning', 'Waiting for approval'],
     succeeded: ['ready', 'Done'],
     failed: ['failed', 'Failed']
   };
@@ -72,7 +88,13 @@
 <div class="screen">
   <TopBar title="Run" crumb={{ href: `/flows/${flowId}`, label: flow?.name ?? 'Flow' }} back="/flows/{flowId}">
     {#snippet status()}<StatusPill tone={RUN[view.status][0]} label={RUN[view.status][1]} size={26} />{/snippet}
+    {#snippet actions()}
+      {#if view.status === 'running' || view.status === 'waiting'}
+        <Button size="s" icon="stop" loading={cancelling} onclick={cancel}>Cancel run</Button>
+      {/if}
+    {/snippet}
   </TopBar>
+  {#if missing}<p class="missing" role="alert">This run doesn't exist, or it belongs to another workspace.</p>{/if}
   <div class="body">
     <div class="stage">
       {#if flow && mobile.current}
@@ -139,6 +161,7 @@
 </div>
 
 <style>
+  .missing { margin: var(--s-4); color: var(--error-text); }
   .screen { display: flex; flex-direction: column; height: 100vh; min-height: 0; }
   .body { flex: 1 1 auto; min-height: 0; display: flex; }
   .stage { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; }

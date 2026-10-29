@@ -23,7 +23,7 @@ export interface Clip {
 }
 
 export interface RunView {
-  status: 'running' | 'succeeded' | 'failed' | 'capped';
+  status: 'running' | 'waiting' | 'succeeded' | 'failed' | 'capped';
   trigger?: string;
   startedAt?: string;
   ms?: number;
@@ -55,9 +55,9 @@ export function reduceView(v: RunView, e: RunEvent): RunView {
     case 'node.failed':
       return step({ status: 'failed', error: e.data.error });
     case 'node.waiting':
-      return { ...step({ status: 'waiting' }), approval: { id: e.data.approvalId, nodeId: id } };
+      return { ...step({ status: 'waiting' }), status: 'waiting', approval: { id: e.data.approvalId, nodeId: id } };
     case 'approval.decided':
-      return { ...v, approval: { id: e.data.approvalId, nodeId: id, decision: e.data.decision, by: e.data.by } };
+      return { ...v, status: 'running', approval: { id: e.data.approvalId, nodeId: id, decision: e.data.decision, by: e.data.by } };
     case 'node.items': {
       const clips = e.data.items.flatMap((item, i) =>
         Object.entries(item.files ?? {}).flatMap(([name, f]) => {

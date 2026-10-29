@@ -46,10 +46,11 @@
 
   api.nodes().then((c) => (catalog = Object.fromEntries(c.nodes.map((n) => [n.typeId, n])))).catch(() => {});
 
+  let missing = $state(false);
   const sub = buildEvents(buildId, (e: BuildEvent) => {
     build = reduce(build, e);
     arrivedAt = performance.now();
-  }, { speed, until, onEnd: () => (paused = true) });
+  }, { speed, until, onEnd: () => (paused = true), onError: () => (missing = true) });
   const timer = setInterval(() => (tick = performance.now()), 250);
   onDestroy(() => {
     sub.close();
@@ -105,6 +106,7 @@
 <svelte:head><title>Building {name} · Interlock</title></svelte:head>
 
 <div class="building">
+  {#if missing}<p class="missing" role="alert">This build doesn't exist, or it belongs to another workspace. <a href="/new">Start a new one</a>.</p>{/if}
   <div class="main">
     <TopBar
       title={build.status === 'ready' ? name : `Building ${name}`}
@@ -209,6 +211,7 @@
 </div>
 
 <style>
+  .missing { margin: var(--s-4); color: var(--error-text); }
   .building { display: flex; height: 100vh; min-height: 0; }
   .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
   .mono { font-family: var(--font-mono); }

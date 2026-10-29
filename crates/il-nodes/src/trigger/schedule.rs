@@ -119,6 +119,7 @@ impl TriggerNode for TriggerSchedule {
                     trigger: MANIFEST.type_id.clone(),
                     items: vec![Item::json(json!({ "firedAt": next.to_rfc3339(), "timezone": tz }))],
                     trigger_node: Some(ctx.node_id.clone()),
+                    only: None,
                 };
                 if let Err(e) = ctx.runner.start(req).await {
                     tracing::warn!(flow_id = %ctx.flow_id, error = %e, "scheduled run failed to start");

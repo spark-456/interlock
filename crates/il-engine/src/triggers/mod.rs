@@ -138,6 +138,7 @@ impl TriggerSupervisor {
             trigger: trigger_type.into(),
             items,
             trigger_node: Some(node.id.clone()),
+            only: None,
         };
         self.runner.invoke(req).await.map_err(|e| TriggerError::Other(e.to_string()))
     }

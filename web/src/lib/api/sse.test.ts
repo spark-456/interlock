@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { replayDelay } from './sse';
+import { describe, expect, it, vi } from 'vitest';
+import { replayDelay, subscribe } from './sse';
 import { fixtureKeys, streamKeys } from './fixtures';
 
 describe('fixture paths', () => {
@@ -24,5 +24,27 @@ describe('replayDelay', () => {
     expect(replayDelay('2026-10-27T09:00:00Z', '2026-10-27T09:00:01Z', 1)).toBe(1000);
     expect(replayDelay('2026-10-27T09:00:00Z', '2026-10-27T09:00:01Z', 4)).toBe(250);
     expect(replayDelay('2026-10-27T09:00:00Z', '2026-10-27T09:01:00Z', 1)).toBe(2500);
+  });
+});
+
+describe('live streams', () => {
+  it('stop and report instead of retrying when the server refuses the stream', async () => {
+    const opened: string[] = [];
+    class FakeSource {
+      onmessage: ((m: { data: string }) => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(url: string) {
+        opened.push(url);
+        setTimeout(() => this.onerror?.(), 0);
+      }
+      close() {}
+    }
+    vi.stubGlobal('EventSource', FakeSource);
+    vi.stubGlobal('fetch', vi.fn(async () => ({ status: 404 })));
+    const status = await new Promise<number>((resolve) => subscribe('/api/runs/nope/events', () => {}, { onError: resolve }));
+    expect(status).toBe(404);
+    await new Promise((r) => setTimeout(r, 1100));
+    expect(opened).toHaveLength(1);
+    vi.unstubAllGlobals();
   });
 });

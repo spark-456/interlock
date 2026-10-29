@@ -130,6 +130,7 @@ pub(crate) async fn respond(ctx: &RouteCtx, flow: &Flow, request: ChatRequest, t
             trigger: trigger.into(),
             items: vec![input],
             trigger_node: None,
+            only: None,
         })
         .await;
     let outcome = match outcome {
@@ -273,6 +274,7 @@ mod tests {
                 trigger_node: None,
                 items: vec![Item::json(json!({"answer":"Refunds in 30 days","sources":[
                 {"title":"Policy","url":"https://example.com/policy"}]}))],
+                only: None,
             })
             .await
             .unwrap();

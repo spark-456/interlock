@@ -32,6 +32,9 @@ pub struct StartRun {
     pub items: Vec<Item>,
     /// Start at this trigger node (flows may have several).
     pub trigger_node: Option<String>,
+    /// Run only this step, with `items` as its input (ED-7 "Run this step").
+    #[serde(default)]
+    pub only: Option<String>,
 }
 
 /// The Respond node's output for chat/API/MCP invocations.

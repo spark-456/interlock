@@ -155,6 +155,7 @@ async fn receive(
         trigger: MANIFEST.type_id.clone(),
         items: vec![item],
         trigger_node: Some(node.id.clone()),
+        only: None,
     };
     if node.settings.get("respond").and_then(Value::as_str) == Some("lastNode") {
         match ctx.runner.invoke(req).await {

@@ -27,4 +27,11 @@ describe('run view', () => {
     expect(failed.steps[0]).toMatchObject({ status: 'failed', error: 'boom' });
     expect(failed).toMatchObject({ status: 'failed', error: 'n_a failed' });
   });
+
+  it('reads Waiting for approval until the decision', () => {
+    const at = (seq: number, type: string, data: object) => ({ seq, ts: '', runId: 'r', nodeId: 'n_ok', type, data }) as unknown as RunEvent;
+    const waiting = replay([at(1, 'node.waiting', { approvalId: 'apr_1' })]);
+    expect(waiting.status).toBe('waiting');
+    expect(reduceView(waiting, at(2, 'approval.decided', { approvalId: 'apr_1', decision: 'approve', by: null })).status).toBe('running');
+  });
 });

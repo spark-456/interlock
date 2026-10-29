@@ -62,6 +62,7 @@ pub async fn poll_once(ctx: &TriggerCtx, trigger: &str, key: &str, poller: &dyn 
             trigger: trigger.to_string(),
             items: vec![item],
             trigger_node: Some(ctx.node_id.clone()),
+            only: None,
         };
         ctx.runner.start(req).await.map_err(|e| NodeError::Retryable(e.to_string()))?;
     }
