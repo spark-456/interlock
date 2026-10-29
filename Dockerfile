@@ -19,9 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certi
     && useradd --system --create-home --uid 10001 interlock && mkdir /data && chown interlock /data
 COPY --from=rust /src/target/release/il-server /usr/local/bin/il-server
 COPY config/interlock.example.toml /etc/interlock/interlock.toml
-COPY fixtures/templates /fixtures/templates
-COPY fixtures/recorded /fixtures/recorded
-COPY fixtures/apis /fixtures/apis
+COPY fixtures /fixtures
 WORKDIR /
 USER interlock
 VOLUME /data
