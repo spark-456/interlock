@@ -26,7 +26,7 @@
 
 <style>
   .card {
-    display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-5);
+    display: flex; flex-direction: column; min-width: 0; gap: var(--s-4); padding: var(--s-5);
     background: var(--card-gradient); border: 1px solid var(--border); border-radius: var(--r-panel); box-shadow: var(--shadow-pop-sm);
   }
   header { display: flex; gap: var(--s-3); align-items: center; }
