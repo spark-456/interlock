@@ -39,15 +39,19 @@ test('dragging a node moves its edges with it', async ({ page }) => {
   expect(after.y - box.y).toBeGreaterThan(80);
   const moved = await edge.getAttribute('d');
   expect(moved).not.toBe(before);
-  // The edge now ends at the dragged card's left edge (in screen space, within a few px).
-  const end = await edge.evaluate((p: SVGPathElement) => {
-    const pt = p.getPointAtLength(p.getTotalLength());
-    const m = p.getScreenCTM()!;
-    return { x: pt.x * m.a + m.e, y: pt.y * m.d + m.f };
-  });
-  expect(Math.abs(end.x - after.x)).toBeLessThan(12);
-  expect(end.y).toBeGreaterThan(after.y);
-  expect(end.y).toBeLessThan(after.y + after.height);
+  // The edge ends at the dragged card's left edge (in screen space, within a few px). Dropping
+  // near the canvas edge auto-pans it for a few frames after mouseup, so measure both again.
+  await expect
+    .poll(async () => {
+      const now = (await card.boundingBox())!;
+      const end = await edge.evaluate((p: SVGPathElement) => {
+        const pt = p.getPointAtLength(p.getTotalLength());
+        const m = p.getScreenCTM()!;
+        return { x: pt.x * m.a + m.e, y: pt.y * m.d + m.f };
+      });
+      return Math.abs(end.x - now.x) < 12 && end.y > now.y && end.y < now.y + now.height;
+    })
+    .toBe(true);
 });
 
 test('mobile shows the grouped list instead of the canvas', async ({ page }) => {
