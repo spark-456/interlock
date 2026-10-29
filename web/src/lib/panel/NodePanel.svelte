@@ -14,6 +14,7 @@
   import SchemaForm from '$lib/forms/SchemaForm.svelte';
   import { sources } from '$lib/forms/mapper';
   import { problems, type Schema } from '$lib/forms/schema';
+  import FriendlyError from '$lib/errors/FriendlyError.svelte';
   import CredentialPicker from './CredentialPicker.svelte';
   import Preview from './Preview.svelte';
   import TriggerInfo from './TriggerInfo.svelte';
@@ -55,6 +56,7 @@
   );
   const outputs = $derived((manifest?.outputs ?? []).map((p) => ({ ...p, key: `${node.id}:${p.name}` })));
   const running = $derived(run.nodes[node.id]?.status === 'building');
+  const failure = $derived(run.nodes[node.id]?.error);
   const tone = $derived(toneFor(node.type));
   const vars = $derived(toneVars(tone));
 </script>
@@ -84,6 +86,7 @@
     />
   </div>
   <div class="body" role="tabpanel">
+    {#if failure}<FriendlyError error={failure} />{/if}
     {#if tab === 'settings'}
       <Input label="Name" bind:value={() => node.name, (v) => onchange({ ...node, name: v })} />
       {#if manifest?.trigger}<TriggerInfo {flow} {node} saved={!dirty} />{/if}
