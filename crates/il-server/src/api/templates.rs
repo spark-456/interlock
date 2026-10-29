@@ -106,7 +106,7 @@ async fn instance(state: &AppState, mut flow: Flow, workspace_id: &str) -> ApiRe
             let file = state
                 .services
                 .files
-                .put("larkspur.openapi.json", "application/json", bytes.into())
+                .put_for_workspace(workspace_id, "larkspur.openapi.json", "application/json", bytes.into())
                 .await
                 .map_err(ApiErr::internal)?;
             node.settings["apiTools"]["spec"] = Value::String(file.id);
@@ -128,7 +128,12 @@ async fn attach_sample_files(state: &AppState, flow: &mut Flow) -> ApiResult<()>
                 };
                 let bytes = tokio::fs::read(dir.join(name)).await.map_err(ApiErr::internal)?;
                 let mime = mime_guess::from_path(name).first_or_octet_stream().to_string();
-                let stored = state.services.files.put(name, &mime, bytes.into()).await.map_err(ApiErr::internal)?;
+                let stored = state
+                    .services
+                    .files
+                    .put_for_workspace(&flow.workspace_id, name, &mime, bytes.into())
+                    .await
+                    .map_err(ApiErr::internal)?;
                 *file = serde_json::to_value(stored).map_err(ApiErr::internal)?;
             }
         }

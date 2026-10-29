@@ -36,7 +36,10 @@ pub(super) fn output_path(extension: &str) -> PathBuf {
 pub(super) async fn save(ctx: &NodeCtx, path: &Path, name: &str, mime: &str) -> Result<FileRef, NodeError> {
     let bytes = tokio::fs::read(path).await.map_err(|e| NodeError::Failed(e.to_string()))?;
     let _ = tokio::fs::remove_file(path).await;
-    ctx.files().put(name, mime, Bytes::from(bytes)).await.map_err(|e| NodeError::Failed(e.to_string()))
+    ctx.files()
+        .put_for_workspace(&ctx.run.workspace_id, name, mime, Bytes::from(bytes))
+        .await
+        .map_err(|e| NodeError::Failed(e.to_string()))
 }
 
 pub(super) fn with_file(input: NodeInput, key: &str, file: FileRef) -> NodeOutput {

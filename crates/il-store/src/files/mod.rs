@@ -43,11 +43,15 @@ impl DiskFileStore {
             .await
             .map_err(file_backend)
     }
-}
 
-#[async_trait]
-impl FileStore for DiskFileStore {
-    async fn put(&self, name: &str, mime: &str, bytes: Bytes) -> Result<FileRef, FileError> {
+    async fn put_owned(
+        &self,
+        workspace_id: Option<&str>,
+        name: &str,
+        mime: &str,
+        bytes: Bytes,
+    ) -> Result<FileRef, FileError> {
+        let owner = workspace_id.map(str::to_owned);
         let id = format!("file_{}", ulid::Ulid::new());
         let path_name = format!("{id}.blob");
         let path = self.root.join(&path_name);
@@ -60,29 +64,65 @@ impl FileStore for DiskFileStore {
             preview_url: Some(format!("/api/files/{id}")),
         };
         let record = result.clone();
-        let save = self
-            .store
-            .with_conn(move |c| {
-                c.execute(
-                    "INSERT INTO fs_files (id,name,mime,bytes,path,created_at) VALUES (?1,?2,?3,?4,?5,?6)",
-                    params![
-                        record.id,
-                        record.name,
-                        record.mime,
-                        record.bytes,
-                        path_name,
-                        chrono::Utc::now().to_rfc3339()
-                    ],
-                )
-                .map_err(backend)?;
-                Ok(())
-            })
-            .await;
+        let save = self.store.with_conn(move |c| {
+            c.execute(
+                "INSERT INTO fs_files (id,name,mime,bytes,path,created_at,workspace_id) VALUES (?1,?2,?3,?4,?5,?6,?7)",
+                params![record.id, record.name, record.mime, record.bytes, path_name, chrono::Utc::now().to_rfc3339(), owner],
+            ).map_err(backend)?;
+            Ok(())
+        }).await;
         if let Err(error) = save {
             let _ = tokio::fs::remove_file(path).await;
             return Err(file_backend(error));
         }
         Ok(result)
+    }
+}
+
+#[async_trait]
+impl FileStore for DiskFileStore {
+    async fn put(&self, name: &str, mime: &str, bytes: Bytes) -> Result<FileRef, FileError> {
+        self.put_owned(None, name, mime, bytes).await
+    }
+
+    async fn put_for_workspace(
+        &self,
+        workspace_id: &str,
+        name: &str,
+        mime: &str,
+        bytes: Bytes,
+    ) -> Result<FileRef, FileError> {
+        self.put_owned(Some(workspace_id), name, mime, bytes).await
+    }
+
+    async fn delete_workspace_files(&self, workspace_id: &str) -> Result<(), FileError> {
+        let id = workspace_id.to_owned();
+        let paths: Vec<String> = self
+            .store
+            .with_conn(move |c| {
+                let mut stmt = c.prepare("SELECT path FROM fs_files WHERE workspace_id=?1").map_err(backend)?;
+                stmt.query_map([id], |row| row.get(0))
+                    .map_err(backend)?
+                    .collect::<Result<Vec<String>, _>>()
+                    .map_err(backend)
+            })
+            .await
+            .map_err(file_backend)?;
+        for path in paths {
+            match tokio::fs::remove_file(self.root.join(path)).await {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(file_backend(error)),
+            }
+        }
+        let id = workspace_id.to_owned();
+        self.store
+            .with_conn(move |c| {
+                c.execute("DELETE FROM fs_files WHERE workspace_id=?1", [id]).map_err(backend)?;
+                Ok(())
+            })
+            .await
+            .map_err(file_backend)
     }
 
     async fn get(&self, id: &str) -> Result<(FileRef, Bytes), FileError> {

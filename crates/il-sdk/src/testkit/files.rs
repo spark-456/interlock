@@ -13,6 +13,7 @@ use crate::services::files::{FileError, FileStore};
 #[derive(Default)]
 pub struct FakeFiles {
     files: Mutex<HashMap<String, (FileRef, Bytes)>>,
+    owners: Mutex<HashMap<String, String>>,
 }
 
 #[async_trait]
@@ -28,6 +29,35 @@ impl FileStore for FakeFiles {
         };
         self.files.lock().map_err(|_| FileError::Backend("poisoned".into()))?.insert(id, (r.clone(), bytes));
         Ok(r)
+    }
+
+    async fn put_for_workspace(
+        &self,
+        workspace_id: &str,
+        name: &str,
+        mime: &str,
+        bytes: Bytes,
+    ) -> Result<FileRef, FileError> {
+        let file = self.put(name, mime, bytes).await?;
+        self.owners
+            .lock()
+            .map_err(|_| FileError::Backend("poisoned".into()))?
+            .insert(file.id.clone(), workspace_id.into());
+        Ok(file)
+    }
+
+    async fn delete_workspace_files(&self, workspace_id: &str) -> Result<(), FileError> {
+        let mut owners = self.owners.lock().map_err(|_| FileError::Backend("poisoned".into()))?;
+        let mut files = self.files.lock().map_err(|_| FileError::Backend("poisoned".into()))?;
+        owners.retain(|id, owner| {
+            if owner == workspace_id {
+                files.remove(id);
+                false
+            } else {
+                true
+            }
+        });
+        Ok(())
     }
 
     async fn get(&self, id: &str) -> Result<(FileRef, Bytes), FileError> {

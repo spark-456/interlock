@@ -4,7 +4,9 @@
 //! ephemeral workspace each (WS-2). GitHub sign-in (WS-1) creates sessions the same way.
 
 use axum::extract::FromRequestParts;
+use axum::http::StatusCode;
 use axum::http::request::Parts;
+use il_core::ApiError;
 use il_core::dto::UserSummary;
 use serde::{Deserialize, Serialize};
 
@@ -50,11 +52,15 @@ impl FromRequestParts<AppState> for Ws {
     type Rejection = ApiErr;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
-        if let Some(token) = cookie(parts, SESSION_COOKIE)
-            && let Ok(Some(v)) = state.services.store.kv_get(&session_key(&token)).await
-            && let Ok(session) = serde_json::from_value::<Session>(v)
-        {
-            return Ok(Ws(session));
+        if let Some(token) = cookie(parts, SESSION_COOKIE) {
+            let value = state.services.store.kv_get(&session_key(&token)).await.map_err(ApiErr::internal)?;
+            if let Some(session) = value.and_then(|value| serde_json::from_value::<Session>(value).ok()) {
+                return Ok(Ws(session));
+            }
+            return Err(ApiErr(
+                StatusCode::UNAUTHORIZED,
+                ApiError::new("session_expired", "This session has expired."),
+            ));
         }
         Ok(Ws(Session { workspace_id: LOCAL_WORKSPACE.into(), user: None, demo: false }))
     }
