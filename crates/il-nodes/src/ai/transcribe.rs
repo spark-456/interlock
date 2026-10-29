@@ -30,11 +30,6 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
                 "default": "{{ item.files.audio }}",
                 "x-widget": "file"
             },
-            "language": {
-                "type": "string",
-                "title": "Language",
-                "description": "Leave empty to detect."
-            },
             "markAs": {
                 "type": "string",
                 "title": "Use as",

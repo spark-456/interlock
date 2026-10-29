@@ -22,8 +22,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
     .settings_schema(json!({
         "type": "object",
         "required": [
-            "knowledgeBase",
-            "content"
+            "knowledgeBase"
         ],
         "properties": {
             "knowledgeBase": {
@@ -34,6 +33,11 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
                 "type": "string",
                 "title": "Content",
                 "x-widget": "expression"
+            },
+            "file": {
+                "type": "string",
+                "title": "File",
+                "x-widget": "file"
             },
             "title": {
                 "type": "string",
@@ -72,13 +76,29 @@ impl NodeExecutor for KnowledgeAdd {
         let kb = ctx.settings["knowledgeBase"]
             .as_str()
             .ok_or_else(|| NodeError::Failed("knowledge base is required".into()))?;
-        let content =
-            ctx.settings["content"].as_str().ok_or_else(|| NodeError::Failed("content is required".into()))?;
         let title = ctx.settings["title"].as_str().unwrap_or("Added text");
-        let source = if ctx.settings["markAs"] == "instructions" {
-            SourceInput::InstructionsText { title: title.into(), text: content.into() }
+        let file_id = ctx.settings["file"].as_str().or_else(|| ctx.settings["file"]["id"].as_str());
+        let source = if let Some(file_id) = file_id.filter(|id| !id.starts_with("{{")) {
+            let name = if let Some(reference) =
+                input.main().first().and_then(|item| item.files.values().find(|file| file.id == file_id))
+            {
+                reference.name.clone()
+            } else {
+                ctx.files().get(file_id).await.map_err(|e| NodeError::Failed(e.to_string()))?.0.name
+            };
+            SourceInput::MarkedFile {
+                file_id: file_id.into(),
+                name,
+                role: ctx.settings["markAs"].as_str().unwrap_or("knowledge").into(),
+            }
+        } else if let Some(content) = ctx.settings["content"].as_str() {
+            if ctx.settings["markAs"] == "instructions" {
+                SourceInput::InstructionsText { title: title.into(), text: content.into() }
+            } else {
+                SourceInput::Text { title: title.into(), text: content.into() }
+            }
         } else {
-            SourceInput::Text { title: title.into(), text: content.into() }
+            return Err(NodeError::Failed("content or file is required".into()));
         };
         let ids = ctx.knowledge().add_sources(kb, vec![source]).await.map_err(|e| NodeError::Failed(e.to_string()))?;
         let mut item = input.main().first().cloned().unwrap_or_default();
@@ -107,5 +127,19 @@ mod tests {
             .settings(json!({"knowledgeBase":"kb_1","content":"{{ item.body }}"}))
             .input_json(vec![json!({"body":"Policy"})]);
         assert_eq!(harness.run().await.unwrap().ports["out"][0].json["sourceIds"].as_array().unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn n02_add_ingests_an_attached_file() {
+        use il_sdk::services::files::FileStore;
+        let harness = NodeHarness::new(super::KnowledgeAdd)
+            .settings(json!({"knowledgeBase":"kb_1","file":"{{ item.files.document }}"}));
+        let file = harness.fakes.files.put("policy.txt", "text/plain", b"Policy".to_vec().into()).await.unwrap();
+        let mut item = il_core::Item::json(json!({}));
+        item.files.insert("document".into(), file);
+        assert_eq!(
+            harness.input(vec![item]).run().await.unwrap().ports["out"][0].json["sourceIds"].as_array().unwrap().len(),
+            1
+        );
     }
 }

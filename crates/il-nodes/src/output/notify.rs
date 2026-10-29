@@ -14,11 +14,23 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "output.notify",
         Category::Output,
         "Send notification",
-        "Sends a short notification in the app or to a channel set in settings.",
+        "Sends a short notification to a connected channel.",
     )
     .icon("bell")
     .status(NodeStatus::Ready)
     .external()
+    .credential(CredentialSpec {
+        optional: true,
+        ..cred("slack", "slack", CredentialKind::OAuth2, "Slack workspace", &["chat:write"])
+    })
+    .credential(CredentialSpec {
+        optional: true,
+        ..cred("discord", "discord", CredentialKind::Webhook, "Discord webhook", &[])
+    })
+    .credential(CredentialSpec {
+        optional: true,
+        ..cred("telegram", "telegram", CredentialKind::BotToken, "Telegram bot", &[])
+    })
     .settings_schema(json!({
         "type": "object",
         "required": [
@@ -29,13 +41,11 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
                 "type": "string",
                 "title": "Channel",
                 "enum": [
-                    "inapp",
-                    "email",
                     "slack",
                     "discord",
                     "telegram"
                 ],
-                "default": "inapp",
+                "default": "slack",
                 "x-widget": "select"
             },
             "title": {
@@ -56,7 +66,8 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
     .example(
         "Tell the team",
         json!({
-            "channel": "inapp",
+            "channel": "slack",
+            "target": "#team",
             "title": "Promos posted",
             "message": "{{ items | length }} posts went out."
         }),
@@ -70,7 +81,12 @@ impl NodeExecutor for OutputNotify {
     }
 
     async fn execute(&self, ctx: &mut NodeCtx, input: NodeInput) -> Result<NodeOutput, NodeError> {
-        let channel = ctx.settings["channel"].as_str().unwrap_or("inapp");
+        let channel = ctx.settings["channel"].as_str().unwrap_or("slack");
+        if !matches!(channel, "slack" | "discord" | "telegram") {
+            return Err(NodeError::Failed("unsupported notification channel".into()));
+        }
+        let credential_id =
+            ctx.credential_ids.get(channel).cloned().ok_or_else(|| NodeError::MissingCredential(channel.into()))?;
         let notification = Notification {
             workspace_id: ctx.run.workspace_id.clone(),
             channel: channel.into(),
@@ -79,7 +95,7 @@ impl NodeExecutor for OutputNotify {
             body: ctx.settings["message"].as_str().unwrap_or_default().into(),
             approval_id: None,
             payload: Value::Null,
-            credential_id: ctx.credential_ids.get(channel).cloned(),
+            credential_id: Some(credential_id),
         };
         let reference = ctx.services.notifier.send(&notification).await.map_err(|e| match e {
             NotifyError::UnknownChannel(_) => NodeError::Failed(e.to_string()),
@@ -108,11 +124,21 @@ mod tests {
     #[tokio::test]
     async fn b08_notify_uses_configured_destination() {
         let harness = NodeHarness::new(super::OutputNotify)
-            .settings(json!({"channel":"slack","target":"#ops","title":"Done","message":"Finished"}));
+            .settings(json!({"channel":"slack","target":"#ops","title":"Done","message":"Finished"}))
+            .credential("slack", "cred");
         let out = harness.run().await.unwrap();
         assert_eq!(out.ports["out"][0].json["notification"]["channel"], "slack");
         let sent = harness.fakes.notifier.sent.lock().unwrap();
         assert_eq!(sent[0].target.as_deref(), Some("#ops"));
         assert_eq!(sent[0].body, "Finished");
+        assert_eq!(sent[0].credential_id.as_deref(), Some("cred"));
+    }
+
+    #[tokio::test]
+    async fn n02_notify_rejects_a_channel_without_a_connection() {
+        let harness = NodeHarness::new(super::OutputNotify)
+            .settings(json!({"channel":"slack","target":"#ops","message":"Finished"}));
+        assert!(harness.run().await.unwrap_err().to_string().contains("slack"));
+        assert!(harness.fakes.notifier.sent.lock().unwrap().is_empty());
     }
 }
