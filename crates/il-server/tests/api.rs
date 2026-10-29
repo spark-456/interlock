@@ -132,6 +132,20 @@ async fn demo_sessions_are_isolated_workspaces() {
 }
 
 #[tokio::test]
+async fn q12_leaving_demo_clears_the_cookie_and_session() {
+    let app = server();
+    let (_, _, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
+    let pair = cookie.unwrap().split(';').next().unwrap().to_string();
+    let (status, _, cleared) = call(&app, "DELETE", "/api/demo/session", None, Some(&pair)).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert!(cleared.unwrap().contains("Max-Age=0"));
+    let (status, _, _) = call(&app, "GET", "/api/me", None, Some(&pair)).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "the old demo token must no longer work");
+    let (_, me, _) = call(&app, "GET", "/api/me", None, None).await;
+    assert_eq!(me["demo"], false);
+}
+
+#[tokio::test]
 async fn q04_reset_demo_session_cannot_access_local_workspace() {
     let state = build_state(Config::from_value(json!({})).unwrap());
     let app = app(state.clone());

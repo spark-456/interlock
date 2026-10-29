@@ -2,20 +2,38 @@
   // App shell (W01): Sidebar (240 / 64 px on canvas screens), page content, mobile TabBar.
   import '../app.css';
   import type { Snippet } from 'svelte';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { api, type Me } from '$lib/api';
   import Banner from '$lib/design/Banner.svelte';
+  import Button from '$lib/design/Button.svelte';
   import Sidebar from '$lib/design/Sidebar.svelte';
   import TabBar from '$lib/design/TabBar.svelte';
   import Toast from '$lib/design/Toast.svelte';
+  import { toast } from '$lib/design/toasts.svelte';
   import { isCanvasRoute } from '$lib/design/nav';
 
   let { children }: { children: Snippet } = $props();
   let me = $state<Me | null>(null);
+  let leaving = $state(false);
 
   $effect(() => {
+    void page.url.pathname;
     api.me().then((m) => (me = m)).catch(() => (me = null));
   });
+
+  async function leaveDemo() {
+    leaving = true;
+    try {
+      await api.leaveDemo();
+      me = await api.me();
+      await goto('/flows');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not leave the demo.', 'error');
+    } finally {
+      leaving = false;
+    }
+  }
 
   // The offline banner follows the browser's connection state.
   let online = $state(typeof navigator === 'undefined' || navigator.onLine);
@@ -32,7 +50,12 @@
   <Sidebar collapsed={isCanvasRoute(page.route.id)} path={page.url.pathname} {user} {plan} />
   <div class="content">
     {#if !online}<Banner kind="offline">You're offline. Saving, builds and runs work again once you reconnect.</Banner>{/if}
-    {#if me?.demo}<Banner kind="demo">You're in the demo. Builds use recorded media and small limits.</Banner>{/if}
+    {#if me?.demo}
+      <Banner kind="demo">
+        You're in the demo. Builds use recorded media and small limits.
+        {#snippet action()}<Button size="s" loading={leaving} onclick={leaveDemo}>Leave demo</Button>{/snippet}
+      </Banner>
+    {/if}
     <main>{@render children()}</main>
     <TabBar path={page.url.pathname} />
   </div>
