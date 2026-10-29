@@ -64,6 +64,7 @@ export type * from './UsageCaps';
 export type * from './UsageDay';
 export type * from './UsageFlow';
 export type * from './UsageReport';
+export type * from './UsageRole';
 export type * from './UserSummary';
 export type * from './WebhookUrl';
 export type * from './serde_json/JsonValue';

@@ -2,6 +2,7 @@
 import type { UsageCaps } from "./UsageCaps";
 import type { UsageDay } from "./UsageDay";
 import type { UsageFlow } from "./UsageFlow";
+import type { UsageRole } from "./UsageRole";
 
 /**
  * `GET /api/usage`: the workspace's spend over the last 30 days and the caps in force.
@@ -14,4 +15,8 @@ days: Array<UsageDay>,
 /**
  * Flows that spent anything, most expensive first.
  */
-flows: Array<UsageFlow>, caps: UsageCaps, };
+flows: Array<UsageFlow>, 
+/**
+ * Spend by model role and other metered work, highest cost first.
+ */
+roles: Array<UsageRole>, caps: UsageCaps, };

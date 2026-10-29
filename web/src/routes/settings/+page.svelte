@@ -1,6 +1,6 @@
 <script lang="ts">
   // Settings: the workspace you're in, API keys (create once, revoke), and how spending is capped.
-  import { api, type Me, type UsageReport } from '$lib/api';
+  import { api, type Me, type UsageCaps, type UsageReport } from '$lib/api';
   import { usd } from '$lib/design/format';
   import Button from '$lib/design/Button.svelte';
   import CopyField from '$lib/design/CopyField.svelte';
@@ -21,7 +21,15 @@
 
   api.me().then((m) => (me = m), () => {});
   let usage = $state.raw<UsageReport | null>(null);
-  api.usage().then((u) => (usage = u), () => {});
+  let runCap = $state('');
+  let flowCap = $state('');
+  let workspaceCap = $state('');
+  api.usage().then((u) => {
+    usage = u;
+    runCap = String(u.caps.runUsd);
+    flowCap = String(u.caps.flowDailyUsd);
+    workspaceCap = String(u.caps.workspaceDailyUsd);
+  }, () => {});
   const barHeight = (cost: number) => {
     const max = Math.max(...(usage?.days.map((d) => d.costUsd) ?? [0]), 0.000001);
     return cost > 0 ? Math.max(2, (cost / max) * 58) : 1;
@@ -49,6 +57,28 @@
       keys = (keys ?? []).map((x) => (x.id === k.id ? { ...x, revoked: true } : x));
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Could not revoke the key.', 'error');
+    } finally {
+      busy = null;
+    }
+  }
+
+  async function saveCaps() {
+    const caps: UsageCaps = {
+      runUsd: Number(runCap), flowDailyUsd: Number(flowCap), workspaceDailyUsd: Number(workspaceCap)
+    };
+    if (!Number.isFinite(caps.runUsd) || caps.runUsd <= 0 ||
+        !Number.isFinite(caps.flowDailyUsd) || caps.flowDailyUsd < caps.runUsd ||
+        !Number.isFinite(caps.workspaceDailyUsd) || caps.workspaceDailyUsd < caps.flowDailyUsd) {
+      toast('Enter positive caps ordered per run, flow, then workspace.', 'error');
+      return;
+    }
+    busy = 'caps';
+    try {
+      const saved = await api.updateUsageCaps(caps);
+      if (usage) usage = { ...usage, caps: saved };
+      toast('Workspace caps saved.', 'success');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not save workspace caps.', 'error');
     } finally {
       busy = null;
     }
@@ -117,11 +147,25 @@
           {#each usage.flows as f (f.flowId)}<li><a href="/flows/{f.flowId}">{f.name}</a><span class="mono">{usd(f.costUsd)}</span></li>{/each}
         </ul>
       {/if}
+      {#if usage.roles.length}
+        <h3>Spend by role</h3>
+        <ul class="roles" aria-label="Spend by model role">
+          {#each usage.roles as role (role.role)}<li><span>{role.role}</span><span class="mono">{usd(role.costUsd)}</span></li>{/each}
+        </ul>
+      {/if}
       <dl class="caps">
         <div><dt>Per run</dt><dd class="mono">{usd(usage.caps.runUsd)}</dd></div>
         <div><dt>Per flow, per day</dt><dd class="mono">{usd(usage.caps.flowDailyUsd)}</dd></div>
         <div><dt>Workspace, per day</dt><dd class="mono">{usd(usage.caps.workspaceDailyUsd)}</dd></div>
       </dl>
+      {#if !me?.demo}
+        <form class="cap-form" onsubmit={(e) => (e.preventDefault(), saveCaps())}>
+          <Input label="Per run (USD)" type="number" min="0.01" step="0.01" bind:value={runCap} />
+          <Input label="Per flow, per day (USD)" type="number" min="0.01" step="0.01" bind:value={flowCap} />
+          <Input label="Workspace, per day (USD)" type="number" min="0.01" step="0.01" bind:value={workspaceCap} />
+          <Button type="submit" variant="primary" loading={busy === 'caps'}>Save caps</Button>
+        </form>
+      {/if}
     {/if}
     <p class="muted">
       When a cap is reached the run stops and says so. A flow can set its own lower per-run cap in its settings.{#if me?.demo} Demo workspaces use small caps, the smaller models and recorded media.{/if}
@@ -148,10 +192,13 @@
   .total .mono { font: var(--t-h3); font-family: var(--font-mono); margin-right: var(--s-1); }
   .bars { width: 100%; height: 60px; }
   .bars rect { fill: var(--primary); }
-  .flows { list-style: none; margin: 0; padding: 0; }
-  .flows li { display: flex; justify-content: space-between; padding: var(--s-1) 0; border-bottom: 1px solid var(--border); }
+  .flows, .roles { list-style: none; margin: 0; padding: 0; }
+  .flows li, .roles li { display: flex; justify-content: space-between; padding: var(--s-1) 0; border-bottom: 1px solid var(--border); }
   .flows a { color: var(--text); }
   .caps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin: 0; }
+  .cap-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); align-items: end; }
+  .cap-form :global(.btn) { grid-column: 1 / -1; justify-self: start; }
+  h3 { font: var(--t-body); margin: 0; }
   .create { display: flex; align-items: flex-end; gap: var(--s-2); }
   .create :global(.field) { flex: 1; }
   .keys { list-style: none; margin: 0; padding: 0; }
@@ -160,6 +207,7 @@
   @media (max-width: 767px) {
     .page { padding: var(--s-4); }
     dl { grid-template-columns: minmax(0, 1fr); }
+    .cap-form { grid-template-columns: minmax(0, 1fr); }
     .create { flex-direction: column; align-items: stretch; }
   }
 </style>

@@ -222,7 +222,19 @@ pub struct UsageReport {
     pub days: Vec<UsageDay>,
     /// Flows that spent anything, most expensive first.
     pub flows: Vec<UsageFlow>,
+    /// Spend by model role and other metered work, highest cost first.
+    #[serde(default)]
+    pub roles: Vec<UsageRole>,
     pub caps: UsageCaps,
+}
+
+/// Spend attributed to one model role or other work type.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct UsageRole {
+    pub role: String,
+    pub cost_usd: f64,
 }
 
 /// Spend on one UTC day (`YYYY-MM-DD`).

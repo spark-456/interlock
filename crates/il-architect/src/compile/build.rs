@@ -12,6 +12,7 @@ use il_core::events::{BuildNodeStatus, BuildQuestion, StageStatus};
 use il_core::{BuildEvent, BuildEventKind, Flow, FlowKind, Json};
 use il_sdk::Services;
 use il_sdk::services::architect::{ArchitectError, ArchitectService};
+use il_sdk::services::metering::{ModelCallContext, with_model_context};
 use il_sdk::services::runner::FlowRunner;
 use serde_json::json;
 use tokio::sync::oneshot;
@@ -66,7 +67,15 @@ impl ArchitectService for Architect {
     async fn start_build(&self, workspace_id: &str, req: BuildRequest) -> Result<String, ArchitectError> {
         let id = il_sdk::id("bld");
         let (inner, build_id, ws) = (self.inner.clone(), id.clone(), workspace_id.to_string());
-        tokio::spawn(async move { inner.run(build_id, ws, req).await });
+        tokio::spawn(async move {
+            let context = ModelCallContext {
+                workspace_id: ws.clone(),
+                flow_id: None,
+                run_id: None,
+                build_id: Some(build_id.clone()),
+            };
+            with_model_context(context, inner.run(build_id, ws, req)).await;
+        });
         Ok(id)
     }
 
@@ -79,7 +88,13 @@ impl ArchitectService for Architect {
 
     async fn ask(&self, flow: &Flow, message: &str) -> Result<AskDiff, ArchitectError> {
         let models = self.inner.services.models.as_ref();
-        let (diff, _) = crate::ask::ask(models, &self.inner.catalog, flow, message)
+        let context = ModelCallContext {
+            workspace_id: flow.workspace_id.clone(),
+            flow_id: Some(flow.id.clone()),
+            run_id: None,
+            build_id: None,
+        };
+        let (diff, _) = with_model_context(context, crate::ask::ask(models, &self.inner.catalog, flow, message))
             .await
             .map_err(|e| ArchitectError::Failed(e.to_string()))?;
         Ok(diff)
