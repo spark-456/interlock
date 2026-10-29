@@ -64,7 +64,7 @@
   <div class="grid">
     {#each templates ?? [] as t (t.id)}
       <article class="card">
-        <div class="apps" aria-label="Apps used">
+        <div class="apps" role="group" aria-label="Apps used">
           {#each t.apps.slice(0, 6) as a (a)}<span title={appNames[a] ?? a}><AppTile name={appNames[a] ?? a} size={28} /></span>{/each}
         </div>
         <div class="title">

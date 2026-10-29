@@ -43,14 +43,14 @@
     font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
   }
   .sq { width: 6px; height: 6px; border-radius: 2px; }
-  .gs { margin-left: auto; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-4); }
+  .gs { margin-left: auto; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text-3); }
   .cards { display: flex; flex-direction: column; gap: 8px; }
   .item {
     position: relative; width: 100%; min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 12px;
     text-align: left; border-radius: var(--r-card); background: var(--card-gradient); border: 1px solid var(--border);
     box-shadow: var(--shadow-pop-sm); color: inherit; cursor: pointer; animation: enter var(--dur-node-enter) ease-out;
   }
-  .item.waiting { opacity: .6; border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
+  .item.waiting { background: var(--surface-2); border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
   .item.building { border: 1.5px solid var(--primary); box-shadow: var(--shadow-pop-active); }
   .item.failed { border-color: var(--error); }
   .item:focus-visible { outline: none; box-shadow: var(--focus-ring); }

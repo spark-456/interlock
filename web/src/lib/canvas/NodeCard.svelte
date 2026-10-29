@@ -67,7 +67,7 @@
   .card:hover { box-shadow: var(--shadow-pop-hover); transform: translateY(-2px); }
   .card.selected { box-shadow: var(--shadow-pop-selected); transform: translateY(-3px); }
   .card.dragging { box-shadow: var(--shadow-pop-drag); transform: translateY(-6px) rotate(-0.6deg); cursor: grabbing; }
-  .card.waiting { opacity: .6; border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
+  .card.waiting { background: var(--surface-2); border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
   .card.failed { border-color: var(--error); box-shadow: 0 0 0 1px var(--error), var(--shadow-pop); }
   .card[data-diff='added'] { border-color: var(--success); box-shadow: 0 0 0 2px var(--success), var(--shadow-pop); }
   .card[data-diff='changed'] { border-color: var(--warning); box-shadow: 0 0 0 2px var(--warning), var(--shadow-pop); }

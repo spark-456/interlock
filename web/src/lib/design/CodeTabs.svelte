@@ -18,7 +18,8 @@
 <div class="codetabs">
   <Tabs label="Language" tabs={snippets} bind:value />
   <div class="code">
-    <pre><code>{code}</code></pre>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region must be keyboard reachable) -->
+    <pre tabindex="0"><code>{code}</code></pre>
     <span class="copy"><Button size="s" icon={copied ? 'check' : 'copy'} onclick={copy}>{copied ? 'Copied' : 'Copy'}</Button></span>
   </div>
 </div>
