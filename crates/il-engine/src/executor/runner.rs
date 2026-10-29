@@ -86,6 +86,9 @@ impl Engine {
                 flow.nodes.iter().find(|n| n.id == trigger_node).and_then(|n| n.settings["sampleItems"].as_array());
             items = samples.into_iter().flatten().cloned().map(sample_item).collect();
         }
+        for (index, item) in items.iter_mut().enumerate() {
+            item.lineage = Some(vec![format!("{}:{index}", run.id)]);
+        }
         inner.bus.emit(&run.id, Some(&trigger_node), RunEventKind::NodeStarted {}).await;
         let preview = items.iter().take(3).cloned().collect();
         let kind = RunEventKind::NodeItems { port: "out".into(), items: preview, total: items.len() as u64 };
@@ -296,5 +299,5 @@ fn sample_item(mut json: serde_json::Value) -> Item {
     if let (Some(_), Some(object)) = (&files, json.as_object_mut()) {
         object.remove("files");
     }
-    Item { json, files: files.unwrap_or_default() }
+    Item { json, files: files.unwrap_or_default(), lineage: None }
 }

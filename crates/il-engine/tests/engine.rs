@@ -47,13 +47,76 @@ async fn linear_per_item_flow_renders_expressions_and_orders_events() {
     let (run, events) = run_to_end(&engine, fakes.store.as_ref(), items(&[1, 2, 3])).await;
     assert_eq!(run.status, RunStatus::Succeeded);
     let texts: Vec<_> = outputs(&run, "x", "out").iter().map(|j| j["text"].clone()).collect();
-    assert_eq!(texts, [json!("n=2 of 3, first=1"), json!("n=4 of 3, first=1"), json!("n=6 of 3, first=1")]);
+    assert_eq!(texts, [json!("n=2 of 3, first=1"), json!("n=4 of 3, first=2"), json!("n=6 of 3, first=3")]);
     let seqs: Vec<u64> = events.iter().map(|e| e.seq).collect();
     assert_eq!(seqs, (1..=seqs.len() as u64).collect::<Vec<_>>(), "seq is dense and ordered");
     assert!(matches!(events.first().unwrap().kind, RunEventKind::RunStarted { .. }));
     assert!(matches!(events.last().unwrap().kind, RunEventKind::RunSucceeded { .. }));
     let node_runs = fakes.store.node_runs(&run.id).await.unwrap();
     assert_eq!(node_runs.len(), 2, "d and x recorded");
+}
+
+#[tokio::test]
+async fn q08_parallel_branches_pair_items_and_resolve_matching_upstream_values() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("left", "test.field", json!({"field":"left","value":"{{ item.n * 10 }}","fileKey":"leftFile"})),
+            ("right", "test.field", json!({"field":"right","value":"{{ item.n * 100 }}","fileKey":"rightFile"})),
+            (
+                "join",
+                "test.text",
+                json!({
+                    "text":"{{ item.left }}:{{ item.right }}:{{ nodes.left.json.left }}:{{ nodes.right.json.right }}"
+                }),
+            ),
+        ],
+        &[
+            ("t", "out", "left", "in"),
+            ("t", "out", "right", "in"),
+            ("left", "out", "join", "in"),
+            ("right", "out", "join", "in"),
+        ],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1, 2, 3])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(
+        outputs(&run, "join", "out").iter().map(|item| item["text"].clone()).collect::<Vec<_>>(),
+        [json!("10:100:10:100"), json!("20:200:20:200"), json!("30:300:30:300")]
+    );
+    assert_eq!(run.state["outputs"]["join"]["out"][0]["files"].as_object().unwrap().len(), 2);
+}
+
+#[tokio::test]
+async fn q08_split_items_keep_distinct_lineage_through_parallel_branches() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("split", "test.split", json!({})),
+            ("left", "test.field", json!({"field":"left","value":"{{ item.n * 10 + item.part }}"})),
+            ("right", "test.field", json!({"field":"right","value":"{{ item.n * 100 + item.part }}"})),
+            ("join", "test.text", json!({"text":"{{ nodes.split.json.part }}:{{ item.left }}:{{ item.right }}"})),
+        ],
+        &[
+            ("t", "out", "split", "in"),
+            ("split", "out", "left", "in"),
+            ("split", "out", "right", "in"),
+            ("left", "out", "join", "in"),
+            ("right", "out", "join", "in"),
+        ],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1, 2])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(
+        outputs(&run, "join", "out").iter().map(|item| item["text"].clone()).collect::<Vec<_>>(),
+        [json!("0:10:100"), json!("1:11:101"), json!("0:20:200"), json!("1:21:201")]
+    );
 }
 
 #[tokio::test]

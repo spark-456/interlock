@@ -37,7 +37,7 @@ pub(crate) async fn run_node(
     base: RunInfo,
     node: Node,
     input: Ports,
-    nodes_scope: Value,
+    nodes_scopes: Vec<Value>,
     cancel: CancellationToken,
     resume: Option<Resume>,
 ) -> CallResult {
@@ -86,7 +86,7 @@ pub(crate) async fn run_node(
         let scope = Scope::new()
             .item(current)
             .items(all_json.clone())
-            .var("nodes", nodes_scope.clone())
+            .var("nodes", nodes_scopes.get(idx).cloned().unwrap_or(Value::Null))
             .var("run", json!({ "id": base.run_id, "flowId": base.flow_id, "trigger": base.trigger }))
             .var("now", json!(inner.services.clock.now().to_rfc3339()));
         let settings = match render_value(&node.settings, &scope) {
@@ -103,7 +103,27 @@ pub(crate) async fn run_node(
         match call_with_retry(&inner, &services, exec.as_ref(), info, &node, settings, node_input, &cancel, decision)
             .await
         {
-            Ok(out) => {
+            Ok(mut out) => {
+                for items in out.ports.values_mut() {
+                    if per_item {
+                        if let Some(parent) = main.get(idx) {
+                            let count = items.len();
+                            for (child_index, item) in items.iter_mut().enumerate() {
+                                let mut lineage = parent.lineage.clone().unwrap_or_default();
+                                if count > 1 {
+                                    lineage.push(format!("{}:{child_index}", node.id));
+                                }
+                                item.lineage = Some(lineage);
+                            }
+                        }
+                    } else if items.len() == main.len() {
+                        for (item, parent) in items.iter_mut().zip(&main) {
+                            if item.lineage.is_none() {
+                                item.lineage = parent.lineage.clone();
+                            }
+                        }
+                    }
+                }
                 partial.cost_usd += out.cost_usd;
                 match out.waiting_for {
                     Some(approval_id) => {

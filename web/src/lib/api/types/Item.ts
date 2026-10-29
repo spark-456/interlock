@@ -4,5 +4,6 @@ import type { JsonValue } from "./serde_json/JsonValue";
 
 /**
  * The unit of data that flows between nodes. Each port carries `Vec<Item>`.
+ * Its optional lineage pairs items when parallel branches join.
  */
-export type Item = { json: JsonValue, files: { [key in string]?: FileRef }, };
+export type Item = { json: JsonValue, files: { [key in string]?: FileRef }, lineage?: Array<string>, };
