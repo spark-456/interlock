@@ -1,0 +1,67 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Demo Customers API",
+    "version": "1.0.0",
+    "description": "Test API for the Interlock testing kit, backed by the free public JSONPlaceholder service (no key needed). Writes are faked by the service and change nothing."
+  },
+  "servers": [{ "url": "https://jsonplaceholder.typicode.com" }],
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "lookup_customer",
+        "summary": "Look up a customer by email",
+        "parameters": [
+          { "name": "email", "in": "query", "required": true, "schema": { "type": "string" }, "description": "The customer's email address" }
+        ],
+        "responses": { "200": { "description": "Matching customers (an empty list when none match)" } }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "get_customer",
+        "summary": "Get a customer's profile, address and company",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "The customer" } }
+      },
+      "delete": {
+        "operationId": "delete_customer",
+        "summary": "Delete a customer and all their data",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/users/{id}/todos": {
+      "get": {
+        "operationId": "list_customer_tasks",
+        "summary": "List a customer's open and completed tasks",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "The customer's tasks" } }
+      }
+    },
+    "/posts": {
+      "post": {
+        "operationId": "open_ticket",
+        "summary": "Open a support ticket for a person to follow up",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "body", "userId"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "body": { "type": "string" },
+                  "userId": { "type": "integer" }
+                }
+              },
+              "example": { "title": "Refund review", "body": "Customer asks for a refund above $100.", "userId": 1 }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Ticket created" } }
+      }
+    }
+  }
+}
