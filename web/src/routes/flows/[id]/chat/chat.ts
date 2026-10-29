@@ -70,7 +70,10 @@ export function reduceTurn(t: Turn, e: RunEvent, flow: Flow): Turn {
         ...t,
         answer: json.answer,
         by: { name },
-        sources: Array.isArray(json.sources) ? (json.sources as Source[]) : t.sources,
+        // One chip per document (the list is keyed by it; a repeated id stopped the turn rendering).
+        sources: Array.isArray(json.sources)
+          ? (json.sources as Source[]).filter((s, i, all) => all.findIndex((o) => o.sourceId === s.sourceId) === i)
+          : t.sources,
         actions: Array.isArray(json.actions) ? (json.actions as Turn['actions']) : t.actions,
         tools: [...new Set([...t.tools, ...activity.filter((a) => a.tool && !a.tool.startsWith('search_')).map((a) => a.tool!)])],
         passages: [...t.passages, ...searches.flatMap((s) => (Array.isArray(s.result) ? (s.result as Passage[]) : []))]

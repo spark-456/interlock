@@ -99,6 +99,9 @@ impl Knowledge {
 
     async fn prepare_file(&self, file_id: &str, name: &str, role: &'static str) -> Result<Prepared, KnowledgeError> {
         let (file, bytes) = self.files.get(file_id).await.map_err(|e| KnowledgeError::Ingest(e.to_string()))?;
+        // Flow steps name a file by its id; the stored name is what people recognise in citations.
+        let name = if name == file_id { file.name.clone() } else { name.to_owned() };
+        let name = name.as_str();
         let document = if file.mime.starts_with("audio/") {
             let transcript =
                 self.models.transcribe(&file, &bytes).await.map_err(|e| KnowledgeError::Ingest(e.to_string()))?;
