@@ -2,7 +2,7 @@
 
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Multipart, Path, State};
-use axum::http::{StatusCode, header};
+use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -22,7 +22,7 @@ const MAX_UPLOAD: usize = 50 * 1024 * 1024;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/api/me", get(me))
-        .route("/api/demo/session", post(demo_session))
+        .route("/api/demo/session", post(demo_session).delete(leave_demo))
         .route("/api/files", post(upload).layer(DefaultBodyLimit::max(MAX_UPLOAD + 64 * 1024)))
         .route("/api/files/{id}", get(download))
         .route("/api/knowledge", get(list_knowledge).post(add_knowledge))
@@ -53,6 +53,32 @@ async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
     let cookie = format!("{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800{secure}");
     let me = Me { user: None, workspace_id: session.workspace_id, demo: true };
     Ok(([(header::SET_COOKIE, cookie)], Json(me)).into_response())
+}
+
+/// Ends only the caller's demo session and expires its browser cookie.
+async fn leave_demo(State(state): State<AppState>, ws: Ws, headers: HeaderMap) -> ApiResult<Response> {
+    if !ws.0.demo {
+        return Err(ApiErr(StatusCode::FORBIDDEN, il_core::ApiError::new("not_demo", "This is not a demo session.")));
+    }
+    let token = headers
+        .get(header::COOKIE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|cookies| {
+            cookies
+                .split(';')
+                .filter_map(|cookie| cookie.trim().split_once('='))
+                .find(|(name, _)| *name == SESSION_COOKIE)
+        })
+        .map(|(_, token)| token)
+        .ok_or_else(|| ApiErr::bad_request("The demo session cookie is missing."))?;
+    state.services.store.kv_put(&session_key(token), &Value::Null).await.map_err(ApiErr::internal)?;
+    let secure = if state.config.server.public_url.as_deref().is_some_and(|url| url.starts_with("https://")) {
+        "; Secure"
+    } else {
+        ""
+    };
+    let cookie = format!("{SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0{secure}");
+    Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, cookie)]).into_response())
 }
 
 /// Multipart upload: every file part is stored; returns their `FileRef`s.

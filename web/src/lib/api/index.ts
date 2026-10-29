@@ -48,6 +48,8 @@ export const api = {
   guide: (flowId: string) => get<string>(`/api/flows/${flowId}/guide`),
   /** Starts an anonymous demo workspace (sets the session cookie). */
   demoSession: () => post<Me>('/api/demo/session', {}),
+  /** Clears the current demo session and its browser cookie. */
+  leaveDemo: () => del<void>('/api/demo/session'),
   keys: () => get<{ id: string; name: string; revoked: boolean; lastUsedAt: string | null }[]>('/api/keys'),
   revokeKey: (id: string) => del<void>(`/api/keys/${id}`),
   /** Creates an API key; the full key is in this response only. */
