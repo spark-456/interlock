@@ -186,6 +186,14 @@ fn results(evs: &[BuildEvent]) -> Vec<(u32, u32)> {
         .collect()
 }
 
+/// The last `build.node` status a step card got.
+fn final_state(evs: &[BuildEvent], node: &str) -> Option<il_core::events::BuildNodeStatus> {
+    evs.iter().rev().filter(|e| e.node_id.as_deref() == Some(node)).find_map(|e| match &e.kind {
+        BuildEventKind::Node { status, .. } => Some(*status),
+        _ => None,
+    })
+}
+
 async fn saved(fakes: &FakeServices, evs: &[BuildEvent]) -> Flow {
     let Some(BuildEventKind::Ready { flow_id }) = evs.last().map(|e| &e.kind) else { panic!("{evs:#?}") };
     fakes.store.get_flow(flow_id).await.unwrap().unwrap()
@@ -211,6 +219,7 @@ async fn a_failing_test_run_is_fixed_and_run_again() {
     );
     assert!(user_messages(&fakes.models).iter().any(|m| m.contains("step `n_draft`: the input expression is empty")));
     assert_eq!(saved(&fakes, &evs).await.node("n_draft").unwrap().settings["input"], "{{ item.text }}");
+    assert_eq!(final_state(&evs, "n_draft"), Some(il_core::events::BuildNodeStatus::Fixed));
 }
 
 #[tokio::test]
@@ -227,6 +236,7 @@ async fn gives_up_fixing_after_the_last_round_but_keeps_the_flow() {
     assert_eq!(fakes.models.calls().len(), MAX_FIX_ROUNDS + 1);
     assert!(evs.iter().any(|e| matches!(&e.kind, BuildEventKind::Log { text } if text.contains("remain after"))));
     saved(&fakes, &evs).await;
+    assert_eq!(final_state(&evs, "n_draft"), Some(il_core::events::BuildNodeStatus::Warning));
 }
 
 #[tokio::test]
@@ -260,6 +270,13 @@ async fn an_app_runs_its_suite_and_fixes_failed_answers() {
     let flow = saved(&fakes, &evs).await;
     assert_eq!(flow.kind, FlowKind::App);
     assert_eq!(flow.node("n_billing").unwrap().settings["instructions"], "Always look invoices up with the tool.");
+    assert_eq!(final_state(&evs, "n_billing"), Some(il_core::events::BuildNodeStatus::Fixed));
+    assert_eq!(
+        final_state(&evs, "n_tests"),
+        Some(il_core::events::BuildNodeStatus::Fixed),
+        "the suite card shows the fix"
+    );
+    assert!(flow.node("n_tests").is_none(), "the suite card is build-only");
 }
 
 #[tokio::test]

@@ -10,6 +10,7 @@ use il_architect::catalog::Catalog;
 use il_architect::compile::{CompileError, MAX_REPAIRS, Outcome, compile};
 use il_architect::validate::validate;
 use il_core::dto::{BuildAnswers, BuildRequest};
+use il_core::events::BuildNodeStatus;
 use il_core::{BuildEvent, BuildEventKind, NodeManifest};
 use il_sdk::services::ArchitectService;
 use il_sdk::services::models::ChatRole;
@@ -121,6 +122,34 @@ async fn events(store: &dyn Store, id: &str, until: fn(&BuildEventKind) -> bool)
 
 fn ended(k: &BuildEventKind) -> bool {
     matches!(k, BuildEventKind::Ready { .. } | BuildEventKind::Failed { .. })
+}
+
+#[tokio::test]
+async fn a03_every_step_card_builds_then_ends_ready() {
+    let fakes = FakeServices::default();
+    fakes.models.push_json(draft("fa"));
+    let architect = Architect::new(fakes.services(), Arc::new(FakeRunner::default()), catalog());
+    let id = architect.start_build("ws_1", request(FA)).await.unwrap();
+    let evs = events(fakes.store.as_ref(), &id, ended).await;
+    let BuildEventKind::Ready { flow_id } = &evs.last().unwrap().kind else { panic!("{evs:#?}") };
+    let saved = fakes.store.get_flow(flow_id).await.unwrap().unwrap();
+    for node in &saved.nodes {
+        let states: Vec<_> = evs
+            .iter()
+            .filter(|e| e.node_id.as_deref() == Some(node.id.as_str()))
+            .filter_map(|e| match &e.kind {
+                BuildEventKind::Node { status, .. } => Some(*status),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(states.first(), Some(&BuildNodeStatus::Building), "{}", node.id);
+        assert!(
+            matches!(states.last(), Some(BuildNodeStatus::Ready | BuildNodeStatus::Fixed | BuildNodeStatus::Warning)),
+            "{}: {states:?}",
+            node.id
+        );
+    }
+    assert!(saved.node("n_tests").is_none(), "the test-suite card is never saved");
 }
 
 #[tokio::test]

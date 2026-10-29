@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use il_core::dto::{AskDiff, AttachmentKind, AttachmentRole, BuildAnswers, BuildRequest};
-use il_core::events::{BuildQuestion, StageStatus};
+use il_core::events::{BuildNodeStatus, BuildQuestion, StageStatus};
 use il_core::{BuildEvent, BuildEventKind, Flow, FlowKind, Json};
 use il_sdk::Services;
 use il_sdk::services::architect::{ArchitectError, ArchitectService};
@@ -16,7 +16,7 @@ use il_sdk::services::runner::FlowRunner;
 use serde_json::json;
 use tokio::sync::oneshot;
 
-use super::{Compiled, Draft, Outcome, assemble, compile, revise, to_draft};
+use super::{Compiled, Draft, Outcome, assemble, compile, progress, revise, to_draft};
 use crate::appkit::{self, Case};
 use crate::ask::{changed, diff};
 use crate::catalog::Catalog;
@@ -234,8 +234,24 @@ impl Inner {
 
     /// Test-runs the saved flow and fixes what fails, at most [`MAX_FIX_ROUNDS`] times (AR-6, AR-9).
     /// Problems left after the last round are logged, not fatal: the person sees them in the editor.
-    async fn test_and_fix(&self, ev: &mut Events<'_>, mut flow: Flow, sample: &Json, brief: &str) {
+    /// Tests the flow, fixes what fails, then settles every step card.
+    async fn test_and_fix(&self, ev: &mut Events<'_>, flow: Flow, sample: &Json, brief: &str) {
+        let (flow, fixed, remaining) = self.test_and_fix_rounds(ev, flow, sample, brief).await;
+        for (id, event) in progress::finals(&flow, &fixed, &remaining) {
+            ev.emit(Some(id), event).await;
+        }
+    }
+
+    /// Returns the last flow, the steps a fix changed, and the steps with problems left.
+    async fn test_and_fix_rounds(
+        &self,
+        ev: &mut Events<'_>,
+        mut flow: Flow,
+        sample: &Json,
+        brief: &str,
+    ) -> (Flow, Vec<String>, Vec<Option<String>>) {
         let models = self.services.models.as_ref();
+        let mut fixed: Vec<String> = Vec::new();
         let mut cases = Vec::new();
         if flow.kind == FlowKind::App {
             ev.log("Writing test questions for the app.").await;
@@ -247,34 +263,46 @@ impl Inner {
                 Err(e) => tracing::warn!(build_id = %ev.build_id, error = %e, "could not write a test suite"),
             }
         }
+        if !cases.is_empty() {
+            for patch in progress::tests_card(&flow, cases.len()) {
+                ev.emit(Some(progress::TESTS), patch).await;
+            }
+            ev.emit(Some(progress::TESTS), progress::tests_state(0, cases.len(), 0, false)).await;
+        }
         for round in 0..=MAX_FIX_ROUNDS {
             let (passed, failures) = self.test(ev, &flow, sample, &cases).await;
             let failed = u32::try_from(failures.len()).unwrap_or(u32::MAX);
             ev.emit(None, BuildEventKind::TestResult { passed, failed }).await;
+            let last = failures.is_empty() || round == MAX_FIX_ROUNDS;
+            if !cases.is_empty() {
+                let state = progress::tests_state(passed, cases.len(), fixed.len(), last);
+                ev.emit(Some(progress::TESTS), state).await;
+            }
+            let remaining = || failures.iter().map(|f| f.node_id.clone()).collect();
             if failures.is_empty() {
                 ev.log("All tests passed.").await;
-                return;
+                return (flow, fixed, vec![]);
             }
             if round == MAX_FIX_ROUNDS {
                 ev.log(format!(
                     "{failed} test problem(s) remain after {MAX_FIX_ROUNDS} fixes; check them in the editor."
                 ))
                 .await;
-                return;
+                return (flow, fixed, remaining());
             }
             ev.log(format!("Fixing {failed} problem(s) the tests found.")).await;
             let revised = match revise(models, &self.catalog, &flow, &fix_request(&failures)).await {
                 Ok(revised) => revised,
                 Err(e) => {
                     ev.log(format!("Could not fix the failing tests: {e}")).await;
-                    return;
+                    return (flow, fixed, remaining());
                 }
             };
             ev.cost(revised.cost_usd).await;
             let next = revised.flow;
             if let Err(e) = self.services.store.put_flow(&next).await {
                 ev.log(format!("Could not save the fixed flow: {e}")).await;
-                return;
+                return (flow, fixed, remaining());
             }
             let patch = diff(&flow, &next).json_patch;
             ev.emit(None, BuildEventKind::FlowPatch { json_patch: patch }).await;
@@ -289,9 +317,11 @@ impl Inner {
                     source: Some(source.into()),
                 };
                 ev.emit(Some(&node.id), fix).await;
+                fixed.push(node.id.clone());
             }
             flow = next;
         }
+        (flow, fixed, vec![])
     }
 
     /// One test round: the app's suite and safety check, or one sample run for an automation.
@@ -379,6 +409,8 @@ Attachment ({role}): {}",
         let mut apps = BTreeSet::new();
         for n in order {
             ev.emit(Some(&n.id), patch("/nodes/-", json!(n))).await;
+            let title = self.catalog.get(&n.node_type).map(|m| m.title.clone());
+            ev.emit(Some(&n.id), progress::node(BuildNodeStatus::Building, title, None, None)).await;
             placed.insert(n.id.as_str());
             for e in flow.edges.iter().filter(|e| e.to.node == n.id || e.from.node == n.id) {
                 if placed.contains(e.from.node.as_str()) && placed.contains(e.to.node.as_str()) {
