@@ -63,6 +63,15 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 52 | B09 | Model fallbacks: Groq and OpenRouter | P1 | B02 | done | claude-a | t/B09-model-fallbacks | 2026-10-29 04:29 | [PR #54](https://github.com/spark-456/interlock/pull/54): Groq and OpenRouter fallbacks; OpenRouter's free Nemotron models are in the example config |
 | 53 | C05 | Connectors: Notion, Airtable, HubSpot | P1 | C04 | review | claude-a | t/C05-key-connectors | 2026-10-29 04:29 | [PR #57](https://github.com/spark-456/interlock/pull/57) |
 | 54 | C06 | Google Drive upload and new file; Sheets read rows | P1 | C01 | ready |  |  |  | Uses the Google sign-in from C01 |
+| 55 | K03 | Wire the real knowledge service into the server | P0 | K01 | ready |  |  |  | Found in the audit (docs/AUDIT.md, rank 1): the server keeps the testkit `FakeKnowledge`, so knowledge bases, search, parse and MCP `add_documents` are fake in production. F-C can't answer from documents |
+| 56 | K04 | Build attachments become a knowledge base; `/api/knowledge` | P0 | K03 | ready |  |  |  | Found in the audit (rank 2): the architect only writes attachments into the brief. Files, links (Tavily) and audio marked Knowledge must be ingested into the flow's knowledge base. `GET/POST /api/knowledge` return 501 |
+| 57 | P02 | Publish works without GitHub: keys, MCP auth line, content parts | P0 | P01 | ready |  |  |  | Found in the audit (rank 4): `POST /api/keys` needs a GitHub session (401 in the local workspace, 403 in demo), so `/v1` and `/mcp` are unusable on a fresh deploy; the platform MCP install line has no auth header; OpenAI content-part messages get 400 |
+| 58 | Q10 | Workspace isolation: files, builds, session-less access | P0 | B04 | ready |  |  |  | Found in the audit (rank 5): `GET /api/files/:id` and build events/answers ignore the workspace; OAuth with no cookie acts on `ws_local`; a public deploy must not fall back to `ws_local`. Feeds Q03 |
+| 59 | C07 | Connector reliability: Google token refresh, send dedupe, agent tools in test runs | P0 | C01 | ready |  |  |  | Found in the audit (rank 6). Touches `il-connectors`: coordinate with whoever holds C05/C06 |
+| 60 | A03 | Architect emits `build.node` and the `build.tests` node | P0 | A01 | ready |  |  |  | Found in the audit (rank 7): after a live build every step on the Building screen still says "Waiting" |
+| 61 | B10 | Enforce demo caps and count build spend | P0 | B03 | ready |  |  |  | Found in the audit (rank 8): `demo_run_usd`, `demo_models` and `demo_media` are read by nothing; architect build spend never reaches `us_ledger`, so builds are uncapped |
+| 62 | N02 | Notify channels and ignored node settings | P1 | B08 | ready |  |  |  | Found in the audit (rank 11): `output.notify` reports success for in-app/email without delivering and can't bind channel credentials; several manifest settings are ignored |
+| 63 | W08 | UI state gaps: run step, cancel, delete, loading and stream errors | P1 | W05 | ready |  |  |  | Found in the audit (rank 12): Run this step → 501; no cancel-run or delete-flow buttons; blank pages while loading; endless SSE retries on 404; run view says Running while waiting |
 
 ## Waiting on the owner
 
@@ -91,8 +100,8 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 | Approval generated types | handoff to claude-a | B03b | On `t/B03b-approval-expiry`, run `cargo xtask gen-types` and commit only `web/src/lib/api/types/{Approval,ApprovalTimeout,index}.ts`; `contracts/approval.json` is already in codex-1's branch. Note the SHA in B03b's row. | done (`5124a26`) |
 | GitHub Actions blocked on private repos | blocker | all | Account billing stops hosted runners. The repo is public so CI runs; making it private again stops CI | workaround |
 | Model IDs not verified | issue | B02 | Config model IDs are guesses until checked against Token Factory | open |
-| Architect must emit `build.node` and `build.cost` | issue | A01, A02 | The Building screen needs them for node stats and the running cost | open |
-| No `ai.guardrails` node | issue | N01 | The F-C flow and the design's "Safety rules" node need it | open |
+| Architect must emit `build.node` and `build.cost` | issue | A01, A02 | The Building screen needs them for node stats and the running cost. `build.cost` is emitted; `build.node` is task A03 | open |
+| No `ai.guardrails` node | issue | N01 | The F-C flow and the design's "Safety rules" node need it | done (N01) |
 | `corepack enable` needs admin | note | — | pnpm 10.14 works through the existing shims | open |
 
 ### Contract log (breaking changes only)
@@ -298,6 +307,116 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 ### C06 · Google Drive upload and new file; Sheets read rows
 - **Owns**: `crates/il-connectors/src/{drive,sheets}/`.
 - **Acceptance**: `app.drive.upload` (file from an item into a folder), `trigger.drive.new_file` (polling with a cursor, like Gmail new email), `app.sheets.read_rows`; Google OAuth scopes added; wiremock harness tests; catalog regenerated.
+
+### K03 · Wire the real knowledge service into the server
+- **Owns**: `crates/il-server/src/wiring.rs`, `crates/il-nodes/src/knowledge/**`, `crates/il-nodes/src/data/parse_document.rs`, `crates/il-knowledge/**`.
+- **Why**: `build_state_persistent` starts from `FakeServices` and never replaces `services.knowledge` (`il-server/src/wiring.rs:87-104`). Every knowledge base, search, parse and MCP `add_documents` call in production therefore goes to the testkit fake (see `docs/AUDIT.md`).
+- **Acceptance**:
+  - The server builds `il_knowledge::ingest::Knowledge` from the SQLite store, the file store, the model gateway and Tavily (when `TAVILY_API_KEY` is set), and uses it as `services.knowledge`.
+  - Fake mode keeps working offline; the fake gateway's embeddings must give a stable dimension.
+  - `knowledge.base` reuses one base per flow node instead of creating one per run.
+  - `data.parse_document` honours `format` (`pdf` → the PDF parser) and returns `text` plus `sections`.
+  - A server integration test ingests text, test-runs the Larkspur template and gets non-empty `sources`, and the per-flow MCP `search_*` tool returns hits.
+
+### K04 · Build attachments become a knowledge base; `/api/knowledge`
+- **Owns**: `crates/il-architect/src/compile/build.rs` (attachment handling), `crates/il-server/src/api/misc.rs` (knowledge routes), and a small helper in `il-knowledge` if needed.
+- **Hard deps**: K03.
+- **Why**: AR-1 and the F-C acceptance need "knowledge base built" and "voice memo transcribed into instructions". Today attachments only become text in the brief (`build.rs:307-330`), and `GET/POST /api/knowledge` return 501.
+- **Acceptance**:
+  - A build with Knowledge attachments creates a knowledge base in the workspace, logs progress as build events, and sets it on the flow's `knowledge.base` node. Attachments can be uploaded files, links crawled through Tavily up to the page cap, or audio, which is transcribed.
+  - Instructions attachments go into the agents' instructions.
+  - `GET /api/knowledge` lists the workspace's bases with source counts. `POST /api/knowledge` creates a base or adds sources. Both are workspace-scoped.
+  - Tests run offline (fake gateway, wiremock Tavily).
+
+### P02 · Publish works without GitHub: keys, MCP auth line, content parts
+- **Owns**: `crates/il-publish/**`, `web/src/routes/flows/[id]/publish/**`, `web/src/routes/settings/**`.
+- **Why**:
+  - `POST /api/keys` needs a GitHub session cookie (`il-publish/src/keys/routes.rs:32`) and is refused in demo (`:41`). On a fresh deploy and in the judges' demo, nobody can call `/v1` or `/mcp`.
+  - The platform MCP install line (`AgentCard.svelte:28`) has no `Authorization` header.
+  - Content-part messages are rejected (`openai/mod.rs:118`).
+- **Acceptance**:
+  - Keys can be created in the session-less local workspace when GitHub sign-in isn't configured.
+  - Demo keys need an **owner decision**: either one demo-scoped key per demo workspace, capped and deleted with it, or keys stay off and the Publish page says so.
+  - The platform MCP line includes `--header "Authorization: Bearer $INTERLOCK_KEY"`.
+  - `/v1/chat/completions` accepts `content` as a string or as an array of text parts.
+  - Stretch: stream the agent's answer as token deltas (PB-1) instead of one chunk after the run.
+  - Tests for each.
+
+### Q10 · Workspace isolation: files, builds, session-less access
+- **Owns**: `crates/il-server/src/api/**`, plus one line in `crates/il-connectors/src/oauth/routes.rs` if the fallback moves to config (coordinate with C05/C06).
+- **Why** (`docs/AUDIT.md` bugs 5, 6, 17):
+  - `GET /api/files/:id` ignores the caller's workspace (`misc.rs:77`).
+  - `GET /api/builds/:id/events` and `POST /api/builds/:id/answers` take no workspace (`builds.rs:57,72`).
+  - Without a cookie, every request acts on `ws_local`. That is fine self-hosted but not on the public demo.
+- **Acceptance**:
+  - Files record their workspace and downloads check it. Template and recorded fixture files stay readable by their workspace.
+  - Builds store their workspace, and events/answers check it.
+  - A config flag (`server.local_workspace = false` on the public deploy) turns the `ws_local` fallback into a 401. OAuth start/refresh follow it.
+  - Integration tests cover two demo sessions.
+  - Hand remaining findings to Q03.
+
+### C07 · Connector reliability: Google token refresh, send dedupe, agent tools in test runs
+- **Owns**: `crates/il-connectors/**` (coordinate with whoever holds C05/C06), and `crates/il-engine/src/executor/` for the test-run flag if needed.
+- **Why**:
+  - Google nodes read `access_token` and never refresh it (`gmail/common.rs:18`, `sheets/append_row.rs:88`, `youtube/upload.rs:107`), so F-B fails about an hour after connecting.
+  - Slack, Discord, Telegram, Bluesky and OpenAPI sends have no dedupe key, so a retry can double-post.
+  - Agent OpenAPI tools call real APIs during test runs (`openapi/tool.rs:103`), breaking R08's promise.
+- **Acceptance**:
+  - A shared helper refreshes an OAuth credential when it expires within 60 s, and once on a 401, and stores the new token. All Google nodes and the Gmail poller use it.
+  - Every send/post node uses `ctx.dedupe_key()`, as Gmail does.
+  - In a test run, agent API tools return a "would call" preview instead of calling the API.
+  - wiremock tests cover refresh, dedupe on retry, and the test-run preview.
+
+### A03 · Architect emits `build.node` and the `build.tests` node
+- **Owns**: `crates/il-architect/src/compile/build.rs`, `crates/il-architect/src/testfix/**`, `crates/il-architect/src/appkit/**`.
+- **Why**: the Building screen relies on `build.node` (MAPPING.md, "Events") for each step's status, stats and summary, and on a build-only `build.tests` node for AI apps. Neither is emitted, so after "Ready" every step still shows "Waiting".
+- **Acceptance**:
+  - Each streamed node gets `build.node` `building`, then `ready` (or `fixed`/`warning`/`failed` after test-and-fix), with a subtitle and a summary.
+  - AI-app builds add the `build.tests` node with test counts, linked to the agent as in the recorded `bld_larkspur` stream. The saved flow doesn't contain it.
+  - Tests assert the event sequence in fake mode.
+  - The Building screen shows every step ready after an offline F-C build.
+
+### B10 · Enforce demo caps and count build spend
+- **Owns**: `crates/il-engine/src/caps/**`, and `crates/il-architect/src/compile/build.rs` (ledger writes only).
+- **Why**: WS-2 and the cost-safety NFR. `[caps] demo_run_usd`, `demo_models` and `demo_media` are read by nothing. Architect build spend is emitted as `build.cost` but never recorded in `us_ledger`, so builds don't count toward any cap.
+- **Acceptance**:
+  - Runs in `ws_demo_*` workspaces use `demo_run_usd`.
+  - Model calls from demo workspaces are limited to `demo_models` roles; an `architect` request falls back to `agent`.
+  - Media generation in demo is replay-only. That is already true via the recorded provider; add a test.
+  - Build spend is written to the ledger with `build_id`, and checked against the workspace and global daily caps before a build starts, with a clear `build.failed` when over.
+  - Tests use a fake clock and store.
+
+### N02 · Notify channels and ignored node settings
+- **Owns**: `crates/il-nodes/src/output/notify.rs`, `crates/il-nodes/src/trigger/{mcp_call,webhook}.rs`, `crates/il-nodes/src/ai/{transcribe,guardrails}.rs`, `crates/il-nodes/src/knowledge/add.rs`, `crates/il-publish/src/mcp/flow.rs` (tool name only).
+- **Why**: `output.notify` declares no credential specs, so its Slack/Discord/Telegram channels can't be bound. `inapp` and `email` fall through to the testkit `FakeNotifier`, which reports success and delivers nothing. Several manifest settings are ignored.
+- **Acceptance**:
+  - Notify declares optional credentials per channel.
+  - `inapp` writes a visible notification (or the option is removed). `email` sends through Gmail (or is removed). Nothing reports success without delivering.
+  - Honour or remove these settings:
+    - `trigger.mcp_call` `toolName`/`description`/`inputSchema` (the per-flow MCP uses them)
+    - webhook `method`
+    - transcribe `language`
+    - guardrails `handoff` (route to a human step)
+    - `knowledge.add` files
+  - Harness tests.
+
+### W08 · UI state gaps: run step, cancel, delete, loading and stream errors
+- **Owns**: `web/src/routes/**` (except publish and settings, which P02 owns), `web/src/lib/api/sse.ts`, and `crates/il-server/src/api/flows.rs` (`run_node` only).
+- **Why**:
+  - "Run this step" calls a 501 stub (`flows.rs:196`, ED-7, P1).
+  - There are no cancel-run or delete-flow buttons, although the API has both.
+  - List pages are blank while loading.
+  - The SSE helper retries a 404 stream forever with no message.
+  - The run view shows "Running" while a run waits at an approval.
+  - `/dev/components` ships in production.
+- **Acceptance**:
+  - `POST /api/flows/:id/nodes/:nodeId/run` runs one step with pinned or last input and returns its output, through the engine trait only.
+  - Cancel on the run view. Delete on the flow card, with a confirm.
+  - Skeleton and EmptyState on flows, templates, connections, approvals, settings and demo.
+  - The SSE helper stops on 4xx and shows an error.
+  - The run status reads "Waiting for approval".
+  - `/dev/components` exists only in dev builds.
+  - vitest and the Playwright smoke tests are updated.
 
 ---
 
