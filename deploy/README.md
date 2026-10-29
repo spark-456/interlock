@@ -1,6 +1,6 @@
 # Interlock deployment
 
-The image builds the Svelte app, embeds it in the Rust server, and runs as UID 10001 with ffmpeg. It listens on port 8080. `/data` contains the SQLite database and uploaded files; keep it on a persistent volume. The image includes templates, recorded runs and the sample OpenAPI spec so a new demo session works without external providers.
+The image builds the Svelte app, embeds it in the Rust server, and runs as UID 10001 with ffmpeg. It listens on port 8080. `/data` contains the SQLite database and uploaded files; keep it on a persistent volume. The image includes `fixtures/` (templates, recorded runs, sample files, recorded help-center pages and the sample OpenAPI spec) so a new demo session works without external providers.
 
 ## Build and verify locally
 
@@ -15,7 +15,20 @@ In another terminal, run `node deploy/smoke.mjs http://127.0.0.1:8080`. It check
 
 ## Nebius VM
 
-Use a Nebius VM with a public IP and an attached persistent disk. Mount the disk at `/mnt/interlock-data` and make it writable by UID 10001. Install Docker with Compose, clone the repository, and copy `config/interlock.example.toml` to `/etc/interlock/interlock.toml`. Set `server.public_url` to the final HTTPS URL. The example config sets the global daily cap to USD 25, workspace and per-run caps, and recorded media for demos. Check those limits against the owner's budget before opening public access.
+Use a Nebius VM with a public IP and an attached persistent disk. Mount the disk at `/mnt/interlock-data` and make it writable by UID 10001. Install Docker with Compose, clone the repository, and copy `config/interlock.example.toml` to `/etc/interlock/interlock.toml`. Then change these settings in it (see `docs/SECURITY-REVIEW.md`):
+
+```toml
+[server]
+public_url = "https://<your domain>"   # Secure cookies, OAuth callbacks
+local_workspace = false                 # no sign-in-free workspace on a public host
+trust_proxy = true                      # rate limits see the visitor behind Caddy
+
+[caps]
+global_daily_usd = 2.0                  # the example's 25.0 is for local use
+demo_run_usd = 0.02
+```
+
+Demos replay recorded media and use only the `demo_models` roles.
 
 Set `NEBIUS_API_KEY`, `IL_MASTER_KEY` (base64 of 32 random bytes), and any enabled connector or media provider keys through `/etc/interlock/secrets.env`, readable only by the VM administrator. Compose passes these as environment variables to the container. The image defaults to `IL_PROVIDERS=real` and `IL_CONFIG=/etc/interlock/interlock.toml`. Keep the configured storage path at `/data` (the example config uses `data` relative to the container's `/` working directory).
 
