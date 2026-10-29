@@ -83,14 +83,15 @@ pub(crate) async fn run_node(
             NodeInput::items(main.get(idx).cloned().into_iter().collect())
         };
         let current = node_input.main().first().map(Item::scope_json).unwrap_or(Value::Null);
+        let nodes = nodes_scopes.get(idx).cloned().unwrap_or(Value::Null);
         let scope = Scope::new()
             .item(current)
             .items(all_json.clone())
-            .var("nodes", nodes_scopes.get(idx).cloned().unwrap_or(Value::Null))
+            .var("nodes", nodes.clone())
             .var("run", json!({ "id": base.run_id, "flowId": base.flow_id, "trigger": base.trigger }))
             .var("now", json!(inner.services.clock.now().to_rfc3339()));
         let settings = match render_value(&node.settings, &scope) {
-            Ok(s) => knowledge_ids(s, &nodes_scope),
+            Ok(s) => knowledge_ids(s, &nodes),
             Err(e) => return CallResult::Failed { error: e.to_string(), retryable: false, input: main },
         };
         // Test runs never send or post: steps with outside effects pass their items on with a
