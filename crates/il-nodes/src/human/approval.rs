@@ -13,6 +13,7 @@ pub struct HumanApproval;
 static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
     NodeManifest::new("human.approval", Category::Human, "Approval", "Pauses until a person approves or rejects (in the app, optionally Slack). The payload can be edited before approving.")
         .icon("check-circle")
+        .status(NodeStatus::Ready)
         .outputs(&["approved", "rejected"])
         .credential(CredentialSpec { optional: true, ..cred("slack", "slack", CredentialKind::OAuth2, "Slack workspace", &["chat:write"]) })
         .settings_schema(json!({

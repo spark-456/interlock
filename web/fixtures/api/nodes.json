@@ -3268,7 +3268,7 @@
         "type": "object"
       },
       "sideEffect": "none",
-      "status": "stub",
+      "status": "ready",
       "title": "Approval",
       "trigger": false,
       "typeId": "human.approval",
