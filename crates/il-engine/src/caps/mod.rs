@@ -1,8 +1,15 @@
-//! Spend caps per run, per flow per day, per workspace per day, and global per day (EN-6).
+//! Spend caps per run, per flow per day, per workspace per day, and global per day (EN-6), and the
+//! tighter limits for demo workspaces (WS-2): a smaller run cap and only the cheaper model roles.
 
+use std::sync::Arc;
+
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use il_core::{Flow, Run, dto::UsageCaps};
+use il_core::{FileRef, Flow, Run, dto::UsageCaps};
 use il_sdk::services::Store;
+use il_sdk::services::models::{
+    ChatRequest, ChatResponse, ChatStream, ModelError, ModelGateway, ModelRole, Transcript,
+};
 use il_sdk::services::store::SpendScope;
 use serde::{Deserialize, Serialize};
 
@@ -14,12 +21,28 @@ pub struct CapsConfig {
     pub flow_daily_usd: f64,
     pub workspace_daily_usd: f64,
     pub global_daily_usd: f64,
+    /// Run cap in demo workspaces.
+    pub demo_run_usd: f64,
+    /// Model roles demo runs may use (`fast`, `agent`, `architect`).
+    pub demo_models: Vec<String>,
 }
 
 impl Default for CapsConfig {
     fn default() -> Self {
-        Self { run_usd: 1.0, flow_daily_usd: 3.0, workspace_daily_usd: 5.0, global_daily_usd: 25.0 }
+        Self {
+            run_usd: 1.0,
+            flow_daily_usd: 3.0,
+            workspace_daily_usd: 5.0,
+            global_daily_usd: 25.0,
+            demo_run_usd: 0.10,
+            demo_models: vec!["fast".into(), "agent".into()],
+        }
     }
+}
+
+/// Whether a workspace is a demo session's (`ws_demo_…`).
+pub fn is_demo(workspace_id: &str) -> bool {
+    workspace_id.starts_with("ws_demo")
 }
 
 /// A cap that has been reached.
@@ -71,7 +94,10 @@ pub async fn effective_caps(store: &dyn Store, workspace_id: &str, cfg: &CapsCon
 pub async fn check(store: &dyn Store, now: DateTime<Utc>, run: &Run, flow: &Flow, cfg: &CapsConfig) -> Option<CapHit> {
     let cfg = effective_caps(store, &run.workspace_id, cfg).await;
     let day = start_of_day(now);
-    let run_cap = flow.settings.spend_cap_usd_per_run.unwrap_or(cfg.run_usd);
+    let mut run_cap = flow.settings.spend_cap_usd_per_run.unwrap_or(cfg.run_usd);
+    if is_demo(&run.workspace_id) {
+        run_cap = run_cap.min(cfg.demo_run_usd);
+    }
     let checks: [(&'static str, f64, SpendScope); 4] = [
         ("run", run_cap, SpendScope::Run(run.id.clone())),
         ("flow_daily", cfg.flow_daily_usd, SpendScope::FlowSince(flow.id.clone(), day)),
@@ -87,15 +113,54 @@ pub async fn check(store: &dyn Store, now: DateTime<Utc>, run: &Run, flow: &Flow
     None
 }
 
+/// The model gateway for demo runs: roles outside `allowed` use the next cheaper allowed role
+/// (`architect` → `agent` → `fast`).
+pub struct DemoModels {
+    pub inner: Arc<dyn ModelGateway>,
+    pub allowed: Vec<String>,
+}
+
+impl DemoModels {
+    fn role(&self, role: ModelRole) -> ModelRole {
+        let ok = |r: &str| self.allowed.iter().any(|a| a == r);
+        match role {
+            ModelRole::Architect if ok("architect") => ModelRole::Architect,
+            ModelRole::Architect | ModelRole::Agent if ok("agent") => ModelRole::Agent,
+            _ => ModelRole::Fast,
+        }
+    }
+}
+
+#[async_trait]
+impl ModelGateway for DemoModels {
+    async fn chat(&self, role: ModelRole, req: ChatRequest) -> Result<ChatResponse, ModelError> {
+        self.inner.chat(self.role(role), req).await
+    }
+    async fn chat_stream(&self, role: ModelRole, req: ChatRequest) -> Result<ChatStream, ModelError> {
+        self.inner.chat_stream(self.role(role), req).await
+    }
+    async fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>, ModelError> {
+        self.inner.embed(texts).await
+    }
+    async fn transcribe(&self, file: &FileRef, bytes: &[u8]) -> Result<Transcript, ModelError> {
+        self.inner.transcribe(file, bytes).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use chrono::Utc;
     use il_core::{Flow, Run};
+    use il_sdk::services::models::{ChatRequest, ModelGateway, ModelRole};
     use il_sdk::{
         services::{Store, store::SpendEntry},
-        testkit::MemoryStore,
+        testkit::{FakeGateway, MemoryStore},
     };
     use serde_json::json;
+
+    use super::{DemoModels, is_demo};
 
     #[tokio::test]
     async fn u02_workspace_cap_override_precedes_config() {
@@ -124,5 +189,23 @@ mod tests {
         let hit = super::check(&store, now, &run, &flow, &super::CapsConfig::default()).await.unwrap();
         assert_eq!(hit.cap, "workspace_daily");
         assert_eq!(hit.limit_usd, 0.4);
+    }
+
+    #[tokio::test]
+    async fn b10_demo_runs_use_only_the_allowed_roles() {
+        let fake = Arc::new(FakeGateway::default());
+        let demo = DemoModels { inner: fake.clone(), allowed: vec!["fast".into(), "agent".into()] };
+        for role in [ModelRole::Architect, ModelRole::Agent, ModelRole::Fast] {
+            fake.push_text("ok");
+            demo.chat(role, ChatRequest::default()).await.unwrap();
+        }
+        let roles: Vec<ModelRole> = fake.calls().into_iter().map(|(r, _)| r).collect();
+        assert_eq!(roles, [ModelRole::Agent, ModelRole::Agent, ModelRole::Fast]);
+
+        let fast_only = DemoModels { inner: fake.clone(), allowed: vec!["fast".into()] };
+        fake.push_text("ok");
+        fast_only.chat(ModelRole::Architect, ChatRequest::default()).await.unwrap();
+        assert_eq!(fake.calls().last().unwrap().0, ModelRole::Fast);
+        assert!(is_demo("ws_demo_01J") && !is_demo("ws_local"));
     }
 }

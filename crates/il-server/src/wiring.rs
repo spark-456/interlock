@@ -121,12 +121,15 @@ fn finish_state(config: Config, mut services: Services, store: Option<Arc<Sqlite
         runner.clone(),
         il_engine::NodeLookup::default(),
     ));
-    let architect = Arc::new(il_architect::Architect::new_with_fake_templates(
-        services.clone(),
-        runner.clone(),
-        il_architect::catalog::Catalog::registered(),
-        config.providers == "fake",
-    ));
+    let architect = Arc::new(
+        il_architect::Architect::new_with_fake_templates(
+            services.clone(),
+            runner.clone(),
+            il_architect::catalog::Catalog::registered(),
+            config.providers == "fake",
+        )
+        .with_caps(config.section("caps").unwrap_or_default()),
+    );
     AppState {
         config: Arc::new(config),
         services,

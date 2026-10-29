@@ -428,6 +428,30 @@ async fn spend_cap_pauses_the_run() {
 }
 
 #[tokio::test]
+async fn b10_demo_runs_stop_at_the_demo_run_cap() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let mut f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("c1", "test.cost", json!({ "usd": 0.06 })),
+            ("c2", "test.cost", json!({ "usd": 0.06 })),
+            ("c3", "test.cost", json!({ "usd": 0.06 })),
+        ],
+        &[("t", "out", "c1", "in"), ("c1", "out", "c2", "in"), ("c2", "out", "c3", "in")],
+    );
+    f.workspace_id = "ws_demo_1".into();
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, events) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::CapReached);
+    let limit = events.iter().find_map(|e| match &e.kind {
+        RunEventKind::RunCapReached { cap, limit_usd, .. } => Some((cap.clone(), *limit_usd)),
+        _ => None,
+    });
+    assert_eq!(limit, Some(("run".into(), 0.10)));
+}
+
+#[tokio::test]
 async fn invoke_returns_the_respond_output() {
     let (fakes, svc) = services();
     let (engine, _) = engine_with(svc, config());

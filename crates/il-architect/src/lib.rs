@@ -8,7 +8,7 @@ pub mod layout;
 pub mod testfix;
 pub mod validate;
 
-pub use compile::Architect;
+pub use compile::{Architect, BuildCaps};
 
 /// Referenced by `il-server` so the linker keeps this crate's self-registrations.
 pub fn link() {}
