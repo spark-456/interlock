@@ -20,3 +20,9 @@ test('the landing fits a phone without sideways scrolling', async ({ page }) => 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test('Q12 favicon.ico serves an icon instead of a missing page', async ({ request }) => {
+  const response = await request.get('/favicon.ico');
+  expect(response.status()).toBe(200);
+  expect([...((await response.body()).subarray(0, 4))]).toEqual([0, 0, 1, 0]);
+});
