@@ -14,6 +14,7 @@
   import Banner from '$lib/design/Banner.svelte';
   import StatusPill, { type PillTone } from '$lib/design/StatusPill.svelte';
   import TopBar from '$lib/design/TopBar.svelte';
+  import FriendlyError from '$lib/errors/FriendlyError.svelte';
   import ApprovalCard from '../../../../approvals/ApprovalCard.svelte';
   import { emptyView, reduceView, type StepStatus } from './run';
 
@@ -89,7 +90,7 @@
       </dl>
       {#if view.status === 'capped'}
         <Banner kind="cap">{view.error}. The run stopped instead of spending more.</Banner>
-      {:else if view.error}<p role="alert" class="error">{view.error}</p>{/if}
+      {:else if view.error}<FriendlyError error={view.error} />{/if}
 
       {#if approval && approval.status === 'pending' && !decision}
         <ApprovalCard {approval} ondecided={() => (approval = approval && { ...approval, status: 'approved' })} />
@@ -123,8 +124,8 @@
               </div>
               {#if s.status === 'succeeded'}
                 <span class="meta mono">{s.count} {s.count === 1 ? 'item' : 'items'} · {clock(s.ms ?? 0)}{s.costUsd ? ` · ${usd(s.costUsd)}` : ''}</span>
-              {:else if s.error}
-                <span class="meta error">{s.error}</span>
+              {:else if s.error && s.error !== view.error}
+                <FriendlyError error={s.error} />
               {/if}
             </li>
           {:else}
@@ -151,7 +152,6 @@
   .mono { font-family: var(--font-mono); }
   h2 { font: var(--t-h3); margin: 0 0 var(--s-3); }
   .muted { color: var(--text-3); font: var(--t-small); }
-  .error { color: var(--error-text); margin: 0; }
   .decided { margin: 0; padding: var(--s-3) var(--s-4); border-radius: var(--r-card); background: var(--success-soft); color: var(--success-text); }
   .clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: var(--s-3); }
   figure { margin: 0; display: flex; flex-direction: column; gap: var(--s-1); }

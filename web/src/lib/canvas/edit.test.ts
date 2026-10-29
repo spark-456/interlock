@@ -99,6 +99,8 @@ describe('views', () => {
     const cards = flowCards(sample(), {}, run);
     expect(cards.map((c) => [c.id, c.status])).toEqual([['a', 'ready'], ['b', 'building']]);
     expect(flowEdges(sample(), run)[0]).toMatchObject({ state: 'active', count: 3 });
+    run = reduceRun(run, ev(5, 'node.failed', 'b', { error: 'missing credential `google`', retryable: false }));
+    expect(run.nodes.b).toEqual({ status: 'failed', label: 'Failed', error: 'missing credential `google`' });
   });
 
   it('marks a proposal and keeps removed steps visible', () => {
