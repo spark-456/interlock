@@ -237,6 +237,7 @@ impl Inner {
         ev.log("Reading your request.").await;
         let instructions = super::attach::instructions(&self.services, &req.attachments).await;
         let mut brief = self.brief(ev, req, &instructions).await;
+        ev.log("Planning the steps. This can take a minute.").await;
         let mut compiled = if self.fake_templates {
             self.compile_template(ws, &req.goal).await?
         } else {

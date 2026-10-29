@@ -57,9 +57,10 @@
     clearInterval(timer);
   });
 
-  // Elapsed snaps to event time and ticks between events (capped so it never runs ahead).
+  // Elapsed snaps to event time and keeps ticking between events: a model call can take a minute
+  // with no events. A paused fixture replay stops on its last event.
   const now = $derived(
-    build.status === 'building' && build.t0 !== null && !paused ? build.elapsed + Math.min((tick - arrivedAt) * speed, 2500) : build.elapsed
+    build.status === 'building' && build.t0 !== null && !paused ? build.elapsed + (tick - arrivedAt) * speed : build.elapsed
   );
   const cards = $derived(cardViews(build, catalog));
   const edges = $derived(edgeViews(build));
