@@ -47,10 +47,11 @@ pub(crate) async fn drive(
         && let Some(node) = flow.node(&node_id).cloned()
     {
         running.insert(node_id.clone());
-        let (inner2, base2, scope, cancel2) = (inner.clone(), base.clone(), nodes_scope(&cp), cancel.clone());
+        let (inner2, base2, scopes, cancel2) =
+            (inner.clone(), base.clone(), scopes_for_input(&cp, &r.partial.input), cancel.clone());
         let (input, services2) = (r.partial.input.clone(), services.clone());
         tasks.spawn(async move {
-            (node_id, run_node(inner2, services2, base2, node, input, scope, cancel2, Some(r)).await)
+            (node_id, run_node(inner2, services2, base2, node, input, scopes, cancel2, Some(r)).await)
         });
     }
 
@@ -86,7 +87,7 @@ pub(crate) async fn drive(
                 for e in &incoming {
                     let items =
                         cp.outputs.get(&e.from.node).and_then(|p| p.get(&e.from.port)).cloned().unwrap_or_default();
-                    input.entry(e.to.port.clone()).or_default().extend(items);
+                    append_paired(input.entry(e.to.port.clone()).or_default(), items);
                 }
                 if !incoming.is_empty() && input.values().all(Vec::is_empty) {
                     cp.skipped.insert(node.id.clone());
@@ -114,11 +115,11 @@ pub(crate) async fn drive(
                 inner.bus.emit(&run.id, Some(&node.id), RunEventKind::NodeStarted {}).await;
                 running.insert(node.id.clone());
                 progressed = true;
-                let (inner2, base2, scope, cancel2, node2) =
-                    (inner.clone(), base.clone(), nodes_scope(&cp), cancel.clone(), node.clone());
+                let (inner2, base2, scopes, cancel2, node2) =
+                    (inner.clone(), base.clone(), scopes_for_input(&cp, &input), cancel.clone(), node.clone());
                 let (id, services2) = (node.id.clone(), services.clone());
                 tasks.spawn(async move {
-                    (id, run_node(inner2, services2, base2, node2, input, scope, cancel2, None).await)
+                    (id, run_node(inner2, services2, base2, node2, input, scopes, cancel2, None).await)
                 });
             }
         }
@@ -185,13 +186,18 @@ async fn complete(
     run: &Run,
     node: &Node,
     cp: &mut Checkpoint,
-    ports: Ports,
+    mut ports: Ports,
     cost_usd: f64,
     ms: u64,
     input: Vec<Item>,
 ) {
     let mut count = 0u64;
-    for (port, items) in &ports {
+    for (port, items) in &mut ports {
+        for (index, item) in items.iter_mut().enumerate() {
+            if item.lineage.is_none() {
+                item.lineage = Some(vec![format!("{}:{}:{port}:{index}", run.id, node.id)]);
+            }
+        }
         count += items.len() as u64;
         let preview: Vec<Item> = items.iter().take(3).cloned().collect();
         let kind = RunEventKind::NodeItems { port: port.clone(), items: preview, total: items.len() as u64 };
@@ -233,12 +239,51 @@ fn node_run(
     NodeRun { run_id: run.id.clone(), node_id: node_id.into(), status, attempt: 1, input, output, error, ms, cost_usd }
 }
 
-/// `nodes` expression scope: `{ "<id>": { "json": first item, "items": [...] } }`.
-fn nodes_scope(cp: &Checkpoint) -> Value {
+/// Pairs branch outputs with the same source item, retaining fields and files from both.
+fn append_paired(existing: &mut Vec<Item>, items: Vec<Item>) {
+    let earlier = existing.len();
+    for item in items {
+        if item.lineage.is_some()
+            && let Some(prior) = existing[..earlier].iter_mut().find(|prior| prior.lineage == item.lineage)
+            && let (Some(left), Some(right)) = (prior.json.as_object_mut(), item.json.as_object())
+        {
+            left.extend(right.clone());
+            prior.files.extend(item.files);
+        } else {
+            existing.push(item);
+        }
+    }
+}
+
+fn scopes_for_input(cp: &Checkpoint, input: &Ports) -> Vec<Value> {
+    let items: Vec<&Item> = input.values().flatten().collect();
+    if items.is_empty() {
+        vec![nodes_scope(cp, None)]
+    } else {
+        items.into_iter().map(|item| nodes_scope(cp, Some(item))).collect()
+    }
+}
+
+/// `nodes` expression scope selects the upstream item matching the current item's lineage.
+fn nodes_scope(cp: &Checkpoint, current: Option<&Item>) -> Value {
     let mut map = Map::new();
     for (id, ports) in &cp.outputs {
         let items: Vec<Value> = ports.values().flatten().map(|i| i.json.clone()).collect();
-        let first = ports.get("out").and_then(|v| v.first()).map(|i| i.json.clone()).or_else(|| items.first().cloned());
+        let matching = current.filter(|item| item.lineage.is_some()).and_then(|item| {
+            ports
+                .values()
+                .flatten()
+                .filter(|upstream| {
+                    upstream.lineage.as_ref().is_some_and(|lineage| {
+                        item.lineage.as_ref().is_some_and(|current| current.starts_with(lineage))
+                    })
+                })
+                .max_by_key(|upstream| upstream.lineage.as_ref().map_or(0, Vec::len))
+        });
+        let first = matching
+            .or_else(|| ports.get("out").and_then(|v| v.first()))
+            .map(|i| i.json.clone())
+            .or_else(|| items.first().cloned());
         map.insert(id.clone(), json!({ "json": first.unwrap_or(Value::Null), "items": items }));
     }
     Value::Object(map)

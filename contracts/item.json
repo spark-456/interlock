@@ -35,7 +35,7 @@
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "The unit of data that flows between nodes. Each port carries `Vec<Item>`.",
+  "description": "The unit of data that flows between nodes. Each port carries `Vec<Item>`.\nIts optional lineage pairs items when parallel branches join.",
   "properties": {
     "files": {
       "additionalProperties": {
@@ -44,7 +44,16 @@
       "default": {},
       "type": "object"
     },
-    "json": true
+    "json": true,
+    "lineage": {
+      "items": {
+        "type": "string"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
   },
   "required": [
     "json"

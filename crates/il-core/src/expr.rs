@@ -3,7 +3,7 @@
 //! Scope variables available to settings expressions (the engine and `NodeHarness` both use [`Scope`]):
 //! - `item`  — the current item's JSON (per-item nodes) or the first item (batch nodes)
 //! - `items` — all input items' JSON
-//! - `nodes` — `{ "<nodeId>": { "json": <first output item json>, "items": [...] } }` for upstream nodes
+//! - `nodes` — `{ "<nodeId>": { "json": <matching output item json>, "items": [...] } }` for upstream nodes
 //! - `run`   — `{ "id", "flowId", "trigger" }`
 //! - `now`   — RFC 3339 timestamp
 //!

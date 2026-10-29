@@ -9,18 +9,22 @@ use ts_rs::TS;
 use crate::Json;
 
 /// The unit of data that flows between nodes. Each port carries `Vec<Item>`.
+/// Its optional lineage pairs items when parallel branches join.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema, TS)]
 #[ts(export)]
 pub struct Item {
     pub json: Json,
     #[serde(default)]
     pub files: BTreeMap<String, FileRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub lineage: Option<Vec<String>>,
 }
 
 impl Item {
     /// An item with JSON only.
     pub fn json(json: Json) -> Self {
-        Self { json, files: BTreeMap::new() }
+        Self { json, files: BTreeMap::new(), lineage: None }
     }
 
     /// What `item` means in expressions: the JSON, plus its files under `files` (so

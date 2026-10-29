@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use il_core::{Category, Decision, Edge, Flow, FlowKind, Item, Node, NodeManifest, PortRef, Position};
+use il_core::{Category, Decision, Edge, FileRef, Flow, FlowKind, Item, Node, NodeManifest, PortRef, Position};
 use il_engine::{Engine, EngineConfig, NodeLookup};
 use il_sdk::ctx::{ApprovalSpec, NodeCtx};
 use il_sdk::services::{Services, SystemClock};
@@ -57,6 +57,39 @@ impl NodeExecutor for Fake {
                     .map(|mut i| {
                         i.json["text"] = s["text"].clone();
                         i
+                    })
+                    .collect(),
+            )),
+            "test.field" => Ok(NodeOutput::out(
+                items
+                    .into_iter()
+                    .map(|mut i| {
+                        i.json[s["field"].as_str().unwrap_or("field")] = s["value"].clone();
+                        if let Some(key) = s["fileKey"].as_str() {
+                            i.files.insert(
+                                key.into(),
+                                FileRef {
+                                    id: key.into(),
+                                    mime: "text/plain".into(),
+                                    bytes: 1,
+                                    name: format!("{key}.txt"),
+                                    preview_url: None,
+                                },
+                            );
+                        }
+                        i
+                    })
+                    .collect(),
+            )),
+            "test.split" => Ok(NodeOutput::out(
+                items
+                    .into_iter()
+                    .flat_map(|item| {
+                        (0..2).map(move |part| {
+                            let mut child = item.clone();
+                            child.json["part"] = json!(part);
+                            child
+                        })
                     })
                     .collect(),
             )),
@@ -132,6 +165,8 @@ pub fn lookup() -> (NodeLookup, Arc<Fake>) {
         .with(Fake::new(m("test.trigger").trigger()))
         .with(Fake::new(m("test.double")))
         .with(Fake::new(m("test.text")))
+        .with(Fake::new(m("test.field")))
+        .with(Fake::new(m("test.split")))
         .with(Fake::new(m("test.branch").outputs(&["even", "odd"])))
         .with(Fake::new(m("test.collect").inputs(&["a", "b"]).batch()))
         .with(Fake::new(m("test.flaky")))

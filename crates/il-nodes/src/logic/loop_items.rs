@@ -68,7 +68,11 @@ impl NodeExecutor for LogicLoop {
                 } else {
                     value.clone()
                 };
-                Item { json, files: parent.map(|item| item.files.clone()).unwrap_or_default() }
+                Item {
+                    json,
+                    files: parent.map(|item| item.files.clone()).unwrap_or_default(),
+                    lineage: parent.and_then(|item| item.lineage.clone()),
+                }
             })
             .collect();
         Ok(NodeOutput::out(items))
