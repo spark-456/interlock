@@ -8,6 +8,9 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use il_core::FileRef;
 use il_core::dto::Me;
+use il_sdk::services::knowledge::SourceInput;
+use serde::Deserialize;
+use serde_json::{Value, json};
 
 use super::session::{SESSION_COOKIE, Session, session_key};
 use super::{ApiErr, ApiResult, Ws};
@@ -22,7 +25,7 @@ pub fn routes() -> Router<AppState> {
         .route("/api/demo/session", post(demo_session))
         .route("/api/files", post(upload).layer(DefaultBodyLimit::max(MAX_UPLOAD + 64 * 1024)))
         .route("/api/files/{id}", get(download))
-        .route("/api/knowledge", get(knowledge).post(knowledge))
+        .route("/api/knowledge", get(list_knowledge).post(add_knowledge))
 }
 
 async fn me(ws: Ws) -> Json<Me> {
@@ -87,6 +90,43 @@ async fn download(State(state): State<AppState>, _ws: Ws, Path(id): Path<String>
         .into_response())
 }
 
-async fn knowledge() -> ApiErr {
-    ApiErr::not_implemented("K01 (knowledge)")
+/// `GET /api/knowledge`: the workspace's knowledge bases with their source counts.
+async fn list_knowledge(State(state): State<AppState>, ws: Ws) -> ApiResult<Json<Vec<Value>>> {
+    state.services.knowledge.list_bases(ws.id()).await.map(Json).map_err(ApiErr::internal)
+}
+
+/// `POST /api/knowledge` body: a new base (`name`) or more sources for an existing one (`knowledgeBase`).
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AddKnowledge {
+    knowledge_base: Option<String>,
+    name: Option<String>,
+    #[serde(default)]
+    sources: Vec<SourceInput>,
+}
+
+async fn add_knowledge(
+    State(state): State<AppState>,
+    ws: Ws,
+    Json(req): Json<AddKnowledge>,
+) -> ApiResult<(StatusCode, Json<Value>)> {
+    let knowledge = &state.services.knowledge;
+    let id = match (req.knowledge_base, req.name) {
+        (Some(id), _) => {
+            if !knowledge.owns_base(ws.id(), &id).await.map_err(ApiErr::internal)? {
+                return Err(ApiErr::not_found("Knowledge base"));
+            }
+            id
+        }
+        (None, Some(name)) if !name.trim().is_empty() => {
+            knowledge.create_base(ws.id(), name.trim()).await.map_err(ApiErr::internal)?
+        }
+        _ => return Err(ApiErr::bad_request("give a name for a new knowledge base")),
+    };
+    let sources = if req.sources.is_empty() {
+        vec![]
+    } else {
+        knowledge.add_sources(&id, req.sources).await.map_err(|e| ApiErr::bad_request(e.to_string()))?
+    };
+    Ok((StatusCode::CREATED, Json(json!({ "knowledgeBase": id, "sources": sources }))))
 }

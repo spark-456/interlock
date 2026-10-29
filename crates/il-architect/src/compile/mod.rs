@@ -1,6 +1,7 @@
 //! Goal + attachments → Flow JSON with the Architect role: the model writes a compact draft, the
 //! draft becomes a laid-out flow, and validation errors go back to the model (AR-3, AR-4, AR-10).
 
+mod attach;
 mod build;
 
 use std::collections::BTreeMap;

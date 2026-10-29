@@ -46,6 +46,10 @@ pub trait KnowledgeService: Send + Sync {
     async fn owns_base(&self, _workspace_id: &str, _kb_id: &str) -> Result<bool, KnowledgeError> {
         Ok(false)
     }
+    /// The workspace's bases, newest first: `{id, name, createdAt, sources}` (source count).
+    async fn list_bases(&self, _workspace_id: &str) -> Result<Vec<Value>, KnowledgeError> {
+        Ok(vec![])
+    }
     /// Creates a knowledge base and returns its id.
     async fn create_base(&self, workspace_id: &str, name: &str) -> Result<String, KnowledgeError>;
     /// Ingests sources (parse, chunk, embed). Returns the new source ids.
