@@ -217,6 +217,28 @@ fn insert_chunk(
 
 #[async_trait]
 impl KnowledgeService for Knowledge {
+    async fn list_bases(&self, workspace_id: &str) -> Result<Vec<Value>, KnowledgeError> {
+        let workspace = workspace_id.to_owned();
+        self.store
+            .with_conn(move |conn| {
+                let sql = "SELECT b.id, b.name, b.created_at, COUNT(s.id) FROM kb_bases b                            LEFT JOIN kb_sources s ON s.kb_id = b.id WHERE b.workspace_id = ?1                            GROUP BY b.id ORDER BY b.created_at DESC";
+                let mut stmt = conn.prepare(sql).map_err(|e| StoreError::Backend(e.to_string()))?;
+                let rows = stmt
+                    .query_map(params![workspace], |r| {
+                        Ok(json!({
+                            "id": r.get::<_, String>(0)?,
+                            "name": r.get::<_, String>(1)?,
+                            "createdAt": r.get::<_, String>(2)?,
+                            "sources": r.get::<_, i64>(3)?,
+                        }))
+                    })
+                    .map_err(|e| StoreError::Backend(e.to_string()))?;
+                rows.collect::<Result<Vec<_>, _>>().map_err(|e| StoreError::Backend(e.to_string()))
+            })
+            .await
+            .map_err(|e| KnowledgeError::Other(e.to_string()))
+    }
+
     async fn owns_base(&self, workspace_id: &str, kb_id: &str) -> Result<bool, KnowledgeError> {
         let (workspace, id) = (workspace_id.to_owned(), kb_id.to_owned());
         self.store

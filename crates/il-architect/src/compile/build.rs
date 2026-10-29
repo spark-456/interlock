@@ -154,7 +154,8 @@ impl Inner {
         let models = self.services.models.as_ref();
         ev.stage("understand").await;
         ev.log("Reading your request.").await;
-        let mut brief = self.brief(ev, req).await;
+        let instructions = super::attach::instructions(&self.services, &req.attachments).await;
+        let mut brief = self.brief(ev, req, &instructions).await;
         let mut compiled = if self.fake_templates {
             self.compile_template(ws, &req.goal).await?
         } else {
@@ -184,6 +185,9 @@ impl Inner {
         flow.workspace_id = ws.into();
         if let Some(kind) = req.kind {
             flow.kind = kind;
+        }
+        for line in super::attach::apply(&mut flow, &req.attachments, &instructions) {
+            ev.log(line).await;
         }
         self.stream(ev, &flow).await;
         self.services.store.put_flow(&flow).await.map_err(|e| format!("could not save the flow: {e}"))?;
@@ -303,41 +307,47 @@ impl Inner {
         (u32::from(failures.is_empty()), failures)
     }
 
-    /// The goal plus attachments and hints; voice memos marked Instructions are transcribed.
-    async fn brief(&self, ev: &mut Events<'_>, req: &BuildRequest) -> String {
+    /// The goal plus attachments and hints, with the text of each Instructions attachment.
+    async fn brief(&self, ev: &mut Events<'_>, req: &BuildRequest, instructions: &[(String, String)]) -> String {
         let mut brief = format!("Goal: {}", req.goal.trim());
         if let Some(kind) = req.kind {
-            let _ = write!(brief, "\nBuild it as: {}", json!(kind).as_str().unwrap_or_default());
+            let _ = write!(
+                brief,
+                "
+Build it as: {}",
+                json!(kind).as_str().unwrap_or_default()
+            );
         }
         if !req.hints.is_empty() {
-            let _ = write!(brief, "\nApps and APIs to use: {}", req.hints.join(", "));
+            let _ = write!(
+                brief,
+                "
+Apps and APIs to use: {}",
+                req.hints.join(", ")
+            );
         }
         for a in &req.attachments {
             let role = match a.role {
                 AttachmentRole::Knowledge => "knowledge to answer from",
                 AttachmentRole::Instructions => "instructions to follow",
             };
-            let _ = write!(brief, "\nAttachment ({role}): {}", a.url.as_deref().unwrap_or(&a.name));
-            if a.kind == AttachmentKind::Audio
-                && a.role == AttachmentRole::Instructions
-                && let Some(text) = self.transcribe(a.file_id.as_deref()).await
-            {
-                ev.log(format!("Transcribed {}.", a.name)).await;
-                let _ = write!(brief, "\n  Transcript: {text}");
+            let _ = write!(
+                brief,
+                "
+Attachment ({role}): {}",
+                a.url.as_deref().unwrap_or(&a.name)
+            );
+            if let Some((_, text)) = instructions.iter().find(|(name, _)| *name == a.name) {
+                let verb = if a.kind == AttachmentKind::Audio { "Transcribed" } else { "Read" };
+                ev.log(format!("{verb} {}.", a.name)).await;
+                let _ = write!(
+                    brief,
+                    "
+  Text: {text}"
+                );
             }
         }
         brief
-    }
-
-    async fn transcribe(&self, file_id: Option<&str>) -> Option<String> {
-        let (file, bytes) = self.services.files.get(file_id?).await.ok()?;
-        match self.services.models.transcribe(&file, &bytes).await {
-            Ok(t) => Some(t.text),
-            Err(e) => {
-                tracing::warn!(file_id = %file.id, error = %e, "could not transcribe an attachment");
-                None
-            }
-        }
     }
 
     async fn ask_questions(&self, ev: &mut Events<'_>, questions: Vec<BuildQuestion>) -> Result<BuildAnswers, String> {
