@@ -4,7 +4,7 @@
   import Chip from '$lib/design/Chip.svelte';
   import CopyField from '$lib/design/CopyField.svelte';
   import Icon from '$lib/design/Icon.svelte';
-  import type { Endpoints } from './publish';
+  import { platformMcpInstall, type Endpoints } from './publish';
 
   let { endpoints, appName }: { endpoints: Endpoints; appName: string } = $props();
   const TOOLS = ['list_flows', 'get_integration_guide', 'add_documents', 'create_flow_from_goal', 'run_flow'];
@@ -25,7 +25,7 @@
   </header>
   <CopyField label="Interlock MCP" value={endpoints.platformMcp} />
   <ol>
-    <li><CopyField label="Add it to Claude Code" value="claude mcp add --transport http interlock {endpoints.platformMcp}" /></li>
+    <li><CopyField label="Add it to Claude Code" value={platformMcpInstall(endpoints)} /></li>
     <li>
       <p class="prompt">“{prompt}”</p>
       <Button size="s" icon={copied ? 'check' : 'copy'} onclick={copy}>{copied ? 'Copied' : 'Copy prompt'}</Button>

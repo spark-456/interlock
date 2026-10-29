@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { endpoints, mcpInstall, quickStart, slug } from './publish';
+import { endpoints, mcpInstall, platformMcpInstall, quickStart, slug } from './publish';
 
 describe('publish', () => {
   it('slugs names the way il-publish does', () => {
@@ -22,5 +22,12 @@ describe('publish', () => {
     expect(tabs[0]?.code).toContain('"Can I get a refund?"');
     expect(mcpInstall(e)[0]?.text).toContain('claude mcp add --transport http larkspur-support https://il.example/mcp/larkspur-support');
     expect(JSON.parse(mcpInstall(e)[1]!.text).mcpServers['larkspur-support'].url).toBe(e.mcp);
+  });
+
+  it('P02 includes the bearer header in the platform MCP command', () => {
+    const e = endpoints('https://il.example', 'Larkspur Support');
+    const command = platformMcpInstall(e);
+    expect(command).toContain('https://il.example/mcp --header "Authorization: Bearer $INTERLOCK_KEY"');
+    expect(quickStart(e, 'Hello').find((tab) => tab.value === 'claude')?.code).toContain(command);
   });
 });
