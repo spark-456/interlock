@@ -32,6 +32,10 @@ pub trait FileStore: Send + Sync {
     async fn delete_workspace_files(&self, _workspace_id: &str) -> Result<(), FileError> {
         Ok(())
     }
+    /// The workspace that saved the file, when it was saved for one.
+    async fn owner(&self, _id: &str) -> Result<Option<String>, FileError> {
+        Ok(None)
+    }
     /// Reads a file.
     async fn get(&self, id: &str) -> Result<(FileRef, Bytes), FileError>;
     /// A local path for child processes such as ffmpeg (copying to a temp file if needed).

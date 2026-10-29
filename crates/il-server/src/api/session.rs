@@ -62,6 +62,12 @@ impl FromRequestParts<AppState> for Ws {
                 ApiError::new("session_expired", "This session has expired."),
             ));
         }
+        if !state.config.server.local_workspace {
+            return Err(ApiErr(
+                StatusCode::UNAUTHORIZED,
+                ApiError::new("sign_in_required", "Start a demo or sign in to continue."),
+            ));
+        }
         Ok(Ws(Session { workspace_id: LOCAL_WORKSPACE.into(), user: None, demo: false }))
     }
 }

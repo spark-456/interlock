@@ -8,6 +8,8 @@ host = "127.0.0.1"
 port = 8080
 # public_url = "https://interlock.example"   # used for OAuth callbacks, webhooks, widget URLs
 cors_origins = []
+# Requests without a session use the local workspace (fine self-hosted). Set false on a public deploy.
+local_workspace = true
 
 [auth.github]
 client_id = ""          # secret: GITHUB_CLIENT_SECRET

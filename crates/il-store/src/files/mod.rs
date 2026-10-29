@@ -125,6 +125,20 @@ impl FileStore for DiskFileStore {
             .map_err(file_backend)
     }
 
+    async fn owner(&self, id: &str) -> Result<Option<String>, FileError> {
+        let id = id.to_owned();
+        self.store
+            .with_conn(move |c| {
+                let owner: Option<Option<String>> = c
+                    .query_row("SELECT workspace_id FROM fs_files WHERE id=?1", [&id], |r| r.get(0))
+                    .optional()
+                    .map_err(backend)?;
+                Ok(owner.flatten())
+            })
+            .await
+            .map_err(file_backend)
+    }
+
     async fn get(&self, id: &str) -> Result<(FileRef, Bytes), FileError> {
         let (reference, path) = self.metadata(id).await?.ok_or_else(|| FileError::NotFound(id.to_owned()))?;
         let bytes = tokio::fs::read(path).await.map_err(file_backend)?;

@@ -18,6 +18,8 @@ const STATE_COOKIE: &str = "il_connection_state";
 struct RouteState {
     services: Services,
     secure_cookies: bool,
+    /// `server.local_workspace`: requests without a session act on `ws_local`.
+    local_workspace: bool,
 }
 
 #[derive(Deserialize)]
@@ -41,6 +43,7 @@ fn routes(ctx: &RouteCtx) -> Router {
             .pointer("/server/public_url")
             .and_then(Value::as_str)
             .is_some_and(|url| url.starts_with("https://")),
+        local_workspace: ctx.config.pointer("/server/local_workspace").and_then(Value::as_bool).unwrap_or(true),
     };
     Router::new()
         .route("/api/oauth/{provider}/start", get(start))
@@ -76,7 +79,12 @@ fn state_cookie(state: &RouteState, value: &str, max_age: u32) -> Result<HeaderV
 }
 
 async fn workspace_id(state: &RouteState, headers: &HeaderMap) -> Result<String, (StatusCode, Json<Value>)> {
-    let Some(token) = cookie(headers, "il_session") else { return Ok("ws_local".into()) };
+    let Some(token) = cookie(headers, "il_session") else {
+        if state.local_workspace {
+            return Ok("ws_local".into());
+        }
+        return Err(error(StatusCode::UNAUTHORIZED, "sign_in_required", "Sign in to connect apps."));
+    };
     let session = state
         .services
         .store

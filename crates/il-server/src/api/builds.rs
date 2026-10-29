@@ -10,6 +10,7 @@ use axum::{Json, Router};
 use il_core::BuildEventKind;
 use il_core::dto::{BuildAnswers, BuildCreated, BuildRequest};
 use serde::Deserialize;
+use serde_json::{Value, json};
 use tokio::sync::mpsc;
 
 use super::{ApiErr, ApiResult, Ws, sse};
@@ -51,14 +52,27 @@ async fn start(
         }
     }
     let build_id = state.architect.start_build(ws.id(), req).await.map_err(architect_err)?;
+    state.services.store.kv_put(&owner_key(&build_id), &json!(ws.id())).await.map_err(ApiErr::internal)?;
     Ok((StatusCode::ACCEPTED, Json(BuildCreated { build_id })))
+}
+
+fn owner_key(build_id: &str) -> String {
+    format!("ar:build:workspace:{build_id}")
+}
+
+/// 404 unless the build was started by the caller's workspace.
+async fn owned(state: &AppState, ws: &Ws, build_id: &str) -> ApiResult<()> {
+    let owner = state.services.store.kv_get(&owner_key(build_id)).await.map_err(ApiErr::internal)?;
+    if owner.as_ref().and_then(Value::as_str) == Some(ws.id()) { Ok(()) } else { Err(ApiErr::not_found("Build")) }
 }
 
 async fn answer(
     State(state): State<AppState>,
+    ws: Ws,
     Path(id): Path<String>,
     Json(a): Json<BuildAnswers>,
 ) -> ApiResult<StatusCode> {
+    owned(&state, &ws, &id).await?;
     state.architect.answer(&id, a).await.map_err(architect_err)?;
     Ok(StatusCode::ACCEPTED)
 }
@@ -71,10 +85,12 @@ struct After {
 /// SSE over the stored build events (the architect persists every event), until ready/failed.
 async fn events(
     State(state): State<AppState>,
+    ws: Ws,
     Path(id): Path<String>,
     Query(q): Query<After>,
     headers: HeaderMap,
-) -> impl IntoResponse {
+) -> ApiResult<impl IntoResponse> {
+    owned(&state, &ws, &id).await?;
     let mut last = sse::cursor(q.after, &headers);
     let (tx, rx) = mpsc::channel(256);
     let store = state.services.store.clone();
@@ -97,5 +113,5 @@ async fn events(
             tokio::time::sleep(POLL).await;
         }
     });
-    sse::response(rx)
+    Ok(sse::response(rx))
 }
