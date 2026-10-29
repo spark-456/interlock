@@ -87,3 +87,15 @@ async fn q10_a_public_deploy_has_no_sign_in_free_workspace() {
     let oauth = send(&app, Request::get("/api/oauth/google/start").body(Body::empty()).unwrap()).await.0;
     assert_eq!(oauth, StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn q18_an_expired_session_can_be_cleared() {
+    let stale = "il_session=gone-since-the-demo-reset";
+    let (app, _data) = app(true).await;
+    let (status, error, _) = send(&app, get("/api/me", stale)).await;
+    assert_eq!((status, error["error"]["code"].as_str()), (StatusCode::UNAUTHORIZED, Some("session_expired")));
+    let leave = Request::delete("/api/demo/session").header(header::COOKIE, stale).body(Body::empty()).unwrap();
+    let (status, _, cleared) = send(&app, leave).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert_eq!(cleared.as_deref(), Some("il_session="), "the browser drops the stale cookie");
+}

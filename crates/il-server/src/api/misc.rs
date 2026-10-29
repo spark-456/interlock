@@ -55,11 +55,9 @@ async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
     Ok(([(header::SET_COOKIE, cookie)], Json(me)).into_response())
 }
 
-/// Ends only the caller's demo session and expires its browser cookie.
-async fn leave_demo(State(state): State<AppState>, ws: Ws, headers: HeaderMap) -> ApiResult<Response> {
-    if !ws.0.demo {
-        return Err(ApiErr(StatusCode::FORBIDDEN, il_core::ApiError::new("not_demo", "This is not a demo session.")));
-    }
+/// Ends only the caller's demo session and expires its browser cookie. An expired session (a demo
+/// reset overnight) only has its cookie cleared, so the browser can start again.
+async fn leave_demo(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<Response> {
     let token = headers
         .get(header::COOKIE)
         .and_then(|value| value.to_str().ok())
@@ -71,7 +69,16 @@ async fn leave_demo(State(state): State<AppState>, ws: Ws, headers: HeaderMap) -
         })
         .map(|(_, token)| token)
         .ok_or_else(|| ApiErr::bad_request("The demo session cookie is missing."))?;
-    state.services.store.kv_put(&session_key(token), &Value::Null).await.map_err(ApiErr::internal)?;
+    let session = state.services.store.kv_get(&session_key(token)).await.map_err(ApiErr::internal)?;
+    if let Some(session) = session.and_then(|value| serde_json::from_value::<Session>(value).ok()) {
+        if !session.demo {
+            return Err(ApiErr(
+                StatusCode::FORBIDDEN,
+                il_core::ApiError::new("not_demo", "This is not a demo session."),
+            ));
+        }
+        state.services.store.kv_put(&session_key(token), &Value::Null).await.map_err(ApiErr::internal)?;
+    }
     let secure = if state.config.server.public_url.as_deref().is_some_and(|url| url.starts_with("https://")) {
         "; Secure"
     } else {

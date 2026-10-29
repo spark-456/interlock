@@ -4,7 +4,7 @@
   import type { Snippet } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { api, type Me } from '$lib/api';
+  import { api, ApiRequestError, type Me } from '$lib/api';
   import Banner from '$lib/design/Banner.svelte';
   import Button from '$lib/design/Button.svelte';
   import Sidebar from '$lib/design/Sidebar.svelte';
@@ -19,7 +19,22 @@
 
   $effect(() => {
     void page.url.pathname;
-    api.me().then((m) => (me = m)).catch(() => (me = null));
+    api.me().then(
+      (m) => (me = m),
+      async (e) => {
+        me = null;
+        if (!(e instanceof ApiRequestError) || e.status !== 401) return;
+        // An expired demo session (demos reset daily) would leave every screen empty: drop its cookie,
+        // then continue in the local workspace, or go home to start a new demo.
+        // The reload refetches every screen's data without the cookie; it can't repeat, the cookie is gone.
+        if (e.code === 'session_expired') {
+          await api.leaveDemo().catch(() => {});
+          location.reload();
+          return;
+        }
+        if (page.route.id !== '/' && page.route.id !== '/demo') await goto('/');
+      }
+    );
   });
 
   async function leaveDemo() {

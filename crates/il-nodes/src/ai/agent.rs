@@ -174,10 +174,13 @@ impl NodeExecutor for AiAgent {
                         .ok_or_else(|| NodeError::Failed("knowledge search requires a query".into()))?;
                     let hits =
                         ctx.knowledge().search(base, query, 5).await.map_err(|e| NodeError::Failed(e.to_string()))?;
+                    // One entry per document: several passages often come from the same one.
                     for hit in &hits {
-                        sources.push(
-                            json!({"sourceId":hit.source_id,"title":hit.title,"section":hit.section,"url":hit.url}),
-                        );
+                        if !sources.iter().any(|s: &Value| s["sourceId"] == hit.source_id) {
+                            sources.push(
+                                json!({"sourceId":hit.source_id,"title":hit.title,"section":hit.section,"url":hit.url}),
+                            );
+                        }
                     }
                     json!(hits)
                 } else {

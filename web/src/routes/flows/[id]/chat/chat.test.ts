@@ -24,6 +24,18 @@ describe('playground turn', () => {
     expect(passageFor(t, 'missing')).toBeUndefined();
   });
 
+  it('lists each source document once, even when two passages come from it', () => {
+    const doubled = (events as RunEvent[]).map((e) => {
+      if (e.type !== 'node.items') return e;
+      const data = e.data as { items: { json: { sources?: unknown[] } }[] };
+      const json = data.items[0]?.json;
+      if (!json?.sources?.length) return e;
+      const items = [{ ...data.items[0]!, json: { ...json, sources: [json.sources[0], ...json.sources] } }];
+      return { ...e, data: { ...data, items } } as unknown as RunEvent;
+    });
+    expect(replay(doubled).sources.map((s) => s.title)).toEqual(['Refund policy 2026.pdf', 'Plans and limits']);
+  });
+
   it('notes a guardrail when the check after the answer says no', () => {
     const blocked = (events as RunEvent[]).map((e) =>
       e.nodeId === 'n_guard' && e.type === 'node.items' ? ({ ...e, data: { ...e.data, port: 'no' } } as RunEvent) : e
