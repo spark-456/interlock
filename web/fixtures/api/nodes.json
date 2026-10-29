@@ -1121,6 +1121,164 @@
       "version": 1
     },
     {
+      "app": "airtable",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "airtable",
+          "key": "airtable",
+          "kind": "apiKey",
+          "label": "Airtable personal access token",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Adds a record to an Airtable table, mapping fields to values.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "baseId": "appX1y2Z3",
+            "fields": {
+              "Customer": "{{ item.name }}",
+              "Total": "{{ item.total }}"
+            },
+            "table": "Orders"
+          },
+          "title": "Log an order"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "table",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "baseId": {
+            "description": "Starts with app…; it's in the base's URL.",
+            "title": "Base id",
+            "type": "string"
+          },
+          "fields": {
+            "description": "Field name → value. Choices and numbers are matched to the field's type.",
+            "title": "Fields",
+            "type": "object"
+          },
+          "table": {
+            "description": "Table name or id (tbl…).",
+            "title": "Table",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "table",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "ready",
+      "title": "Create record (Airtable)",
+      "trigger": false,
+      "typeId": "app.airtable.create_record",
+      "version": 1
+    },
+    {
+      "app": "airtable",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "airtable",
+          "key": "airtable",
+          "kind": "apiKey",
+          "label": "Airtable personal access token",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Reads records from an Airtable table as one item with a `records` list; follow it with Loop to handle each record.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "baseId": "appX1y2Z3",
+            "formula": "{Status} = 'Open'",
+            "table": "Orders"
+          },
+          "title": "Open orders"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "table",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "baseId": {
+            "description": "Starts with app…; it's in the base's URL.",
+            "title": "Base id",
+            "type": "string"
+          },
+          "formula": {
+            "description": "Optional Airtable formula, e.g. {Status} = 'Open'.",
+            "title": "Filter formula",
+            "type": "string"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Most records",
+            "type": "integer"
+          },
+          "table": {
+            "description": "Table name or id (tbl…).",
+            "title": "Table",
+            "type": "string"
+          },
+          "view": {
+            "description": "Optional; uses the view's filters and order.",
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseId",
+          "table"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "List records (Airtable)",
+      "trigger": false,
+      "typeId": "app.airtable.list_records",
+      "version": 1
+    },
+    {
       "app": "bluesky",
       "category": "app",
       "costHint": "free",
@@ -1558,6 +1716,73 @@
       "version": 1
     },
     {
+      "app": "hubspot",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "hubspot",
+          "key": "hubspot",
+          "kind": "apiKey",
+          "label": "HubSpot private app token",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Creates a HubSpot contact, or updates the one with the same email.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "email": "{{ item.email }}",
+            "properties": {
+              "company": "{{ item.company }}",
+              "firstname": "{{ item.first_name }}"
+            }
+          },
+          "title": "Save a lead"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "plug",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "properties": {
+            "description": "HubSpot property name → value, e.g. firstname, lastname, company, phone.",
+            "title": "Other properties",
+            "type": "object"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "ready",
+      "title": "Create or update contact (HubSpot)",
+      "trigger": false,
+      "typeId": "app.hubspot.upsert_contact",
+      "version": 1
+    },
+    {
       "app": "instagram",
       "category": "app",
       "costHint": "free",
@@ -1698,6 +1923,162 @@
       "title": "Post (LinkedIn)",
       "trigger": false,
       "typeId": "app.linkedin.post",
+      "version": 1
+    },
+    {
+      "app": "notion",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "notion",
+          "key": "notion",
+          "kind": "apiKey",
+          "label": "Notion integration token",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Adds a page to a Notion database, with a title, properties and body text.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "content": "{{ item.summary }}",
+            "databaseId": "1f2e3d4c5b6a79881f2e3d4c5b6a7988",
+            "properties": {
+              "Email": "{{ item.email }}",
+              "Score": "{{ item.score }}"
+            },
+            "title": "{{ item.name }}"
+          },
+          "title": "Log a lead"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "file-plus",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "content": {
+            "title": "Page text",
+            "type": "string",
+            "x-widget": "longtext"
+          },
+          "databaseId": {
+            "description": "From the database link: notion.so/…/<database id>?v=…. Share the database with your integration.",
+            "title": "Database id",
+            "type": "string"
+          },
+          "properties": {
+            "description": "Column name → value. Text, numbers and true/false map to Notion text, number and checkbox.",
+            "title": "Other columns",
+            "type": "object"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "titleProperty": {
+            "default": "Name",
+            "title": "Title column",
+            "type": "string"
+          }
+        },
+        "required": [
+          "databaseId",
+          "title"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "ready",
+      "title": "Create page (Notion)",
+      "trigger": false,
+      "typeId": "app.notion.create_page",
+      "version": 1
+    },
+    {
+      "app": "notion",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "notion",
+          "key": "notion",
+          "kind": "apiKey",
+          "label": "Notion integration token",
+          "optional": false,
+          "scopes": []
+        }
+      ],
+      "description": "Reads pages from a Notion database as one item with a `pages` list of plain values; follow it with Loop to handle each page.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "databaseId": "1f2e3d4c5b6a79881f2e3d4c5b6a7988",
+            "limit": 10
+          },
+          "title": "Open tasks"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "search",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "databaseId": {
+            "title": "Database id",
+            "type": "string"
+          },
+          "filter": {
+            "description": "Optional Notion filter, e.g. {\"property\": \"Status\", \"status\": {\"equals\": \"Open\"}}.",
+            "title": "Filter",
+            "type": "object",
+            "x-widget": "json"
+          },
+          "limit": {
+            "default": 25,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Most pages",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "databaseId"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "Query database (Notion)",
+      "trigger": false,
+      "typeId": "app.notion.query_database",
       "version": 1
     },
     {
