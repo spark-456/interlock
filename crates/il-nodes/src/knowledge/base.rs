@@ -101,6 +101,19 @@ impl NodeExecutor for KnowledgeBase {
 
     async fn execute(&self, ctx: &mut NodeCtx, _input: NodeInput) -> Result<NodeOutput, NodeError> {
         let name = ctx.settings["name"].as_str().ok_or_else(|| NodeError::Failed("name is required".into()))?;
+        // One base per flow step: later runs reuse it until the step's sources change.
+        let run = &ctx.run;
+        let key = format!("kb:node:{}:{}:{}", run.workspace_id, run.flow_id, run.node_id);
+        let fingerprint = json!([name, ctx.settings["sources"], ctx.settings["crawlLimit"]]).to_string();
+        let store = &ctx.services.store;
+        if let Some(saved) = store.kv_get(&key).await.map_err(|e| NodeError::Failed(e.to_string()))?
+            && saved["fingerprint"] == fingerprint.as_str()
+            && let Some(id) = saved["knowledgeBase"].as_str()
+            && ctx.knowledge().owns_base(&run.workspace_id, id).await.unwrap_or(false)
+        {
+            let out = json!({"knowledgeBase": id, "sources": saved["sources"]});
+            return Ok(NodeOutput::port("kb", vec![Item::json(out)]));
+        }
         let id = ctx
             .knowledge()
             .create_base(&ctx.run.workspace_id, name)
@@ -128,6 +141,8 @@ impl NodeExecutor for KnowledgeBase {
         } else {
             ctx.knowledge().add_sources(&id, sources).await.map_err(|e| NodeError::Failed(e.to_string()))?
         };
+        let saved = json!({"knowledgeBase": id, "sources": source_ids, "fingerprint": fingerprint});
+        store.kv_put(&key, &saved).await.map_err(|e| NodeError::Failed(e.to_string()))?;
         Ok(NodeOutput::port("kb", vec![Item::json(json!({"knowledgeBase":id,"sources":source_ids}))]))
     }
 }

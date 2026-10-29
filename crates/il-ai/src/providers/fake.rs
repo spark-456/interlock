@@ -1,6 +1,7 @@
 //! `fake` provider (`IL_PROVIDERS=fake`): deterministic, offline. Echoes the last user message, or,
-//! when the request asks for JSON, returns a minimal instance of its schema so structured steps run;
-//! transcribes any audio to a line naming the file.
+//! when the request asks for JSON, returns a minimal instance of its schema so structured steps run.
+//! Offered a knowledge search, it searches once for the question and answers with the best passage.
+//! Transcribes any audio to a line naming the file.
 
 use std::sync::Arc;
 
@@ -8,9 +9,9 @@ use async_trait::async_trait;
 use il_core::FileRef;
 use il_sdk::registry::ProviderFactory;
 use il_sdk::services::models::{
-    ChatDelta, ChatRequest, ChatResponse, ChatRole, ChatStream, ModelError, ModelProvider, Transcript, Usage,
+    ChatDelta, ChatRequest, ChatResponse, ChatRole, ChatStream, ModelError, ModelProvider, ToolCall, Transcript, Usage,
 };
-use serde_json::Value;
+use serde_json::{Value, json};
 
 /// Offline provider used by tests and fake mode.
 #[derive(Debug, Default)]
@@ -25,9 +26,18 @@ impl ModelProvider for FakeProvider {
     async fn chat(&self, model: &str, req: ChatRequest) -> Result<ChatResponse, ModelError> {
         let last = req.messages.iter().rev().find(|m| m.role == ChatRole::User);
         let echo = last.map(|m| m.content.clone()).unwrap_or_default();
-        let content = match &req.json_schema {
-            Some(schema) => sample(schema, &echo).to_string(),
-            None => echo,
+        let searched = req.messages.iter().rev().find(|m| m.role == ChatRole::Tool);
+        if let (Some(search), None) = (req.tools.iter().find(|t| t.name.starts_with("search_")), searched) {
+            let call = ToolCall { id: "call_0".into(), name: search.name.clone(), arguments: json!({ "query": echo }) };
+            return Ok(ChatResponse { tool_calls: vec![call], model: model.to_string(), ..Default::default() });
+        }
+        let passage = searched
+            .and_then(|m| serde_json::from_str::<Value>(&m.content).ok())
+            .and_then(|hits| hits[0]["text"].as_str().map(str::to_string));
+        let content = match (&req.json_schema, passage) {
+            (Some(schema), _) => sample(schema, &echo).to_string(),
+            (None, Some(passage)) => passage,
+            (None, None) => echo,
         };
         Ok(ChatResponse { content, usage: Usage::default(), model: model.to_string(), ..Default::default() })
     }

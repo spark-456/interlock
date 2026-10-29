@@ -71,6 +71,9 @@ pub(crate) async fn drive(
                 if cp.resolved(&node.id) || cp.partial.contains_key(&node.id) || running.contains(&node.id) {
                     continue;
                 }
+                if knowledge_steps(node, &flow).any(|step| !cp.resolved(step)) {
+                    continue;
+                }
                 let incoming: Vec<_> = flow.incoming(&node.id).filter(|e| flow.node(&e.from.node).is_some()).collect();
                 if incoming.is_empty() {
                     // Other roots: extra triggers are not taken; source nodes (knowledge bases…) run.
@@ -287,6 +290,13 @@ fn nodes_scope(cp: &Checkpoint, current: Option<&Item>) -> Value {
         map.insert(id.clone(), json!({ "json": first.unwrap_or(Value::Null), "items": items }));
     }
     Value::Object(map)
+}
+
+/// Steps a node names as its knowledge bases (`"knowledgeBases": ["n_kb"]`); it waits for them as for an input.
+fn knowledge_steps<'a>(node: &'a Node, flow: &'a Flow) -> impl Iterator<Item = &'a str> + 'a {
+    let settings = &node.settings;
+    let named = settings["knowledgeBases"].as_array().into_iter().flatten().chain([&settings["knowledgeBase"]]);
+    named.filter_map(Value::as_str).filter(|id| flow.node(id).is_some())
 }
 
 async fn persist(inner: &Inner, run: &mut Run, cp: &Checkpoint) {
