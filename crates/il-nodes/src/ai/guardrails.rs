@@ -90,6 +90,8 @@ impl NodeExecutor for AiGuardrails {
             json_schema: Some(
                 json!({"type":"object","required":["rule"],"properties":{"rule":{"type":"string","enum":names}},"additionalProperties":false}),
             ),
+            // The same answer must get the same verdict; sampling made small models flag good answers.
+            temperature: Some(0.0),
             ..Default::default()
         };
         let response = ctx.models().chat(role, request).await.map_err(|e| NodeError::Failed(e.to_string()))?;
