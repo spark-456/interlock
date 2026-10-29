@@ -153,6 +153,29 @@ async fn a03_every_step_card_builds_then_ends_ready() {
 }
 
 #[tokio::test]
+async fn b10_builds_refuse_to_start_over_the_daily_cap() {
+    use il_sdk::services::store::SpendEntry;
+    let fakes = FakeServices::default();
+    let entry = SpendEntry {
+        workspace_id: "ws_1".into(),
+        flow_id: None,
+        run_id: None,
+        build_id: Some("bld_old".into()),
+        role: "architect".into(),
+        cost_usd: 5.5,
+        at: fakes.services().clock.now(),
+    };
+    fakes.store.record_spend(&entry).await.unwrap();
+    let caps = il_architect::BuildCaps { workspace_daily_usd: 5.0, global_daily_usd: 25.0 };
+    let architect = Architect::new(fakes.services(), Arc::new(FakeRunner::default()), catalog()).with_caps(caps);
+    let id = architect.start_build("ws_1", request(FA)).await.unwrap();
+    let evs = events(fakes.store.as_ref(), &id, ended).await;
+    let BuildEventKind::Failed { error } = &evs.last().unwrap().kind else { panic!("{evs:#?}") };
+    assert!(error.contains("spend cap reached") && error.contains("$5.50 of $5.00"), "{error}");
+    assert!(fakes.models.calls().is_empty(), "no model was called");
+}
+
+#[tokio::test]
 async fn a_build_streams_the_flow_and_saves_it() {
     let fakes = FakeServices::default();
     fakes.models.push_json(draft("fa"));

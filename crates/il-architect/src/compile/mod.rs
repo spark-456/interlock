@@ -13,7 +13,7 @@ use il_sdk::services::models::{ChatMessage, ChatRequest, ModelError, ModelGatewa
 use serde::Deserialize;
 use serde_json::json;
 
-pub use build::Architect;
+pub use build::{Architect, BuildCaps};
 
 use crate::catalog::Catalog;
 use crate::validate::{Issue, validate};

@@ -14,6 +14,7 @@ use il_sdk::Services;
 use il_sdk::services::architect::{ArchitectError, ArchitectService};
 use il_sdk::services::metering::{ModelCallContext, with_model_context};
 use il_sdk::services::runner::FlowRunner;
+use il_sdk::services::store::{SpendEntry, SpendScope};
 use serde_json::json;
 use tokio::sync::oneshot;
 
@@ -41,6 +42,8 @@ struct Inner {
     runner: Arc<dyn FlowRunner>,
     catalog: Catalog,
     fake_templates: bool,
+    /// Daily caps a build must be under to start; none in tests.
+    caps: Option<BuildCaps>,
     /// Builds waiting for answers, by build id.
     waiting: Mutex<HashMap<String, oneshot::Sender<BuildAnswers>>>,
 }
@@ -58,7 +61,30 @@ impl Architect {
         catalog: Catalog,
         fake_templates: bool,
     ) -> Self {
-        Self { inner: Arc::new(Inner { services, runner, catalog, fake_templates, waiting: Mutex::default() }) }
+        let inner = Inner { services, runner, catalog, fake_templates, caps: None, waiting: Mutex::default() };
+        Self { inner: Arc::new(inner) }
+    }
+
+    /// Refuses to start builds once the workspace's or everyone's spend today reaches `caps`.
+    pub fn with_caps(mut self, caps: BuildCaps) -> Self {
+        if let Some(inner) = Arc::get_mut(&mut self.inner) {
+            inner.caps = Some(caps);
+        }
+        self
+    }
+}
+
+/// The `[caps]` limits builds count toward (USD per day).
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
+#[serde(default)]
+pub struct BuildCaps {
+    pub workspace_daily_usd: f64,
+    pub global_daily_usd: f64,
+}
+
+impl Default for BuildCaps {
+    fn default() -> Self {
+        Self { workspace_daily_usd: 5.0, global_daily_usd: 25.0 }
     }
 }
 
@@ -105,6 +131,7 @@ impl ArchitectService for Architect {
 struct Events<'a> {
     services: &'a Services,
     build_id: String,
+    workspace_id: String,
     seq: u64,
     cost_usd: f64,
     stage: Option<&'static str>,
@@ -143,6 +170,20 @@ impl Events<'_> {
     }
 
     async fn cost(&mut self, usd: f64) {
+        if usd > 0.0 {
+            let entry = SpendEntry {
+                workspace_id: self.workspace_id.clone(),
+                flow_id: None,
+                run_id: None,
+                build_id: Some(self.build_id.clone()),
+                role: "architect".into(),
+                cost_usd: usd,
+                at: self.services.clock.now(),
+            };
+            if let Err(e) = self.services.store.record_spend(&entry).await {
+                tracing::warn!(build_id = %self.build_id, error = %e, "could not record build spend");
+            }
+        }
         self.cost_usd += usd;
         let cost_usd = self.cost_usd;
         self.emit(None, BuildEventKind::Cost { cost_usd }).await;
@@ -151,8 +192,13 @@ impl Events<'_> {
 
 impl Inner {
     async fn run(self: Arc<Self>, build_id: String, ws: String, req: BuildRequest) {
-        let mut ev = Events { services: &self.services, build_id, seq: 0, cost_usd: 0.0, stage: None };
-        match self.build(&mut ev, &ws, &req).await {
+        let mut ev =
+            Events { services: &self.services, build_id, workspace_id: ws.clone(), seq: 0, cost_usd: 0.0, stage: None };
+        let outcome = match self.over_cap(&ws).await {
+            Some(error) => Err(error),
+            None => self.build(&mut ev, &ws, &req).await,
+        };
+        match outcome {
             Ok(flow_id) => {
                 ev.end_stage(StageStatus::Done).await;
                 ev.emit(None, BuildEventKind::Ready { flow_id }).await;
@@ -163,6 +209,26 @@ impl Inner {
                 ev.emit(None, BuildEventKind::Failed { error }).await;
             }
         }
+    }
+
+    /// Why a build can't start: today's workspace or global spend has reached its cap.
+    async fn over_cap(&self, ws: &str) -> Option<String> {
+        let caps = self.caps?;
+        let now = self.services.clock.now();
+        let day = now.date_naive().and_hms_opt(0, 0, 0).map_or(now, |d| d.and_utc());
+        let checks = [
+            (SpendScope::WorkspaceSince(ws.into(), day), caps.workspace_daily_usd, "This workspace"),
+            (SpendScope::GlobalSince(day), caps.global_daily_usd, "Interlock"),
+        ];
+        for (scope, limit, who) in checks {
+            let spent = self.services.store.spend(&scope).await.unwrap_or(0.0);
+            if spent >= limit {
+                return Some(format!(
+                    "spend cap reached: {who} spent ${spent:.2} of ${limit:.2} today, so builds start again tomorrow"
+                ));
+            }
+        }
+        None
     }
 
     async fn build(&self, ev: &mut Events<'_>, ws: &str, req: &BuildRequest) -> Result<String, String> {
