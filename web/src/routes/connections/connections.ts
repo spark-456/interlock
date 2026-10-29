@@ -52,7 +52,10 @@ const FIELDS: Record<string, KeyField[]> = {
   // Slack has no sign-in yet; a bot token from api.slack.com/apps works for sending and approvals.
   slack: [{ key: 'bot_token', label: 'Bot token', placeholder: 'xoxb-…', secret: true }],
   telegram: [{ key: 'token', label: 'Bot token', placeholder: '123456:ABC…', secret: true }],
-  shopify: [{ key: 'access_token', label: 'Admin API access token', placeholder: 'shpat_…', secret: true }]
+  shopify: [{ key: 'access_token', label: 'Admin API access token', placeholder: 'shpat_…', secret: true }],
+  notion: [{ key: 'api_key', label: 'Internal integration token', placeholder: 'ntn_…', secret: true }],
+  airtable: [{ key: 'api_key', label: 'Personal access token', placeholder: 'pat…', secret: true }],
+  hubspot: [{ key: 'api_key', label: 'Private app access token', placeholder: 'pat-na1-…', secret: true }]
 };
 
 /** Whether the drawer can save a key for the app: key-based apps, and Slack with a bot token. */
