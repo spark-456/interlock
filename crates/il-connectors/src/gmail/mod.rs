@@ -17,6 +17,7 @@ fn google_provider() -> crate::oauth::Provider {
             "https://www.googleapis.com/auth/gmail.modify".into(),
             "https://www.googleapis.com/auth/gmail.send".into(),
             "https://www.googleapis.com/auth/spreadsheets".into(),
+            "https://www.googleapis.com/auth/drive".into(),
             "https://www.googleapis.com/auth/youtube.upload".into(),
         ],
         client_id_env: "GOOGLE_CLIENT_ID",

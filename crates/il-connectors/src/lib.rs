@@ -3,6 +3,7 @@
 pub mod airtable;
 pub mod bluesky;
 pub mod discord;
+pub mod drive;
 pub mod gmail;
 pub mod hubspot;
 pub mod notion;
