@@ -751,7 +751,7 @@
             "x-widget": "expression"
           },
           "model": {
-            "default": "fast",
+            "default": "agent",
             "enum": [
               "architect",
               "agent",
