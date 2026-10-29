@@ -29,7 +29,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
                     "action":{"type":"string","title":"If matched","enum":["block","handoff"],"x-widget":"select"}
                 }
             }},
-            "model":{"type":"string","title":"Model","enum":["architect","agent","fast"],"default":"fast","x-widget":"model-role"}
+            "model":{"type":"string","title":"Model","enum":["architect","agent","fast"],"default":"agent","x-widget":"model-role"}
         }
     }))
     .example("Refund policy", json!({
@@ -57,7 +57,8 @@ impl NodeExecutor for AiGuardrails {
             }
             names.push(name);
         }
-        let role = match ctx.settings["model"].as_str().unwrap_or("fast") {
+        // The fast model flagged good answers in testing; judging needs the agent model.
+        let role = match ctx.settings["model"].as_str().unwrap_or("agent") {
             "fast" => ModelRole::Fast,
             "agent" => ModelRole::Agent,
             "architect" => ModelRole::Architect,
@@ -69,17 +70,29 @@ impl NodeExecutor for AiGuardrails {
             .cloned()
             .or_else(|| input.main().first().and_then(|item| item.json.get("answer")).cloned())
             .unwrap_or(Value::Null);
+        let answer = answer.as_str().map(str::to_owned).unwrap_or_else(|| answer.to_string());
+        // The person's own message tells whose details an answer may repeat (their own email is fine).
+        let asked = input.main().first().and_then(|item| item.json["message"].as_str()).unwrap_or_default();
         let request = ChatRequest {
             messages: vec![
                 ChatMessage::system(format!(
-                    "Check the answer against the rules. Return JSON with the name of the first matching rule, or none. Never choose an action. Rules: {}",
+                    "You check an assistant's answer against rules. A rule matches only when the answer clearly \
+                     breaks it; if you are unsure, or the rule needs facts you can't see, it does not match. Details \
+                     the person gave about themselves are theirs, not another customer's. Return JSON with the name \
+                     of the first matching rule, or none. Never choose an action. Rules: {}",
                     serde_json::to_string(rules).map_err(|e| NodeError::Failed(e.to_string()))?
                 )),
-                ChatMessage::user(answer.as_str().map(str::to_owned).unwrap_or_else(|| answer.to_string())),
+                ChatMessage::user(if asked.is_empty() {
+                    answer
+                } else {
+                    format!("The person wrote:\n{asked}\n\nThe answer to check:\n{answer}")
+                }),
             ],
             json_schema: Some(
                 json!({"type":"object","required":["rule"],"properties":{"rule":{"type":"string","enum":names}},"additionalProperties":false}),
             ),
+            // The same answer must get the same verdict; sampling made small models flag good answers.
+            temperature: Some(0.0),
             ..Default::default()
         };
         let response = ctx.models().chat(role, request).await.map_err(|e| NodeError::Failed(e.to_string()))?;

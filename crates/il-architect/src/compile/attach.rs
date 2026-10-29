@@ -1,10 +1,11 @@
 //! Build attachments in the flow (K04, AR-1): Knowledge attachments become the sources of the flow's
-//! knowledge base step, and Instructions (documents or transcribed voice memos) join every agent's
-//! instructions.
+//! knowledge base step, Instructions (documents or transcribed voice memos) join every agent's
+//! instructions, and an API spec's safe operations become every agent's API tools.
 
 use il_core::dto::{Attachment, AttachmentKind, AttachmentRole};
 use il_core::{Flow, Node, Position};
 use il_sdk::Services;
+use il_sdk::openapi::ApiOperation;
 use serde_json::{Value, json};
 
 /// Characters of one instructions attachment kept in the brief and in agent instructions.
@@ -32,8 +33,50 @@ pub(super) async fn instructions(services: &Services, attachments: &[Attachment]
     out
 }
 
+/// An attached API spec: the file id or URL agents load it from, and its operations.
+pub(super) struct ApiSpec {
+    pub name: String,
+    pub reference: String,
+    pub operations: Vec<ApiOperation>,
+}
+
+impl ApiSpec {
+    /// The operations an agent may call without the person allowing risky ones.
+    pub fn safe(&self) -> Vec<&str> {
+        self.operations.iter().filter(|o| !o.risky).map(|o| o.id.as_str()).collect()
+    }
+}
+
+/// Reads each API attachment (uploaded file or link). A spec that can't be read is logged and skipped.
+pub(super) async fn api_specs(services: &Services, attachments: &[Attachment]) -> Vec<ApiSpec> {
+    let mut out = Vec::new();
+    for a in attachments.iter().filter(|a| a.kind == AttachmentKind::Api) {
+        let (reference, text) = match (&a.file_id, &a.url) {
+            (Some(id), _) => {
+                (id.clone(), services.files.get(id).await.ok().map(|(_, b)| String::from_utf8_lossy(&b).into_owned()))
+            }
+            (None, Some(url)) => (url.clone(), fetch(services, url).await),
+            _ => continue,
+        };
+        match text.ok_or_else(|| "could not be read".to_string()).and_then(|t| il_sdk::openapi::operations(&t)) {
+            Ok(operations) => out.push(ApiSpec { name: a.name.clone(), reference, operations }),
+            Err(e) => tracing::warn!(attachment = %a.name, error = %e, "could not read an API spec attachment"),
+        }
+    }
+    out
+}
+
+async fn fetch(services: &Services, url: &str) -> Option<String> {
+    services.http.get(url).ok()?.send().await.ok()?.error_for_status().ok()?.text().await.ok()
+}
+
 /// Puts the attachments into `flow` and returns a log line for each change.
-pub(super) fn apply(flow: &mut Flow, attachments: &[Attachment], instructions: &[(String, String)]) -> Vec<String> {
+pub(super) fn apply(
+    flow: &mut Flow,
+    attachments: &[Attachment],
+    instructions: &[(String, String)],
+    apis: &[ApiSpec],
+) -> Vec<String> {
     let mut log = Vec::new();
     let sources: Vec<Value> = attachments
         .iter()
@@ -68,6 +111,39 @@ pub(super) fn apply(flow: &mut Flow, attachments: &[Attachment], instructions: &
         }
         if agents > 0 {
             log.push(format!("Gave {agents} assistant{} your instructions.", plural(agents)));
+        }
+    }
+    if let Some(api) = apis.first() {
+        let safe = api.safe();
+        let mut agents = 0;
+        for node in flow.nodes.iter_mut().filter(|n| n.node_type == "ai.agent") {
+            let tools = &node.settings["apiTools"];
+            let chosen: Vec<&str> = match tools["spec"].as_str() {
+                // Keep the model's choice of operations from this spec, minus unknown or risky ones.
+                Some(spec) if spec == api.reference => tools["operations"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                    .filter(|id| safe.contains(id))
+                    .collect(),
+                // Another spec (a template's, or an id the model made up): the attached one wins.
+                _ => vec![],
+            };
+            let operations = if chosen.is_empty() { safe.clone() } else { chosen };
+            node.settings["apiTools"] = json!({ "spec": api.reference, "operations": operations });
+            agents += 1;
+        }
+        if agents > 0 {
+            let skipped = api.operations.len() - safe.len();
+            let note = if skipped > 0 { format!(" ({skipped} risky left out)") } else { String::new() };
+            log.push(format!(
+                "Gave {agents} assistant{} {} API action{} from {}{note}.",
+                plural(agents),
+                safe.len(),
+                plural(safe.len()),
+                api.name
+            ));
         }
     }
     log
@@ -110,7 +186,7 @@ mod tests {
     use il_core::dto::{Attachment, AttachmentKind, AttachmentRole};
     use serde_json::json;
 
-    use super::apply;
+    use super::{ApiSpec, apply};
 
     fn attachment(kind: AttachmentKind, role: AttachmentRole, file: Option<&str>, url: Option<&str>) -> Attachment {
         Attachment { kind, name: "a".into(), file_id: file.map(Into::into), url: url.map(Into::into), role }
@@ -133,7 +209,7 @@ mod tests {
             attachment(AttachmentKind::File, AttachmentRole::Knowledge, Some("fil_1"), None),
             attachment(AttachmentKind::Link, AttachmentRole::Knowledge, None, Some("https://help.example")),
         ];
-        let log = apply(&mut f, &attachments, &[("memo.mp3".into(), "Keep answers short.".into())]);
+        let log = apply(&mut f, &attachments, &[("memo.mp3".into(), "Keep answers short.".into())], &[]);
         let sources = &f.node("n_kb").unwrap().settings["sources"];
         assert_eq!(sources.as_array().unwrap().len(), 2, "the duplicate link is kept once");
         assert_eq!(sources[1], json!({"kind": "file", "value": "fil_1"}));
@@ -148,8 +224,43 @@ mod tests {
     fn k04_a_knowledge_step_is_added_when_the_draft_has_none() {
         let mut f = flow(json!([{"id": "n_agent", "type": "ai.agent", "name": "Agent", "settings": {}}]));
         let attachments = [attachment(AttachmentKind::Audio, AttachmentRole::Knowledge, Some("fil_a"), None)];
-        apply(&mut f, &attachments, &[]);
+        apply(&mut f, &attachments, &[], &[]);
         assert_eq!(f.node("n_kb1").unwrap().settings["sources"], json!([{"kind": "file", "value": "fil_a"}]));
         assert_eq!(f.node("n_agent").unwrap().settings["knowledgeBases"], json!(["n_kb1"]));
+    }
+
+    #[test]
+    fn q11_agents_get_the_specs_safe_operations() {
+        let spec = r#"{"openapi": "3.0.3", "servers": [{"url": "https://api.example.com"}], "paths": {
+            "/users": {"get": {"operationId": "lookup_customer"}},
+            "/users/{id}": {"delete": {"operationId": "delete_customer"}},
+            "/tickets": {"post": {"operationId": "open_ticket"}}}}"#;
+        let api = ApiSpec {
+            name: "api.json".into(),
+            reference: "fil_spec".into(),
+            operations: il_sdk::openapi::operations(spec).unwrap(),
+        };
+        let mut f = flow(json!([
+            {"id": "n_a", "type": "ai.agent", "name": "Support", "settings": {}},
+            {"id": "n_b", "type": "ai.agent", "name": "Billing",
+             "settings": {"apiTools": {"spec": "fil_spec", "operations": ["lookup_customer", "delete_customer", "made_up"]}}},
+            {"id": "n_c", "type": "ai.agent", "name": "Old", "settings": {"apiTools": {"spec": "fil_template", "operations": ["x"]}}}
+        ]));
+        let log = apply(&mut f, &[], &[], &[api]);
+        assert_eq!(
+            f.node("n_a").unwrap().settings["apiTools"],
+            json!({"spec": "fil_spec", "operations": ["lookup_customer", "open_ticket"]})
+        );
+        assert_eq!(
+            f.node("n_b").unwrap().settings["apiTools"],
+            json!({"spec": "fil_spec", "operations": ["lookup_customer"]}),
+            "the model's pick is kept, minus risky and unknown operations"
+        );
+        assert_eq!(
+            f.node("n_c").unwrap().settings["apiTools"],
+            json!({"spec": "fil_spec", "operations": ["lookup_customer", "open_ticket"]}),
+            "a template's spec is replaced by the attached one (Q14)"
+        );
+        assert_eq!(log, ["Gave 3 assistants 2 API actions from api.json (1 risky left out)."]);
     }
 }

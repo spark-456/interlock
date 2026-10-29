@@ -32,15 +32,7 @@ pub fn parse(source: &str) -> Result<Vec<Operation>, String> {
     if source.trim_start().starts_with("curl ") {
         return parse_curl(source).map(|operation| vec![operation]);
     }
-    let document: Value = if let Ok(json) = serde_json::from_str(source) {
-        json
-    } else {
-        serde_yaml::from_str(source).map_err(|e| format!("invalid OpenAPI document: {e}"))?
-    };
-    let version = document["openapi"].as_str().ok_or("missing OpenAPI version")?;
-    if !version.starts_with("3.0.") && !version.starts_with("3.1.") {
-        return Err(format!("unsupported OpenAPI version: {version}"));
-    }
+    let document = il_sdk::openapi::document(source)?;
     let base_url = document["servers"][0]["url"].as_str().ok_or("missing server URL")?;
     Url::parse(base_url).map_err(|e| format!("invalid server URL: {e}"))?;
     let paths = document["paths"].as_object().ok_or("missing paths")?;
@@ -51,10 +43,7 @@ pub fn parse(source: &str) -> Result<Vec<Operation>, String> {
             if !["get", "post", "put", "patch", "delete", "head"].contains(&method.as_str()) {
                 continue;
             }
-            let id = detail["operationId"]
-                .as_str()
-                .map(str::to_owned)
-                .unwrap_or_else(|| format!("{}_{}", method, path.trim_matches('/').replace(['/', '{', '}'], "_")));
+            let id = il_sdk::openapi::operation_id(method, path, detail);
             let description =
                 detail["summary"].as_str().or_else(|| detail["description"].as_str()).unwrap_or(&id).to_owned();
             let mut parameters = Vec::new();
@@ -75,10 +64,7 @@ pub fn parse(source: &str) -> Result<Vec<Operation>, String> {
             let body_schema = detail["requestBody"]["content"]["application/json"]["schema"]
                 .as_object()
                 .map(|_| detail["requestBody"]["content"]["application/json"]["schema"].clone());
-            let risky = method == "delete"
-                || ["delete", "destroy", "remove", "revoke", "refund", "cancel", "terminate"].iter().any(|word| {
-                    id.to_ascii_lowercase().contains(word) || description.to_ascii_lowercase().contains(word)
-                });
+            let risky = il_sdk::openapi::is_risky(method, &id, &description);
             operations.push(Operation {
                 id,
                 description,
