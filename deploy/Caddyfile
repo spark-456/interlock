@@ -1,0 +1,3 @@
+{$INTERLOCK_DOMAIN} {
+    reverse_proxy interlock:8080
+}

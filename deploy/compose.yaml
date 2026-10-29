@@ -1,0 +1,29 @@
+services:
+  interlock:
+    build:
+      context: ..
+    image: interlock:local
+    restart: unless-stopped
+    env_file: /etc/interlock/secrets.env
+    volumes:
+      - /mnt/interlock-data:/data
+      - /etc/interlock/interlock.toml:/etc/interlock/interlock.toml:ro
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - interlock
+    environment:
+      INTERLOCK_DOMAIN: ${INTERLOCK_DOMAIN:?set INTERLOCK_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
