@@ -47,7 +47,7 @@ tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["cors", "compression-gzip", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-ts-rs = { version = "10", features = ["serde-json-impl", "chrono-impl"] }
+ts-rs = { version = "10", features = ["serde-json-impl", "chrono-impl", "no-serde-warnings"] }
 ulid = "1"
 url = "2"
 wiremock = "0.6"

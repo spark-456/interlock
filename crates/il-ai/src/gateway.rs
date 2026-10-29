@@ -83,6 +83,10 @@ impl Gateway {
         let config: GatewayConfig =
             serde_json::from_value(models.clone()).map_err(|e| ModelError::Config(format!("[models]: {e}")))?;
         if fake {
+            // The fake stands in for every provider, so it also does jobs only a fallback has a model for.
+            let mut config = config;
+            let fallback = config.fallbacks.iter().find_map(|f| f.roles.transcribe.clone());
+            config.roles.transcribe = config.roles.transcribe.take().or(fallback);
             return Ok(Self::new(build("fake", models)?, config));
         }
         let mut gateway = Self::empty(&config);
