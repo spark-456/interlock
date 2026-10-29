@@ -107,7 +107,9 @@
   <section aria-labelledby="keys">
     <h2 id="keys">API keys</h2>
     <p class="muted">Keys call your published apps over the OpenAI-compatible API and MCP. A key is shown once, when you create it.</p>
-    {#if keysError}
+    {#if me?.demo}
+      <p class="muted">API keys are unavailable in demo workspaces. Use a non-demo workspace to connect external clients.</p>
+    {:else if keysError}
       <p class="muted">{keysError}</p>
     {:else}
       <form class="create" onsubmit={(e) => (e.preventDefault(), create())}>

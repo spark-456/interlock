@@ -38,6 +38,11 @@ export function mcpInstall(e: Endpoints) {
   ];
 }
 
+/** Command to connect a coding agent to the platform MCP server. */
+export function platformMcpInstall(e: Endpoints): string {
+  return `claude mcp add --transport http interlock ${e.platformMcp} --header "Authorization: Bearer $INTERLOCK_KEY"`;
+}
+
 /** Quick-start code for each tab. */
 export function quickStart(e: Endpoints, question: string): { value: string; label: string; code: string }[] {
   const q = JSON.stringify(question);
@@ -87,7 +92,7 @@ res = client.chat.completions.create(
     {
       value: 'claude',
       label: 'Claude Code',
-      code: `claude mcp add --transport http interlock ${e.platformMcp}
+      code: `${platformMcpInstall(e)}
 # then ask: "Add the ${e.model} assistant as a chat panel in this app."`
     }
   ];

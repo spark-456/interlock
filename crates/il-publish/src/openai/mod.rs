@@ -115,7 +115,7 @@ pub(crate) async fn respond(ctx: &RouteCtx, flow: &Flow, request: ChatRequest, t
         .iter()
         .rev()
         .find(|message| message.role == "user")
-        .and_then(|message| message.content.as_str())
+        .and_then(|message| user_text(&message.content))
         .ok_or_else(|| error(StatusCode::BAD_REQUEST, "a user text message is required"));
     let message = match message {
         Ok(message) => message,
@@ -138,6 +138,27 @@ pub(crate) async fn respond(ctx: &RouteCtx, flow: &Flow, request: ChatRequest, t
         Err(_) => return error(StatusCode::BAD_GATEWAY, "flow execution failed"),
     };
     completion(&request.model, request.stream, outcome)
+}
+
+fn user_text(content: &Value) -> Option<String> {
+    if let Some(text) = content.as_str() {
+        return Some(text.to_owned());
+    }
+    let parts = content.as_array()?;
+    if parts.is_empty() {
+        return None;
+    }
+    let text = parts
+        .iter()
+        .map(|part| {
+            if part.get("type")?.as_str()? != "text" {
+                return None;
+            }
+            part.get("text")?.as_str()
+        })
+        .collect::<Option<Vec<_>>>()?
+        .concat();
+    Some(text)
 }
 
 fn completion(model: &str, stream: bool, outcome: InvokeOutcome) -> Response {
@@ -241,6 +262,40 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let data: Value = serde_json::from_slice(&to_bytes(response.into_body(), 100_000).await.unwrap()).unwrap();
         assert_eq!(data["choices"][0]["message"]["content"], "Hello");
+        let parts = app
+            .clone()
+            .oneshot(
+                Request::post("/v1/chat/completions")
+                    .header("authorization", format!("Bearer {key}"))
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        json!({"model":"support-agent","messages":[{"role":"user","content":[
+                        {"type":"text","text":"Hello "},{"type":"text","text":"world"}]}]})
+                        .to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(parts.status(), StatusCode::OK);
+        let data: Value = serde_json::from_slice(&to_bytes(parts.into_body(), 100_000).await.unwrap()).unwrap();
+        assert_eq!(data["choices"][0]["message"]["content"], "Hello world");
+        let unsupported = app
+            .clone()
+            .oneshot(
+                Request::post("/v1/chat/completions")
+                    .header("authorization", format!("Bearer {key}"))
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        json!({"model":"support-agent","messages":[{"role":"user","content":[
+                        {"type":"image_url","image_url":{"url":"https://example.com/image.png"}}]}]})
+                        .to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(unsupported.status(), StatusCode::BAD_REQUEST);
         let streamed = app
             .clone()
             .oneshot(

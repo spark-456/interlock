@@ -29,7 +29,20 @@ fn cookie(headers: &HeaderMap) -> Option<&str> {
 }
 
 async fn workspace(ctx: &RouteCtx, headers: &HeaderMap) -> Result<String, RouteError> {
-    let token = cookie(headers).ok_or_else(|| error(StatusCode::UNAUTHORIZED, "unauthorized", "Sign in first."))?;
+    let Some(token) = cookie(headers) else {
+        let local_enabled =
+            ctx.config.pointer("/server/local_workspace").and_then(serde_json::Value::as_bool) != Some(false);
+        let github_enabled = ctx
+            .config
+            .pointer("/auth/github/client_id")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|id| !id.trim().is_empty());
+        return if local_enabled && !github_enabled {
+            Ok("ws_local".into())
+        } else {
+            Err(error(StatusCode::UNAUTHORIZED, "unauthorized", "Sign in first."))
+        };
+    };
     let value = ctx
         .services
         .store
@@ -115,7 +128,7 @@ mod tests {
             runner: Arc::new(FakeRunner::default()),
             architect: Arc::new(FakeArchitect),
             flow_tools: Arc::new(il_sdk::services::NoFlowTools),
-            config: Value::Null,
+            config: json!({"auth":{"github":{"client_id":"configured"}}}),
         };
         let router = routes(&ctx);
         let input = json!({"name":"Test"}).to_string();
@@ -168,5 +181,33 @@ mod tests {
             .unwrap();
         assert_eq!(revoked.status(), StatusCode::NO_CONTENT);
         assert!(manager.authenticate(key).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn p02_local_workspace_can_create_keys_without_github() {
+        let fakes = FakeServices::default();
+        let ctx = RouteCtx {
+            services: fakes.services(),
+            runner: Arc::new(FakeRunner::default()),
+            architect: Arc::new(FakeArchitect),
+            flow_tools: Arc::new(il_sdk::services::NoFlowTools),
+            config: json!({"server":{"local_workspace":true},"auth":{"github":{"client_id":""}}}),
+        };
+        let request = || {
+            Request::post("/api/keys")
+                .header("content-type", "application/json")
+                .body(Body::from(json!({"name":"Local key"}).to_string()))
+                .unwrap()
+        };
+        let response = routes(&ctx).oneshot(request()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let created: Value = serde_json::from_slice(&to_bytes(response.into_body(), 4096).await.unwrap()).unwrap();
+        let key = created["key"].as_str().unwrap();
+        assert_eq!(KeyManager::new(fakes.store).authenticate(key).await.unwrap().as_deref(), Some("ws_local"));
+
+        let mut public = ctx;
+        public.config = json!({"server":{"local_workspace":false},"auth":{"github":{"client_id":""}}});
+        let denied = routes(&public).oneshot(request()).await.unwrap();
+        assert_eq!(denied.status(), StatusCode::UNAUTHORIZED);
     }
 }

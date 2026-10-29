@@ -7,7 +7,7 @@
   import { toast } from '$lib/design/toasts.svelte';
   import type { Endpoints } from './publish';
 
-  let { endpoints, appName }: { endpoints: Endpoints; appName: string } = $props();
+  let { endpoints, appName, demo }: { endpoints: Endpoints; appName: string; demo: boolean } = $props();
   let key = $state<string | null>(null);
   let creating = $state(false);
 
@@ -32,11 +32,13 @@
   <CopyField label="Model" value={endpoints.model} />
   {#if key}
     <CopyField label="Key" value={key} mode="reveal-once" />
-  {:else}
+  {:else if !demo}
     <div class="key">
       <span class="label">Key</span>
       <Button icon="plus" loading={creating} onclick={create}>Create a key</Button>
     </div>
+  {:else}
+    <p class="demo-note">Key creation is unavailable in demo mode.</p>
   {/if}
 </section>
 
@@ -51,4 +53,5 @@
   header p { margin: 0; color: var(--text-3); font: var(--t-small); }
   .key { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
   .label { font: var(--t-small); font-weight: 600; color: var(--text-2); }
+  .demo-note { margin: 0; color: var(--text-3); }
 </style>
