@@ -60,6 +60,9 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 49 | Q07 | Friendly run errors | P2 | B03 | ready |  |  |  | Map connector and engine errors to plain-language messages with a next step ("Connect Google in Connections", "This step needs a video from an earlier step") in the run view and node panel |
 | 50 | Q08 | Parallel branches pair items when they join | P1 | B03 | ready |  |  |  | When two per-item branches from one step meet at a per-item step, the join sees 2×N separate items (one per branch) instead of N items carrying both branches' fields and files; and `nodes.<id>.json` is always the upstream step's first item, so per-item flows that read it get item 1's values. Pair items by their source item (zip on lineage) and expose the paired upstream item in expressions; add engine tests. Found in Q02 (promos had to be chained instead). |
 | 51 | Q09 | Edit a trigger's sample data in the panel | P2 | Q02 | done | claude-a | t/Q09-trigger-samples | 2026-10-28 05:13 | PR #53 merged |
+| 52 | B09 | Model fallbacks: Groq and OpenRouter | P1 | B02 | claimed | claude-a | t/B09-model-fallbacks | 2026-10-29 04:00 | Owner request: when Token Factory is rate-limited, down, out of credit or has no key, the gateway retries the same role on Groq, then OpenRouter (each only when its key is set) |
+| 53 | C05 | Connectors: Notion, Airtable, HubSpot | P1 | C04 | claimed | claude-a | t/C05-key-connectors | 2026-10-29 04:00 | API-key apps from PRD P1: Notion create page / query database, Airtable create / list records, HubSpot create or update contact |
+| 54 | C06 | Google Drive upload and new file; Sheets read rows | P1 | C01 | ready |  |  |  | Uses the Google sign-in from C01 |
 
 ## Waiting on the owner
 
@@ -283,6 +286,18 @@ Each card lists **Owns paths** (only edit inside these, plus tiny additive chang
 - **Owns**: `README.md`, `docs/**` (except PRD and WORKBOARD), `assets/**`.
 - **Acceptance** [PRD §13]: README with what/why, demo link, screenshots, architecture diagram, setup for Windows and Linux, how Nemotron Ultra/Super/Nano and Token Factory are used (with file paths), Tavily usage, Nebius deployment, honest limitations; `docs/NODES.md` generated; a demo video script under 3 minutes; Devpost text including the Tilo lineage note and feedback on Nebius/NVIDIA tools.
 - **Licence (owner decision, 2026-10-27)**: the repo is public under an all-rights-reserved `LICENSE` for now. The submission checklist (PRD §13) asks for Apache-2.0 visible in the About section, so switch `LICENSE`, `Cargo.toml`, `web/package.json` and the README back to Apache-2.0 at submission (owner's decision). The root `README.md` was removed on 2026-10-27 so the public repo page stays bare (owner's decision); write it again from scratch for submission (its last version is in git history, commit 7c53926).
+
+### B09 · Model fallbacks: Groq and OpenRouter
+- **Owns**: `crates/il-ai/**`, `[models]` in `config/interlock.example.toml`.
+- **Acceptance**: Groq and OpenRouter providers (OpenAI-compatible, keys `GROQ_API_KEY`, `OPENROUTER_API_KEY`) self-register; `[[models.fallbacks]]` lists providers with their own role → model ids; the gateway moves a call to the next provider after retries are used up on a rate limit, outage, missing or rejected key, or exhausted credit; providers without a key are skipped; Token Factory stays first (hackathon rule); wiremock tests for the fall-over.
+
+### C05 · Connectors: Notion, Airtable, HubSpot
+- **Owns**: `crates/il-connectors/src/{notion,airtable,hubspot}/`.
+- **Acceptance**: `app.notion.create_page`, `app.notion.query_database`, `app.airtable.create_record`, `app.airtable.list_records`, `app.hubspot.upsert_contact`; API-key credentials saved from /connections (C04); destinations come only from settings; wiremock harness tests; `docs/NODES.md` regenerated.
+
+### C06 · Google Drive upload and new file; Sheets read rows
+- **Owns**: `crates/il-connectors/src/{drive,sheets}/`.
+- **Acceptance**: `app.drive.upload` (file from an item into a folder), `trigger.drive.new_file` (polling with a cursor, like Gmail new email), `app.sheets.read_rows`; Google OAuth scopes added; wiremock harness tests; catalog regenerated.
 
 ---
 
