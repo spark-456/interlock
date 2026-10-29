@@ -19,6 +19,11 @@ use crate::search;
 /// Documents ready to chunk: each with its source URL and role (`knowledge`, `instructions`).
 type Prepared = Vec<(ParsedDocument, Option<String>, &'static str)>;
 
+/// Texts per embedding call, and calls in flight. A crawled site has hundreds of chunks and one call
+/// can take many seconds, so a page-by-page loop outlasted the step timeout.
+const EMBED_BATCH: usize = 128;
+const EMBED_PARALLEL: usize = 4;
+
 /// Production knowledge service. All model and file operations use SDK traits.
 #[derive(Clone)]
 pub struct Knowledge {
@@ -45,6 +50,21 @@ impl Knowledge {
     pub fn with_recorded_sites(mut self, dir: PathBuf) -> Self {
         self.recorded = Some(dir);
         self
+    }
+
+    /// Embeds `texts` in batches, a few calls at a time, keeping their order.
+    async fn embed_all(&self, texts: &[String]) -> Result<Vec<Vec<f32>>, KnowledgeError> {
+        let batches: Vec<&[String]> = texts.chunks(EMBED_BATCH).collect();
+        let mut vectors = Vec::with_capacity(texts.len());
+        for group in batches.chunks(EMBED_PARALLEL) {
+            let calls = group.iter().map(|batch| self.models.embed(batch));
+            for batch in
+                futures::future::try_join_all(calls).await.map_err(|e| KnowledgeError::Ingest(e.to_string()))?
+            {
+                vectors.extend(batch);
+            }
+        }
+        Ok(vectors)
     }
 
     async fn prepare(&self, source: SourceInput) -> Result<Prepared, KnowledgeError> {
@@ -95,19 +115,12 @@ impl Knowledge {
     async fn insert(
         &self,
         kb_id: &str,
-        doc: ParsedDocument,
-        url: Option<String>,
-        role: &'static str,
+        (doc, url, role): (ParsedDocument, Option<String>, &'static str),
+        chunks: Vec<Chunk>,
+        vectors: Vec<Vec<f32>>,
+        at: chrono::DateTime<Utc>,
     ) -> Result<String, KnowledgeError> {
         let source_id = il_sdk::id("src");
-        let at = Utc::now();
-        let chunks = if role == "knowledge" { chunk::split(&doc, at) } else { Vec::new() };
-        let texts: Vec<String> = chunks.iter().map(|chunk| chunk.text.clone()).collect();
-        let vectors = if texts.is_empty() {
-            Vec::new()
-        } else {
-            self.models.embed(&texts).await.map_err(|e| KnowledgeError::Ingest(e.to_string()))?
-        };
         if vectors.len() != chunks.len() {
             return Err(KnowledgeError::Ingest("embedding count mismatch".into()));
         }
@@ -286,11 +299,21 @@ impl KnowledgeService for Knowledge {
         if !exists {
             return Err(KnowledgeError::NotFound(kb_id.into()));
         }
-        let mut ids = Vec::new();
+        let mut docs = Vec::new();
         for source in sources {
-            for (doc, url, role) in self.prepare(source).await? {
-                ids.push(self.insert(kb_id, doc, url, role).await?);
-            }
+            docs.extend(self.prepare(source).await?);
+        }
+        let at = Utc::now();
+        let chunks: Vec<Vec<Chunk>> = docs
+            .iter()
+            .map(|(doc, _, role)| if *role == "knowledge" { chunk::split(doc, at) } else { Vec::new() })
+            .collect();
+        let texts: Vec<String> = chunks.iter().flatten().map(|chunk| chunk.text.clone()).collect();
+        let mut vectors = self.embed_all(&texts).await?.into_iter();
+        let mut ids = Vec::new();
+        for (doc, chunks) in docs.into_iter().zip(chunks) {
+            let own: Vec<Vec<f32>> = vectors.by_ref().take(chunks.len()).collect();
+            ids.push(self.insert(kb_id, doc, chunks, own, at).await?);
         }
         Ok(ids)
     }
@@ -337,6 +360,18 @@ mod tests {
     use il_store::db::SqliteStore;
 
     use super::Knowledge;
+
+    #[tokio::test]
+    async fn q11_embedding_in_batches_keeps_each_vector_with_its_text() {
+        use il_sdk::services::ModelGateway;
+        let dir = tempfile::tempdir().unwrap();
+        let models = Arc::new(FakeGateway::default());
+        let store = Arc::new(SqliteStore::open(dir.path().join("k.sqlite")).unwrap());
+        let service = Knowledge::new(store, Arc::new(FakeFiles::default()), models.clone(), None);
+        let texts: Vec<String> = (0..300).map(|i| format!("chunk {i} {}", "x".repeat(i % 7))).collect();
+        let batched = service.embed_all(&texts).await.unwrap();
+        assert_eq!(batched, models.embed(&texts).await.unwrap(), "300 texts span 3 batches, in order");
+    }
 
     #[tokio::test]
     async fn k01_ingest_and_hybrid_search_survive_reopen() {

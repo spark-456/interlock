@@ -58,6 +58,13 @@ impl Catalog {
     }
 }
 
+impl Catalog {
+    /// `type_id`'s settings in the prompt's format, for repair messages.
+    pub fn settings_of(&self, type_id: &str) -> Option<String> {
+        self.get(type_id).map(|m| settings(&m.settings_schema)).filter(|s| !s.is_empty())
+    }
+}
+
 fn ports(p: &[PortSpec]) -> String {
     if p.is_empty() { "none".into() } else { p.iter().map(|p| p.name.as_str()).collect::<Vec<_>>().join("|") }
 }

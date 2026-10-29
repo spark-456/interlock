@@ -66,8 +66,44 @@ pub(super) async fn api_specs(services: &Services, attachments: &[Attachment]) -
     out
 }
 
+/// The first link attachment whose site can't be reached (no such host, refused, timed out), as a
+/// message for the person. HTTP errors don't count: the crawler may still read a page a plain GET can't.
+/// Recorded `.example` sites are never fetched.
+pub(super) async fn unreachable_link(services: &Services, attachments: &[Attachment]) -> Option<String> {
+    for a in attachments.iter().filter(|a| a.kind == AttachmentKind::Link) {
+        let Some(url) = a.url.as_deref() else { continue };
+        let host = url.split("://").nth(1).and_then(|rest| rest.split(['/', ':', '?']).next()).unwrap_or_default();
+        if host == "example" || host.ends_with(".example") {
+            continue;
+        }
+        let reached = match services.http.get(url) {
+            Ok(request) => request.timeout(std::time::Duration::from_secs(15)).send().await.map(|_| ()),
+            Err(e) => return Some(format!("Couldn't open {url}: {e}. Check the link and try again.")),
+        };
+        if let Err(e) = reached {
+            tracing::info!(url, error = %e, "link attachment unreachable");
+            return Some(format!("Couldn't open {url}: the site can't be reached. Check the link and try again."));
+        }
+    }
+    None
+}
+
 async fn fetch(services: &Services, url: &str) -> Option<String> {
     services.http.get(url).ok()?.send().await.ok()?.error_for_status().ok()?.text().await.ok()
+}
+
+/// Removes API tools a fix gave an agent from a spec the flow didn't use before the fix: models
+/// invent spec URLs (`https://api.<site>/openapi.json`) that 404 on every run.
+pub(super) fn keep_known_specs(next: &mut Flow, before: &Flow) {
+    let spec = |n: &Node| n.settings["apiTools"]["spec"].as_str().map(str::to_owned);
+    let known: Vec<String> = before.nodes.iter().filter_map(spec).collect();
+    for node in next.nodes.iter_mut().filter(|n| n.node_type == "ai.agent") {
+        if spec(node).is_some_and(|s| !known.contains(&s))
+            && let Some(settings) = node.settings.as_object_mut()
+        {
+            settings.remove("apiTools");
+        }
+    }
 }
 
 /// Puts the attachments into `flow` and returns a log line for each change.
@@ -76,6 +112,7 @@ pub(super) fn apply(
     attachments: &[Attachment],
     instructions: &[(String, String)],
     apis: &[ApiSpec],
+    hints: &[String],
 ) -> Vec<String> {
     let mut log = Vec::new();
     let sources: Vec<Value> = attachments
@@ -111,6 +148,18 @@ pub(super) fn apply(
         }
         if agents > 0 {
             log.push(format!("Gave {agents} assistant{} your instructions.", plural(agents)));
+        }
+    }
+    if apis.is_empty() {
+        // Without an attached spec, API tools the model wrote point at a spec nobody gave it.
+        for node in flow.nodes.iter_mut().filter(|n| n.node_type == "ai.agent") {
+            let spec = node.settings["apiTools"]["spec"].as_str().unwrap_or_default();
+            if !spec.is_empty() && !hints.iter().any(|h| h == spec) {
+                if let Some(settings) = node.settings.as_object_mut() {
+                    settings.remove("apiTools");
+                }
+                log.push(format!("Removed API actions from \u{201c}{}\u{201d}: no API spec was attached.", node.name));
+            }
         }
     }
     if let Some(api) = apis.first() {
@@ -209,7 +258,7 @@ mod tests {
             attachment(AttachmentKind::File, AttachmentRole::Knowledge, Some("fil_1"), None),
             attachment(AttachmentKind::Link, AttachmentRole::Knowledge, None, Some("https://help.example")),
         ];
-        let log = apply(&mut f, &attachments, &[("memo.mp3".into(), "Keep answers short.".into())], &[]);
+        let log = apply(&mut f, &attachments, &[("memo.mp3".into(), "Keep answers short.".into())], &[], &[]);
         let sources = &f.node("n_kb").unwrap().settings["sources"];
         assert_eq!(sources.as_array().unwrap().len(), 2, "the duplicate link is kept once");
         assert_eq!(sources[1], json!({"kind": "file", "value": "fil_1"}));
@@ -224,7 +273,7 @@ mod tests {
     fn k04_a_knowledge_step_is_added_when_the_draft_has_none() {
         let mut f = flow(json!([{"id": "n_agent", "type": "ai.agent", "name": "Agent", "settings": {}}]));
         let attachments = [attachment(AttachmentKind::Audio, AttachmentRole::Knowledge, Some("fil_a"), None)];
-        apply(&mut f, &attachments, &[], &[]);
+        apply(&mut f, &attachments, &[], &[], &[]);
         assert_eq!(f.node("n_kb1").unwrap().settings["sources"], json!([{"kind": "file", "value": "fil_a"}]));
         assert_eq!(f.node("n_agent").unwrap().settings["knowledgeBases"], json!(["n_kb1"]));
     }
@@ -246,7 +295,7 @@ mod tests {
              "settings": {"apiTools": {"spec": "fil_spec", "operations": ["lookup_customer", "delete_customer", "made_up"]}}},
             {"id": "n_c", "type": "ai.agent", "name": "Old", "settings": {"apiTools": {"spec": "fil_template", "operations": ["x"]}}}
         ]));
-        let log = apply(&mut f, &[], &[], &[api]);
+        let log = apply(&mut f, &[], &[], &[api], &[]);
         assert_eq!(
             f.node("n_a").unwrap().settings["apiTools"],
             json!({"spec": "fil_spec", "operations": ["lookup_customer", "open_ticket"]})
@@ -262,5 +311,28 @@ mod tests {
             "a template's spec is replaced by the attached one (Q14)"
         );
         assert_eq!(log, ["Gave 3 assistants 2 API actions from api.json (1 risky left out)."]);
+    }
+
+    #[test]
+    fn q16_api_tools_without_an_attached_spec_are_removed() {
+        let mut f = flow(json!([
+            {"id": "n_a", "type": "ai.agent", "name": "Helper",
+             "settings": {"apiTools": {"spec": "https://api.made-up.example/openapi.json", "operations": ["x"]}}},
+            {"id": "n_b", "type": "ai.agent", "name": "Named",
+             "settings": {"apiTools": {"spec": "https://api.real.com/openapi.json", "operations": ["y"]}}}
+        ]));
+        let log = apply(&mut f, &[], &[], &[], &["https://api.real.com/openapi.json".into()]);
+        assert!(f.node("n_a").unwrap().settings.get("apiTools").is_none());
+        assert!(f.node("n_b").unwrap().settings.get("apiTools").is_some(), "a spec the person named stays");
+        assert_eq!(log.len(), 1);
+    }
+
+    #[test]
+    fn q16_a_fix_cannot_add_a_new_api_spec() {
+        let before = flow(json!([{"id": "n_a", "type": "ai.agent", "name": "A", "settings": {}}]));
+        let mut next = flow(json!([{"id": "n_a", "type": "ai.agent", "name": "A",
+            "settings": {"apiTools": {"spec": "https://api.site.com/openapi.json", "operations": ["x"]}}}]));
+        super::keep_known_specs(&mut next, &before);
+        assert!(next.node("n_a").unwrap().settings.get("apiTools").is_none());
     }
 }

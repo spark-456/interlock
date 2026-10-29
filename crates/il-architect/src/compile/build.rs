@@ -232,9 +232,11 @@ impl Inner {
     }
 
     async fn build(&self, ev: &mut Events<'_>, ws: &str, req: &BuildRequest) -> Result<String, String> {
-        let models = self.services.models.as_ref();
         ev.stage("understand").await;
         ev.log("Reading your request.").await;
+        if let Some(problem) = super::attach::unreachable_link(&self.services, &req.attachments).await {
+            return Err(problem);
+        }
         let instructions = super::attach::instructions(&self.services, &req.attachments).await;
         let apis = super::attach::api_specs(&self.services, &req.attachments).await;
         let mut brief = self.brief(ev, req, &instructions, &apis).await;
@@ -242,7 +244,7 @@ impl Inner {
         let mut compiled = if self.fake_templates {
             self.compile_template(ws, &req.goal).await?
         } else {
-            compile(models, &self.catalog, &req.goal, &brief, true).await.map_err(|e| e.to_string())?
+            self.compile_or_retry(ev, &req.goal, &brief, true).await?
         };
         ev.cost(compiled.cost_usd).await;
         if let Outcome::Questions(questions) = &compiled.outcome {
@@ -252,7 +254,7 @@ impl Inner {
                 let a = answers.answers.get(&q.id).map_or("no preference", String::as_str);
                 let _ = write!(brief, "\n- {} {a}", q.text);
             }
-            compiled = compile(models, &self.catalog, &req.goal, &brief, false).await.map_err(|e| e.to_string())?;
+            compiled = self.compile_or_retry(ev, &req.goal, &brief, false).await?;
             ev.cost(compiled.cost_usd).await;
         }
         for fixed in &compiled.repairs {
@@ -269,7 +271,7 @@ impl Inner {
         if let Some(kind) = req.kind {
             flow.kind = kind;
         }
-        for line in super::attach::apply(&mut flow, &req.attachments, &instructions, &apis) {
+        for line in super::attach::apply(&mut flow, &req.attachments, &instructions, &apis, &req.hints) {
             ev.log(line).await;
         }
         self.stream(ev, &flow).await;
@@ -278,6 +280,26 @@ impl Inner {
         ev.stage("test").await;
         self.test_and_fix(ev, *flow, &sample, &brief).await;
         Ok(flow_id)
+    }
+
+    /// Compiles; when the plan is still invalid after its repairs, starts once more from a fresh
+    /// conversation. Real models occasionally return a run of drafts with every setting empty.
+    async fn compile_or_retry(
+        &self,
+        ev: &mut Events<'_>,
+        goal: &str,
+        brief: &str,
+        may_ask: bool,
+    ) -> Result<Compiled, String> {
+        let models = self.services.models.as_ref();
+        match compile(models, &self.catalog, goal, brief, may_ask).await {
+            Err(super::CompileError::Invalid(issues)) => {
+                tracing::warn!(build_id = %ev.build_id, problems = issues.len(), "plan invalid after repairs; retrying");
+                ev.log("The plan still had problems, so I'm starting it again.").await;
+                compile(models, &self.catalog, goal, brief, may_ask).await.map_err(|e| e.to_string())
+            }
+            other => other.map_err(|e| e.to_string()),
+        }
     }
 
     async fn compile_template(&self, ws: &str, goal: &str) -> Result<Compiled, String> {
@@ -382,7 +404,8 @@ impl Inner {
                 }
             };
             ev.cost(revised.cost_usd).await;
-            let next = revised.flow;
+            let mut next = revised.flow;
+            super::attach::keep_known_specs(&mut next, &flow);
             if let Err(e) = self.services.store.put_flow(&next).await {
                 ev.log(format!("Could not save the fixed flow: {e}")).await;
                 return (flow, fixed, remaining());
