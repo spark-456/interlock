@@ -57,8 +57,10 @@ async function parse<T>(res: Response): Promise<T> {
       err?.error.details
     );
   }
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  // 202/204 replies have no body, and some routes (the integration guide) answer in plain text.
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return (res.headers.get('content-type')?.includes('json') ? JSON.parse(text) : text) as T;
 }
 
 export const get = <T>(path: string) => request<T>('GET', path);

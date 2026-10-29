@@ -42,7 +42,7 @@ export const api = {
   /** The integration guide (INTERLOCK.md) for a published AI app. */
   /** Where each webhook step listens (made on first ask; refused until the flow is on). */
   hooks: (flowId: string) => get<WebhookUrl[]>(`/api/flows/${flowId}/hooks`),
-  guide: (flowId: string) => get<{ markdown: string }>(`/api/flows/${flowId}/guide`),
+  guide: (flowId: string) => get<string>(`/api/flows/${flowId}/guide`),
   /** Starts an anonymous demo workspace (sets the session cookie). */
   demoSession: () => post<Me>('/api/demo/session', {}),
   keys: () => get<{ id: string; name: string; revoked: boolean; lastUsedAt: string | null }[]>('/api/keys'),
