@@ -33,6 +33,21 @@ pub fn validate(flow: &Flow, catalog: &Catalog) -> Vec<Issue> {
     let mut issues = Vec::new();
     let mut ids = BTreeSet::new();
     let groups: BTreeSet<&str> = flow.groups.iter().map(|g| g.id.as_str()).collect();
+    let available_tools: BTreeSet<&str> = flow
+        .nodes
+        .iter()
+        .filter(|n| !n.disabled)
+        .flat_map(|n| match n.node_type.as_str() {
+            "data.openapi" => n.settings.get("operationId").and_then(Value::as_str).into_iter().collect::<Vec<_>>(),
+            "ai.agent" => n.settings["apiTools"]["operations"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect(),
+            _ => Vec::new(),
+        })
+        .collect();
     for n in &flow.nodes {
         let at = format!("nodes.{}", n.id);
         if !ids.insert(n.id.as_str()) {
@@ -47,6 +62,16 @@ pub fn validate(flow: &Flow, catalog: &Catalog) -> Vec<Issue> {
         };
         if let Err(errs) = il_sdk::validate::validate_json(&m.settings_schema, &n.settings) {
             issues.extend(errs.into_iter().map(|e| Issue::new(format!("{at}.settings{}", e.path), e.message)));
+        }
+        if n.node_type == "ai.agent" {
+            for (index, tool) in n.settings["tools"].as_array().into_iter().flatten().enumerate() {
+                if let Some(name) = tool.as_str().filter(|name| !available_tools.contains(name)) {
+                    issues.push(Issue::new(
+                        format!("{at}.settings.tools[{index}]"),
+                        format!("tool `{name}` is unavailable in this flow"),
+                    ));
+                }
+            }
         }
         if !m.inputs.is_empty() && !m.trigger && flow.incoming(&n.id).next().is_none() {
             issues.push(Issue::new(&at, "nothing connects into this step, so it never runs"));
@@ -234,5 +259,27 @@ mod tests {
         }));
         let issues = validate(&f, &catalog());
         assert_eq!(issues, vec![Issue::new("nodes.n_a.settings", "references `n_b`, which does not run before it")]);
+    }
+
+    #[test]
+    fn q05_flags_agent_tools_missing_from_the_flow() {
+        let catalog = Catalog::new([
+            NodeManifest::new("trigger.manual", Category::Trigger, "Manual", "Start by hand.").trigger(),
+            NodeManifest::new("ai.agent", Category::Ai, "Agent", "Use tools."),
+        ]);
+        let f = flow(json!({
+            "nodes": [
+                {"id":"start","type":"trigger.manual","name":"Start"},
+                {"id":"agent","type":"ai.agent","name":"Agent",
+                    "settings":{"instructions":"Help","tools":["get_invoice"]}}
+            ],
+            "edges": [edge("e1", "start", "out", "agent")]
+        }));
+        assert!(
+            validate(&f, &catalog).contains(&Issue::new(
+                "nodes.agent.settings.tools[0]",
+                "tool `get_invoice` is unavailable in this flow"
+            ))
+        );
     }
 }

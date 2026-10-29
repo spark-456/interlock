@@ -106,6 +106,7 @@ impl NodeExecutor for AiAgent {
         selected
             .extend(ctx.settings["apiTools"]["operations"].as_array().into_iter().flatten().filter_map(|v| v.as_str()));
         let mut tools = Vec::new();
+        let mut activity = Vec::new();
         for base in &bases {
             tools.push(ToolSpec {
                 name: format!("search_{base}"),
@@ -114,16 +115,15 @@ impl NodeExecutor for AiAgent {
             });
         }
         for name in &selected {
-            let tool = ctx
-                .tools()
-                .iter()
-                .find(|tool| tool.name() == *name)
-                .ok_or_else(|| NodeError::Failed(format!("tool {name} is unavailable")))?;
-            tools.push(ToolSpec {
-                name: tool.name().into(),
-                description: tool.description().into(),
-                parameters: tool.schema(),
-            });
+            if let Some(tool) = ctx.tools().iter().find(|tool| tool.name() == *name) {
+                tools.push(ToolSpec {
+                    name: tool.name().into(),
+                    description: tool.description().into(),
+                    parameters: tool.schema(),
+                });
+            } else {
+                activity.push(json!({"tool":name,"warning":format!("tool {name} is unavailable")}));
+            }
         }
         let mut messages = vec![
             ChatMessage::system(format!(
@@ -135,7 +135,6 @@ impl NodeExecutor for AiAgent {
         ];
         let max_steps = ctx.settings["maxSteps"].as_u64().unwrap_or(8).clamp(1, 20);
         let mut sources = Vec::new();
-        let mut activity = Vec::new();
         for _ in 0..max_steps {
             let response = ctx
                 .models()
@@ -172,11 +171,14 @@ impl NodeExecutor for AiAgent {
                     }
                     json!(hits)
                 } else {
-                    let tool = ctx
-                        .tools()
-                        .iter()
-                        .find(|tool| tool.name() == call.name && selected.contains(&tool.name()))
-                        .ok_or_else(|| NodeError::Failed(format!("tool {} is unavailable", call.name)))?;
+                    let Some(tool) =
+                        ctx.tools().iter().find(|tool| tool.name() == call.name && selected.contains(&tool.name()))
+                    else {
+                        let warning = format!("tool {} is unavailable", call.name);
+                        activity.push(json!({"tool":call.name,"warning":warning}));
+                        messages.push(ChatMessage::tool(call.id, json!({"error":warning}).to_string()));
+                        continue;
+                    };
                     tool.invoke(call.arguments).await.map_err(|e| NodeError::Failed(e.to_string()))?
                 };
                 activity.push(json!({"tool":call.name,"result":result}));
@@ -272,5 +274,34 @@ mod tests {
         harness.fakes.models.push_tool_call("get_invoice", json!({"id":"inv1"})).push_text("Invoice paid.");
         let out = harness.run().await.unwrap();
         assert_eq!(out.ports["out"][0].json["activity"][0]["tool"], "get_invoice");
+    }
+
+    #[tokio::test]
+    async fn q05_agent_skips_missing_declared_tool_and_reports_warning() {
+        let harness = NodeHarness::new(super::AiAgent).settings(json!({
+            "instructions":"Answer the customer", "tools":["get_invoice"]
+        }));
+        harness.fakes.models.push_text("I can help with general questions.");
+        let out = harness.run().await.unwrap();
+        assert_eq!(out.ports["out"][0].json["answer"], "I can help with general questions.");
+        assert_eq!(out.ports["out"][0].json["activity"][0]["warning"], "tool get_invoice is unavailable");
+        assert!(harness.fakes.models.calls()[0].1.tools.is_empty());
+    }
+
+    #[tokio::test]
+    async fn q05_agent_recovers_when_model_calls_an_unavailable_tool() {
+        let harness = NodeHarness::new(super::AiAgent).settings(json!({"instructions":"Help"}));
+        harness
+            .fakes
+            .models
+            .push_tool_call("get_invoice", json!({"id":"inv1"}))
+            .push_text("I cannot check that invoice.");
+        let out = harness.run().await.unwrap();
+        assert_eq!(out.ports["out"][0].json["answer"], "I cannot check that invoice.");
+        assert_eq!(out.ports["out"][0].json["activity"][0]["warning"], "tool get_invoice is unavailable");
+        assert!(harness.fakes.models.calls()[1].1.messages.iter().any(|message| {
+            message.role == il_sdk::services::models::ChatRole::Tool
+                && message.content.contains("get_invoice is unavailable")
+        }));
     }
 }
