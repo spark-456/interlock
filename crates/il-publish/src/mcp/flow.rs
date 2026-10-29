@@ -102,7 +102,14 @@ pub(super) async fn call(
             })
             .await
             .map_err(|e| e.to_string())?;
-        return Ok(json!({"run_id":outcome.run.id,"response":outcome.response}));
+        // What an assistant calling this tool needs: the reply and where it came from.
+        let reply = outcome.response.first().map(|item| &item.json);
+        let answer = reply
+            .and_then(|j| j.get("answer").or_else(|| j.get("body")).or_else(|| j.get("message")).or(Some(j)))
+            .cloned()
+            .unwrap_or(Value::Null);
+        let sources = reply.and_then(|j| j.get("sources")).cloned().unwrap_or_else(|| json!([]));
+        return Ok(json!({"answer":answer,"sources":sources,"run_id":outcome.run.id}));
     }
     if let Some(node) = flow.nodes.iter().find(|node| {
         node.node_type == "trigger.mcp_call"
@@ -130,9 +137,21 @@ pub(super) async fn call(
     {
         return agent_tool.invoke(Value::Object(arguments.clone())).await.map_err(|e| e.to_string());
     }
-    let Some(kb_id) = name.strip_prefix("search_").filter(|id| bases(flow).contains(*id)) else {
+    let Some(named) = name.strip_prefix("search_").filter(|id| bases(flow).contains(*id)) else {
         return Err("tool not found".into());
     };
+    // Agents name a knowledge step of the flow; its base is the one the step last built.
+    let kb_id = match flow.node(named).filter(|node| node.node_type == "knowledge.base") {
+        Some(step) => {
+            let key = format!("kb:node:{workspace_id}:{}:{}", flow.id, step.id);
+            let saved = ctx.services.store.kv_get(&key).await.map_err(|e| e.to_string())?;
+            saved
+                .and_then(|saved| saved["knowledgeBase"].as_str().map(str::to_owned))
+                .ok_or("this knowledge base hasn't been built yet; run the app once")?
+        }
+        None => named.to_owned(),
+    };
+    let kb_id = kb_id.as_str();
     if !ctx.services.knowledge.owns_base(workspace_id, kb_id).await.map_err(|e| e.to_string())? {
         return Err("knowledge base not found".into());
     }
