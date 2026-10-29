@@ -102,12 +102,14 @@ pub fn usage(u: Option<&Value>) -> Usage {
 }
 
 /// Maps an HTTP error to the gateway's errors; a 400 about tools or schemas means "fall back".
-pub fn error(status: u16, body: &str) -> ModelError {
+pub fn error(status: u16, body: &str, provider: &str, key_env: &str) -> ModelError {
     let text: String = body.chars().take(300).collect();
     let lower = text.to_lowercase();
     match status {
         429 => ModelError::RateLimited,
-        401 | 403 => ModelError::Config("Token Factory rejected the API key (NEBIUS_API_KEY)".into()),
+        401 | 403 => ModelError::Config(format!("{provider} rejected the API key ({key_env})")),
+        402 => ModelError::Unavailable(format!("{provider} is out of credit: {text}")),
+        404 => ModelError::Config(format!("{provider} has no such model: {text}")),
         400 | 422 if ["tool", "response_format", "json_schema", "not supported"].iter().any(|k| lower.contains(k)) => {
             ModelError::Unsupported(text)
         }

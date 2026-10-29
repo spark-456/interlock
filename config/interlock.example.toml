@@ -1,6 +1,6 @@
 # Interlock configuration. Copy to config/interlock.toml (git-ignored).
 # Every module reads only its own section. Secrets NEVER go here: they come from env
-# (NEBIUS_API_KEY, TAVILY_API_KEY, IL_MASTER_KEY, GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_SECRET,
+# (NEBIUS_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY, TAVILY_API_KEY, IL_MASTER_KEY, GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_SECRET,
 # SLACK_CLIENT_SECRET, media provider keys). Env overrides: IL_HOST, IL_PORT, IL_CONFIG, IL_PROVIDERS.
 
 [server]
@@ -32,6 +32,16 @@ architect = [0.6, 1.8]
 agent = [0.3, 0.9]
 fast = [0.06, 0.24]
 embed = [0.01, 0.0]
+# Fallbacks, tried in order when Token Factory is rate-limited, down, out of credit or has no key.
+# Each one starts only when its key is set; a role left out is never sent to it. Embeddings stay on
+# Token Factory, because a knowledge base can't mix vectors from different embedding models.
+[[models.fallbacks]]
+provider = "openrouter"   # key: OPENROUTER_API_KEY. ":free" models cost nothing but are rate-limited.
+roles = { architect = "nvidia/nemotron-3-ultra-550b-a55b:free", agent = "nvidia/nemotron-3.5-super-vl:free", fast = "nvidia/nemotron-3.5-lightning:free" }
+[[models.fallbacks]]
+provider = "groq"         # key: GROQ_API_KEY
+roles = { architect = "openai/gpt-oss-120b", agent = "openai/gpt-oss-120b", fast = "openai/gpt-oss-20b", transcribe = "whisper-large-v3" }
+# prices = { architect = [0.15, 0.6], agent = [0.15, 0.6], fast = [0.075, 0.3] }   # on a paid Groq plan
 
 [providers.media]
 # `recorded` returns fixture media; it is the default in demo mode, test runs and tests.

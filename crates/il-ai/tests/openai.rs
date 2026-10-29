@@ -1,16 +1,22 @@
-//! The Token Factory provider against a local mock server.
+//! The OpenAI-compatible provider against a local mock server.
 
 use futures::StreamExt;
-use il_ai::providers::tokenfactory::TokenFactory;
+use il_ai::providers::openai::OpenAiCompat;
 use il_sdk::SafeHttp;
 use il_sdk::services::models::{ChatDelta, ChatMessage, ChatRequest, ModelError, ModelProvider, ToolSpec};
 use serde_json::json;
 use wiremock::matchers::{body_partial_json, header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-async fn provider() -> (MockServer, TokenFactory) {
+async fn provider() -> (MockServer, OpenAiCompat) {
     let server = MockServer::start().await;
-    let tf = TokenFactory::new(SafeHttp::permissive_for_tests(), &format!("{}/v1/", server.uri()), "key".into());
+    let tf = OpenAiCompat::new(
+        "tokenfactory",
+        "NEBIUS_API_KEY",
+        SafeHttp::permissive_for_tests(),
+        &format!("{}/v1/", server.uri()),
+        "key".into(),
+    );
     (server, tf)
 }
 
@@ -76,9 +82,14 @@ async fn stream_yields_text_tool_calls_and_usage() {
 #[tokio::test]
 async fn maps_http_errors() {
     let (server, tf) = provider().await;
-    for (status, body) in
-        [(429, "slow down"), (400, "tools are not supported for this model"), (401, "bad key"), (503, "down")]
-    {
+    for (status, body) in [
+        (429, "slow down"),
+        (400, "tools are not supported for this model"),
+        (401, "bad key"),
+        (402, "no credit"),
+        (404, "no model"),
+        (503, "down"),
+    ] {
         server.reset().await;
         Mock::given(method("POST"))
             .respond_with(ResponseTemplate::new(status).set_body_string(body))
@@ -88,7 +99,7 @@ async fn maps_http_errors() {
         let ok = match status {
             429 => matches!(err, ModelError::RateLimited),
             400 => matches!(err, ModelError::Unsupported(_)),
-            401 => matches!(err, ModelError::Config(_)),
+            401 | 404 => matches!(err, ModelError::Config(_)),
             _ => matches!(err, ModelError::Unavailable(_)),
         };
         assert!(ok, "{status} → {err:?}");

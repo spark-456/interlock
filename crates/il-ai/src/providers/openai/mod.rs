@@ -1,5 +1,5 @@
-//! Nebius Token Factory (OpenAI-compatible): chat, streaming, tools, JSON schema, embeddings,
-//! model list and transcription. Key from `NEBIUS_API_KEY`.
+//! The OpenAI-compatible client shared by Token Factory, Groq and OpenRouter: chat, streaming,
+//! tools, JSON schema, embeddings, model list and transcription.
 
 mod stream;
 mod wire;
@@ -10,23 +10,25 @@ use async_trait::async_trait;
 use futures::StreamExt;
 use il_core::FileRef;
 use il_sdk::SafeHttp;
-use il_sdk::registry::ProviderFactory;
 use il_sdk::services::models::{
     ChatRequest, ChatResponse, ChatStream, ModelError, ModelProvider, Transcript, TranscriptSegment,
 };
 use serde_json::{Value, json};
 
-/// The Token Factory client.
-pub struct TokenFactory {
+/// A client for one OpenAI-compatible provider.
+pub struct OpenAiCompat {
+    name: &'static str,
+    /// Where the key comes from, for error messages.
+    key_env: &'static str,
     http: SafeHttp,
     base_url: String,
     api_key: String,
 }
 
-impl TokenFactory {
-    /// A client for `base_url` (e.g. `https://api.tokenfactory.nebius.com/v1/`).
-    pub fn new(http: SafeHttp, base_url: &str, api_key: String) -> Self {
-        Self { http, base_url: base_url.trim_end_matches('/').to_string(), api_key }
+impl OpenAiCompat {
+    /// A client named `name` for `base_url` (e.g. `https://api.tokenfactory.nebius.com/v1/`).
+    pub fn new(name: &'static str, key_env: &'static str, http: SafeHttp, base_url: &str, api_key: String) -> Self {
+        Self { name, key_env, http, base_url: base_url.trim_end_matches('/').to_string(), api_key }
     }
 
     async fn send(&self, req: reqwest::RequestBuilder) -> Result<reqwest::Response, ModelError> {
@@ -35,7 +37,7 @@ impl TokenFactory {
             return Ok(resp);
         }
         let status = resp.status().as_u16();
-        Err(wire::error(status, &resp.text().await.unwrap_or_default()))
+        Err(wire::error(status, &resp.text().await.unwrap_or_default(), self.name, self.key_env))
     }
 
     async fn post(&self, path: &str, body: &Value) -> Result<Value, ModelError> {
@@ -49,9 +51,9 @@ impl TokenFactory {
 }
 
 #[async_trait]
-impl ModelProvider for TokenFactory {
+impl ModelProvider for OpenAiCompat {
     fn name(&self) -> &str {
-        "tokenfactory"
+        self.name
     }
 
     async fn chat(&self, model: &str, req: ChatRequest) -> Result<ChatResponse, ModelError> {
@@ -116,11 +118,15 @@ impl ModelProvider for TokenFactory {
     }
 }
 
-fn make(config: &Value) -> Result<Arc<dyn ModelProvider>, ModelError> {
-    let api_key = std::env::var("NEBIUS_API_KEY").map_err(|_| ModelError::Config("set NEBIUS_API_KEY".into()))?;
-    let base_url = config.get("base_url").and_then(Value::as_str).unwrap_or("https://api.tokenfactory.nebius.com/v1/");
+/// Builds the provider `name` from its config section; its key comes from `key_env`.
+pub fn make(
+    name: &'static str,
+    key_env: &'static str,
+    default_base_url: &str,
+    config: &Value,
+) -> Result<Arc<dyn ModelProvider>, ModelError> {
+    let api_key = std::env::var(key_env).map_err(|_| ModelError::Config(format!("set {key_env}")))?;
+    let base_url = config.get("base_url").and_then(Value::as_str).filter(|u| !u.is_empty()).unwrap_or(default_base_url);
     let http = SafeHttp::new().map_err(|e| ModelError::Config(e.to_string()))?;
-    Ok(Arc::new(TokenFactory::new(http, base_url, api_key)))
+    Ok(Arc::new(OpenAiCompat::new(name, key_env, http, base_url, api_key)))
 }
-
-inventory::submit! { ProviderFactory { name: "tokenfactory", make } }

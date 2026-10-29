@@ -31,7 +31,7 @@ cargo xtask check
 
 ### Environment
 
-Copy `config/interlock.example.toml` to `config/interlock.toml`. Secrets only via env: `NEBIUS_API_KEY`, `TAVILY_API_KEY`, `IL_MASTER_KEY` (32-byte base64), `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `SLACK_CLIENT_ID/SECRET`, media provider keys. **Tests never need network or keys:** they run with `IL_PROVIDERS=fake`.
+Copy `config/interlock.example.toml` to `config/interlock.toml`. Secrets only via env: `NEBIUS_API_KEY`, optional model fallbacks `OPENROUTER_API_KEY` and `GROQ_API_KEY`, `TAVILY_API_KEY`, `IL_MASTER_KEY` (32-byte base64), `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `SLACK_CLIENT_ID/SECRET`, media provider keys. **Tests never need network or keys:** they run with `IL_PROVIDERS=fake`.
 
 ## 2. Commands
 
