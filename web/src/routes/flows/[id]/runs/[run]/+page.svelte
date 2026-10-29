@@ -28,6 +28,7 @@
   let flow = $state.raw<Flow | null>(null);
   let manifests = $state.raw<NodeManifest[]>([]);
   let approval = $state.raw<Approval | null>(null);
+  let selected = $state<string | null>(null);
   let run = $state.raw(idleRun());
   let view = $state.raw(emptyView());
 
@@ -49,6 +50,10 @@
     } finally {
       cancelling = false;
     }
+  }
+  function selectStep(id: string) {
+    selected = id;
+    document.getElementById(`run-step-${id}`)?.focus();
   }
   onDestroy(() => sub.close());
 
@@ -98,7 +103,7 @@
   <div class="body">
     <div class="stage">
       {#if flow && mobile.current}
-        <div class="list-wrap"><NodeList {groups} onselect={() => {}} /></div>
+        <div class="list-wrap"><NodeList {groups} onselect={selectStep} /></div>
       {:else if flow}
         <NodeCanvas {cards} {edges} {labels} />
       {/if}
@@ -140,7 +145,7 @@
         <h2>Steps</h2>
         <ol class="steps">
           {#each view.steps as s (s.nodeId)}
-            <li>
+            <li id="run-step-{s.nodeId}" data-step={s.nodeId} data-selected={selected === s.nodeId} tabindex="-1">
               <div class="row">
                 <span class="name">{name(s.nodeId)}</span>
                 <StatusPill tone={STEP[s.status][0]} label={STEP[s.status][1]} />
@@ -183,6 +188,7 @@
   figcaption { font: var(--t-small); color: var(--text-2); }
   .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .steps li { padding: var(--s-2) 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: var(--s-1); }
+  .steps li[data-selected='true'] { background: var(--primary-soft); border-radius: var(--r-card); padding-inline: var(--s-2); }
   .row { display: flex; justify-content: space-between; align-items: center; gap: var(--s-2); }
   .name { font-weight: 600; }
   .meta { font: var(--t-small); color: var(--text-3); }
