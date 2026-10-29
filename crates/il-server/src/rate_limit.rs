@@ -49,6 +49,13 @@ impl RateLimiter {
     }
 }
 
+/// The client address our proxy appended to `X-Forwarded-For` (its last entry; earlier ones can be
+/// written by the client).
+fn client_ip(headers: &axum::http::HeaderMap) -> Option<IpAddr> {
+    let value = headers.get("x-forwarded-for")?.to_str().ok()?;
+    value.rsplit(',').next()?.trim().parse().ok()
+}
+
 /// Applies limits to hooks, published APIs, MCP, widget chat, sign-in and demo sessions.
 pub async fn middleware(State(state): State<AppState>, request: Request, next: Next) -> Response {
     let path = request.uri().path();
@@ -60,11 +67,9 @@ pub async fn middleware(State(state): State<AppState>, request: Request, next: N
     if !demo && !public && !widget_chat {
         return next.run(request).await;
     }
-    let ip = request
-        .extensions()
-        .get::<ConnectInfo<SocketAddr>>()
-        .map(|info| info.0.ip())
-        .unwrap_or(IpAddr::V4(Ipv4Addr::LOCALHOST));
+    let peer = request.extensions().get::<ConnectInfo<SocketAddr>>().map(|info| info.0.ip());
+    let forwarded = state.config.server.trust_proxy.then(|| client_ip(request.headers())).flatten();
+    let ip = forwarded.or(peer).unwrap_or(IpAddr::V4(Ipv4Addr::LOCALHOST));
     let (class, limit, window) = if demo {
         ("demo", state.config.server.demo_sessions_per_hour, Duration::from_secs(3600))
     } else {
@@ -74,5 +79,22 @@ pub async fn middleware(State(state): State<AppState>, request: Request, next: N
         next.run(request).await
     } else {
         (StatusCode::TOO_MANY_REQUESTS, Json(ApiError::new("rate_limited", "Try again later."))).into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::http::HeaderMap;
+
+    use super::client_ip;
+
+    #[test]
+    fn q03_the_proxys_entry_is_the_client() {
+        let mut headers = HeaderMap::new();
+        assert_eq!(client_ip(&headers), None);
+        headers.insert("x-forwarded-for", "6.6.6.6, 203.0.113.9".parse().unwrap());
+        assert_eq!(client_ip(&headers), Some("203.0.113.9".parse().unwrap()), "a spoofed first entry is ignored");
+        headers.insert("x-forwarded-for", "not an ip".parse().unwrap());
+        assert_eq!(client_ip(&headers), None);
     }
 }

@@ -21,6 +21,8 @@ pub struct ServerConfig {
     pub templates_dir: String,
     /// Requests without a session use the local workspace (self-hosted). Turn off on a public deploy.
     pub local_workspace: bool,
+    /// Behind a reverse proxy: rate limits use the client address it appends to `X-Forwarded-For`.
+    pub trust_proxy: bool,
 }
 
 impl Default for ServerConfig {
@@ -34,6 +36,7 @@ impl Default for ServerConfig {
             demo_sessions_per_hour: 10,
             templates_dir: "fixtures/templates".into(),
             local_workspace: true,
+            trust_proxy: false,
         }
     }
 }
