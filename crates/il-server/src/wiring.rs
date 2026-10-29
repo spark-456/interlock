@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use il_core::Flow;
 use il_sdk::Services;
 use il_sdk::registry::RouteCtx;
+use il_sdk::services::metering::MeteredGateway;
 use il_sdk::services::{AgentTool, ArchitectService, FlowRunner, FlowToolProvider, SystemClock, ToolError};
 use il_sdk::testkit::FakeServices;
 use il_store::db::SqliteStore;
@@ -98,6 +99,8 @@ fn finish_state(config: Config, mut services: Services, store: Option<Arc<Sqlite
         services.http = http;
     }
     wire_models(&mut services, &config);
+    services.models =
+        Arc::new(MeteredGateway::new(services.models.clone(), services.store.clone(), services.clock.clone()));
     if let Some(store) = store {
         wire_knowledge(&mut services, store, &config);
     }

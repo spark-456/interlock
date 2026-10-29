@@ -134,6 +134,11 @@
       "costUsd": 0.058
     }
   ],
+  "roles": [
+    { "role": "agent", "costUsd": 0.2 },
+    { "role": "fast", "costUsd": 0.05 },
+    { "role": "architect", "costUsd": 0.02 }
+  ],
   "caps": {
     "runUsd": 1.0,
     "flowDailyUsd": 3.0,

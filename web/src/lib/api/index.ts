@@ -21,6 +21,7 @@ import type {
   RunEvent,
   RunSummary,
   TemplateSummary,
+  UsageCaps,
   UsageReport,
   WebhookUrl
 } from './types';
@@ -56,6 +57,7 @@ export const api = {
     post<RunCreated>(`/api/flows/${flowId}/nodes/${nodeId}/run`, { items }),
   connections: () => get<ConnectionSummary[]>('/api/connections'),
   usage: () => get<UsageReport>('/api/usage'),
+  updateUsageCaps: (caps: UsageCaps) => put<UsageCaps>('/api/usage/caps', caps),
   /** Saves a key-based connection; the secret is encrypted on the server and never sent back. */
   createConnection: (req: CreateConnectionRequest) => post<ConnectionSummary>('/api/connections', req),
   runs: (flowId: string) => get<RunSummary[]>(`/api/flows/${flowId}/runs`),

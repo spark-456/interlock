@@ -6,6 +6,7 @@ pub mod clock;
 pub mod files;
 pub mod knowledge;
 pub mod media;
+pub mod metering;
 pub mod models;
 pub mod notifier;
 pub mod runner;

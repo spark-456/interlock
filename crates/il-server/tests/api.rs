@@ -482,7 +482,35 @@ async fn usage_reports_thirty_days_by_day_and_flow_with_the_caps() {
     assert_eq!(days[29]["costUsd"], 0.375);
     assert_eq!(days[27]["costUsd"], 0.5);
     assert_eq!(usage["flows"], json!([{ "flowId": flow_id, "name": "Hello", "costUsd": 0.75 }]));
+    assert_eq!(usage["roles"], json!([{"role":"node","costUsd":0.875}]));
     assert_eq!(usage["caps"]["runUsd"], 0.5);
+}
+
+#[tokio::test]
+async fn u02_owner_edits_workspace_caps_and_demo_cannot() {
+    let state = build_state(Config::from_value(json!({"caps":{"global_daily_usd":10.0}})).unwrap());
+    let app = app(state.clone());
+    let caps = json!({"runUsd":0.5,"flowDailyUsd":1.0,"workspaceDailyUsd":2.0});
+    let (status, saved, _) = call(&app, "PUT", "/api/usage/caps", Some(caps.clone()), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(saved, caps);
+    let (_, usage, _) = call(&app, "GET", "/api/usage", None, None).await;
+    assert_eq!(usage["caps"], caps);
+    let (status, _, _) = call(
+        &app,
+        "PUT",
+        "/api/usage/caps",
+        Some(json!({
+            "runUsd":1.0,"flowDailyUsd":2.0,"workspaceDailyUsd":20.0
+        })),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let (_, _, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
+    let pair = cookie.unwrap().split(';').next().unwrap().to_string();
+    let (status, _, _) = call(&app, "PUT", "/api/usage/caps", Some(caps), Some(&pair)).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]

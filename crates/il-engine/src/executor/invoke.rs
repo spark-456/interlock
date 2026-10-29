@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use il_core::expr::{Scope, render_value};
 use il_core::{ApprovalDecision, ExecMode, Item, Node, NodeManifest, RunEventKind, SideEffect};
 use il_sdk::ctx::{NodeCtx, ProgressSink, RunInfo};
+use il_sdk::services::metering::{ModelCallContext, with_model_context};
 use il_sdk::{NodeError, NodeExecutor, NodeInput, NodeOutput, Services};
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
@@ -212,7 +213,10 @@ async fn call_with_retry(
         };
         let result = tokio::select! {
             _ = cancel.cancelled() => Err(NodeError::Cancelled),
-            r = tokio::time::timeout(inner.config.node_timeout(), exec.execute(&mut ctx, input.clone())) => {
+            r = tokio::time::timeout(inner.config.node_timeout(), with_model_context(
+                ModelCallContext { workspace_id: info.workspace_id.clone(), flow_id: Some(info.flow_id.clone()),
+                    run_id: Some(info.run_id.clone()), build_id: None },
+                exec.execute(&mut ctx, input.clone()))) => {
                 r.unwrap_or(Err(NodeError::Timeout))
             }
         };
