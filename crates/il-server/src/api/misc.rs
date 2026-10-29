@@ -83,7 +83,12 @@ async fn upload(
     Ok((StatusCode::CREATED, Json(out)))
 }
 
-async fn download(State(state): State<AppState>, _ws: Ws, Path(id): Path<String>) -> ApiResult<Response> {
+async fn download(State(state): State<AppState>, ws: Ws, Path(id): Path<String>) -> ApiResult<Response> {
+    // Files saved for a workspace are only served to it; step outputs and fixtures have no owner.
+    let owner = state.services.files.owner(&id).await.map_err(|_| ApiErr::not_found("File"))?;
+    if owner.is_some_and(|owner| owner != ws.id()) {
+        return Err(ApiErr::not_found("File"));
+    }
     let (file, bytes) = state.services.files.get(&id).await.map_err(|_| ApiErr::not_found("File"))?;
     let disposition = format!("inline; filename=\"{}\"", file.name.replace('"', ""));
     Ok(([(header::CONTENT_TYPE, file.mime), (header::CONTENT_DISPOSITION, disposition)], Body::from(bytes))
