@@ -135,6 +135,7 @@ pub(super) async fn call(
                     trigger: "mcp".into(),
                     items: vec![Item::json(input)],
                     trigger_node: None,
+                    only: None,
                 })
                 .await
                 .map_err(|e| e.to_string())?;

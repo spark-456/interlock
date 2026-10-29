@@ -23,6 +23,7 @@ pub async fn smoke(runner: &dyn FlowRunner, store: &dyn Store, flow_id: &str, sa
         trigger: "test".into(),
         items: vec![Item::json(sample.clone())],
         trigger_node: None,
+        only: None,
     };
     let outcome = match runner.invoke(req).await {
         Ok(outcome) => outcome,

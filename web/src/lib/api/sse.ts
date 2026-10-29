@@ -27,6 +27,8 @@ export interface SubscribeOptions {
   speed?: number;
   /** Fixture mode: stop the replay this many ms after the first event (to freeze a moment). */
   until?: number;
+  /** Called instead of reconnecting when the server refuses the stream (4xx: not found, not yours). */
+  onError?: (status: number) => void;
 }
 
 const TERMINAL = new Set(['run.succeeded', 'run.failed', 'run.cancelled', 'build.ready', 'build.failed']);
@@ -66,8 +68,20 @@ function live<E extends StreamEvent>(path: string, onEvent: (e: E) => void, opts
     };
     source.onerror = () => {
       source?.close();
-      if (!closed) retry = setTimeout(open, 1000);
+      if (!closed) void refusedOrRetry(`${path}${sep}after=${lastSeq}`);
     };
+  };
+
+  // EventSource hides the status; ask once, and give up on a 4xx instead of retrying forever.
+  const refusedOrRetry = async (url: string) => {
+    const abort = new AbortController();
+    const status = await fetch(url, { signal: abort.signal }).then((r) => r.status, () => 0);
+    abort.abort();
+    if (closed) return;
+    if (status >= 400 && status < 500) {
+      closed = true;
+      opts.onError?.(status);
+    } else retry = setTimeout(open, 1000);
   };
 
   const sub: Subscription = {

@@ -10,7 +10,7 @@ use serde_json::json;
 use support::*;
 
 fn start(items: Vec<il_core::Item>) -> StartRun {
-    StartRun { flow_id: "flw_t".into(), version: None, trigger: "manual".into(), items, trigger_node: None }
+    StartRun { flow_id: "flw_t".into(), version: None, trigger: "manual".into(), items, trigger_node: None, only: None }
 }
 
 async fn run_to_end(engine: &Engine, store: &dyn Store, items: Vec<il_core::Item>) -> (Run, Vec<il_core::RunEvent>) {
@@ -54,6 +54,30 @@ async fn linear_per_item_flow_renders_expressions_and_orders_events() {
     assert!(matches!(events.last().unwrap().kind, RunEventKind::RunSucceeded { .. }));
     let node_runs = fakes.store.node_runs(&run.id).await.unwrap();
     assert_eq!(node_runs.len(), 2, "d and x recorded");
+}
+
+#[tokio::test]
+async fn w08_runs_only_the_chosen_step_with_given_items() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("d", "test.double", json!({})),
+            ("x", "test.text", json!({ "text": "x" })),
+        ],
+        &[("t", "out", "d", "in"), ("d", "out", "x", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let req = StartRun { only: Some("d".into()), ..start(items(&[5])) };
+    let id = engine.start(req).await.unwrap();
+    engine.wait(&id).await;
+    let run = fakes.store.get_run(&id).await.unwrap().unwrap();
+    assert_eq!(run.status, RunStatus::Succeeded);
+    assert_eq!(outputs(&run, "d", "out")[0]["n"], 10);
+    assert!(outputs(&run, "x", "out").is_empty(), "later steps don't run");
+    let ran: Vec<String> = fakes.store.node_runs(&id).await.unwrap().into_iter().map(|n| n.node_id).collect();
+    assert_eq!(ran, ["d"]);
 }
 
 #[tokio::test]

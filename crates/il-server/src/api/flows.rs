@@ -173,7 +173,7 @@ async fn test(
 ) -> ApiResult<(StatusCode, Json<RunCreated>)> {
     owned(&state, &ws, &id).await?;
     let items = body.map(|Json(b)| b.items).unwrap_or_default().into_iter().map(Item::json).collect();
-    let req = StartRun { flow_id: id, version: None, trigger: "test".into(), items, trigger_node: None };
+    let req = StartRun { flow_id: id, version: None, trigger: "test".into(), items, trigger_node: None, only: None };
     let run_id = state.runner.start(req).await.map_err(|e| ApiErr::conflict("run_failed", e.to_string()))?;
     Ok((StatusCode::ACCEPTED, Json(RunCreated { run_id })))
 }
@@ -193,8 +193,22 @@ async fn ask(
         .map_err(|e| ApiErr(StatusCode::BAD_GATEWAY, il_core::ApiError::new("architect_failed", e.to_string())))
 }
 
-async fn run_node() -> ApiErr {
-    ApiErr::not_implemented("W03 / ED-7 (run a single step)")
+/// Runs one step with the given items as its input, as a test run (ED-7).
+async fn run_node(
+    State(state): State<AppState>,
+    ws: Ws,
+    Path((id, node_id)): Path<(String, String)>,
+    body: Option<Json<TestRunRequest>>,
+) -> ApiResult<(StatusCode, Json<RunCreated>)> {
+    let flow = owned(&state, &ws, &id).await?;
+    if flow.node(&node_id).is_none() {
+        return Err(ApiErr::not_found("node"));
+    }
+    let items = body.map(|Json(b)| b.items).unwrap_or_default().into_iter().map(Item::json).collect();
+    let req =
+        StartRun { flow_id: id, version: None, trigger: "test".into(), items, trigger_node: None, only: Some(node_id) };
+    let run_id = state.runner.start(req).await.map_err(|e| ApiErr::conflict("run_failed", e.to_string()))?;
+    Ok((StatusCode::ACCEPTED, Json(RunCreated { run_id })))
 }
 
 #[cfg(test)]

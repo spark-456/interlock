@@ -6,6 +6,9 @@
   import Chip from '$lib/design/Chip.svelte';
   import Input from '$lib/design/Input.svelte';
   import Logo from '$lib/design/Logo.svelte';
+  import Modal from '$lib/design/Modal.svelte';
+  import Skeleton from '$lib/design/Skeleton.svelte';
+  import { toast } from '$lib/design/toasts.svelte';
   import FlowCard from './FlowCard.svelte';
   import { filterFlows, type Filter } from './flows';
 
@@ -17,6 +20,21 @@
   const now = new Date();
 
   api.flows().then((f) => (flows = f), () => (failed = true));
+
+  let deleting = $state.raw<FlowSummary | null>(null);
+  let confirming = $state(false);
+  async function remove() {
+    const f = deleting;
+    confirming = false;
+    if (!f) return;
+    try {
+      await api.deleteFlow(f.id);
+      flows = flows?.filter((x) => x.id !== f.id) ?? null;
+      toast(`Deleted “${f.name}”.`);
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  }
   loadAppNames().then((names) => (appNames = names), () => {});
 
   const live = $derived(flows?.filter((f) => f.active).length ?? 0);
@@ -59,7 +77,7 @@
     {/if}
     <div class="grid">
       {#each shown as f (f.id)}
-        <FlowCard flow={f} {appNames} {now} />
+        <FlowCard flow={f} {appNames} {now} ondelete={() => ((deleting = f), (confirming = true))} />
       {/each}
       {#if !flows.length}
         <section class="empty">
@@ -75,10 +93,23 @@
         <p class="none">No flows match.</p>
       {/if}
     </div>
+  {:else}
+    <div class="grid" aria-busy="true" aria-label="Loading flows">
+      {#each [0, 1, 2] as i (i)}<div class="placeholder"><Skeleton height={112} /><Skeleton lines={3} /></div>{/each}
+    </div>
   {/if}
 </div>
 
+<Modal bind:open={confirming} title="Delete this flow?">
+  <p>“{deleting?.name}” and its run history will be deleted. This can't be undone.</p>
+  {#snippet footer()}
+    <Button onclick={() => (confirming = false)}>Keep it</Button>
+    <Button variant="danger" onclick={remove}>Delete flow</Button>
+  {/snippet}
+</Modal>
+
 <style>
+  .placeholder { display: grid; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--border); border-radius: var(--r-panel); }
   .page { max-width: 1120px; margin: 0 auto; padding: var(--s-8) var(--s-6) var(--s-10); display: flex; flex-direction: column; gap: var(--s-5); }
   header { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s-4); flex-wrap: wrap; }
   h1 { font: var(--t-h1); margin: 0; }

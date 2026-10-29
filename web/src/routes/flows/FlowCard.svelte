@@ -5,10 +5,12 @@
   import { toneFor, toneVars } from '$lib/canvas/categories';
   import AppTile from '$lib/design/AppTile.svelte';
   import Icon from '$lib/design/Icon.svelte';
+  import IconButton from '$lib/design/IconButton.svelte';
   import StatusPill from '$lib/design/StatusPill.svelte';
   import { ago, perDay, sparkPoints, thumbnail } from './flows';
 
-  let { flow, appNames, now }: { flow: FlowSummary; appNames: Record<string, string>; now: Date } = $props();
+  let { flow, appNames, now, ondelete }: { flow: FlowSummary; appNames: Record<string, string>; now: Date; ondelete: () => void } =
+    $props();
 
   let full = $state.raw<Flow | null>(null);
   let runs = $state.raw<RunSummary[]>([]);
@@ -73,6 +75,7 @@
     <span class="go">
       {#if !flow.active}<a class="try" href="/flows/{flow.id}?test=1" aria-label="Test run {flow.name}"><Icon name="play" size={14} /> Test run</a>{/if}
       <a href={app ? `/flows/${flow.id}/publish` : `/flows/${flow.id}`}>{app ? 'Connect' : 'Open'} <Icon name="arrow-right" size={14} /></a>
+      <IconButton icon="trash" label="Delete {flow.name}" onclick={ondelete} />
     </span>
   </footer>
 </article>

@@ -57,7 +57,15 @@ impl Engine {
     /// Starts a run and returns it without waiting.
     async fn start_run(&self, req: StartRun) -> Result<String, EngineError> {
         let flow = self.load_flow(&req.flow_id, req.version).await?;
-        let trigger_node = self.trigger_node(&flow, req.trigger_node.as_deref())?;
+        // Running one step: its items arrive as if from the step that feeds its first input.
+        let (trigger_node, port) = match req.only.as_deref() {
+            Some(step) => {
+                flow.node(step).ok_or_else(|| EngineError::InvalidFlow(format!("no node `{step}`")))?;
+                let feed = flow.incoming(step).next();
+                feed.map_or((step.to_string(), "out".to_string()), |e| (e.from.node.clone(), e.from.port.clone()))
+            }
+            None => (self.trigger_node(&flow, req.trigger_node.as_deref())?, "out".to_string()),
+        };
         let inner = &self.inner;
         let run = Run {
             id: il_sdk::id("run"),
@@ -89,16 +97,22 @@ impl Engine {
         for (index, item) in items.iter_mut().enumerate() {
             item.lineage = Some(vec![format!("{}:{index}", run.id)]);
         }
-        inner.bus.emit(&run.id, Some(&trigger_node), RunEventKind::NodeStarted {}).await;
-        let preview = items.iter().take(3).cloned().collect();
-        let kind = RunEventKind::NodeItems { port: "out".into(), items: preview, total: items.len() as u64 };
-        inner.bus.emit(&run.id, Some(&trigger_node), kind).await;
-        let kind = RunEventKind::NodeSucceeded { count: items.len() as u64, ms: 0, cost_usd: 0.0 };
-        inner.bus.emit(&run.id, Some(&trigger_node), kind).await;
-        let mut ports = Ports::new();
-        ports.insert("out".into(), items);
         let mut cp = Checkpoint { trigger_node: trigger_node.clone(), ..Default::default() };
-        cp.outputs.insert(trigger_node, ports);
+        if let Some(step) = &req.only {
+            let others = flow.nodes.iter().map(|n| &n.id).filter(|id| *id != step && **id != trigger_node);
+            cp.skipped = others.cloned().collect();
+        }
+        if req.only.as_ref() != Some(&trigger_node) {
+            inner.bus.emit(&run.id, Some(&trigger_node), RunEventKind::NodeStarted {}).await;
+            let preview = items.iter().take(3).cloned().collect();
+            let kind = RunEventKind::NodeItems { port: port.clone(), items: preview, total: items.len() as u64 };
+            inner.bus.emit(&run.id, Some(&trigger_node), kind).await;
+            let kind = RunEventKind::NodeSucceeded { count: items.len() as u64, ms: 0, cost_usd: 0.0 };
+            inner.bus.emit(&run.id, Some(&trigger_node), kind).await;
+            let mut ports = Ports::new();
+            ports.insert(port, items);
+            cp.outputs.insert(trigger_node, ports);
+        }
 
         let id = run.id.clone();
         tokio::spawn(drive(inner.clone(), run, flow, cp, None));

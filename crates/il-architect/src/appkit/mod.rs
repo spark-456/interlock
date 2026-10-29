@@ -86,6 +86,7 @@ pub async fn run(
                 json!({"message": case.input, "messages": [{"role": "user", "content": case.input}]}),
             )],
             trigger_node: None,
+            only: None,
         };
         let answer = match runner.invoke(req).await {
             Ok(outcome) => outcome.response.first().map(|i| answer_text(&i.json)).unwrap_or_default(),
