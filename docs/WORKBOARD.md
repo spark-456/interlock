@@ -71,7 +71,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 60 | A03 | Architect emits `build.node` and the `build.tests` node | P0 | A01 | ready |  |  |  | Found in the audit (rank 7): after a live build every step on the Building screen still says "Waiting" |
 | 61 | B10 | Enforce demo caps and count build spend | P0 | B03 | ready |  |  |  | Found in the audit (rank 8): `demo_run_usd`, `demo_models` and `demo_media` are read by nothing; architect build spend never reaches `us_ledger`, so builds are uncapped |
 | 62 | N02 | Notify channels and ignored node settings | P1 | B08 | ready |  |  |  | Found in the audit (rank 11): `output.notify` reports success for in-app/email without delivering and can't bind channel credentials; several manifest settings are ignored |
-| 63 | W08 | UI state gaps: run step, cancel, delete, loading and stream errors | P1 | W05 | ready |  |  |  | Found in the audit (rank 12): Run this step → 501; no cancel-run or delete-flow buttons; blank pages while loading; endless SSE retries on 404; run view says Running while waiting |
+| 63 | W08 | UI state gaps: run step, cancel, delete, loading and stream errors | P1 | W05 | claimed | claude-a | t/W08-ui-gaps | 2026-10-29 05:15 | Found in the audit (rank 12): Run this step → 501; no cancel-run or delete-flow buttons; blank pages while loading; endless SSE retries on 404; run view says Running while waiting |
 
 ## Waiting on the owner
 
