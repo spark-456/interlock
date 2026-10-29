@@ -1417,6 +1417,71 @@
       "version": 1
     },
     {
+      "app": "drive",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/drive"
+          ]
+        }
+      ],
+      "description": "Uploads an item file into a selected Drive folder.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "file": "attachment",
+            "folderId": "drive-folder-id"
+          },
+          "title": "Save invoice"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "upload",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "file": {
+            "default": "attachment",
+            "title": "Item file key",
+            "type": "string"
+          },
+          "folderId": {
+            "title": "Folder ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "folderId"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "external",
+      "status": "ready",
+      "title": "Upload file (Google Drive)",
+      "trigger": false,
+      "typeId": "app.drive.upload",
+      "version": 1
+    },
+    {
       "app": "gmail",
       "category": "app",
       "costHint": "free",
@@ -2154,6 +2219,78 @@
       "title": "Append row (Google Sheets)",
       "trigger": false,
       "typeId": "app.sheets.append_row",
+      "version": 1
+    },
+    {
+      "app": "sheets",
+      "category": "app",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/spreadsheets"
+          ]
+        }
+      ],
+      "description": "Reads sheet rows as items.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "firstRowHeaders": true,
+            "range": "Orders!A:Z",
+            "spreadsheetId": "1AbC"
+          },
+          "title": "Read orders"
+        }
+      ],
+      "execMode": "batch",
+      "icon": "table",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "firstRowHeaders": {
+            "default": true,
+            "title": "First row has headers",
+            "type": "boolean"
+          },
+          "range": {
+            "default": "Sheet1!A:Z",
+            "title": "Range",
+            "type": "string"
+          },
+          "spreadsheetId": {
+            "title": "Spreadsheet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "spreadsheetId",
+          "range"
+        ],
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "Read rows (Google Sheets)",
+      "trigger": false,
+      "typeId": "app.sheets.read_rows",
       "version": 1
     },
     {
@@ -4647,6 +4784,76 @@
       "title": "Chat message",
       "trigger": true,
       "typeId": "trigger.chat",
+      "version": 1
+    },
+    {
+      "app": "drive",
+      "category": "trigger",
+      "costHint": "free",
+      "credentials": [
+        {
+          "app": "google",
+          "key": "google",
+          "kind": "oAuth2",
+          "label": "Google account",
+          "optional": false,
+          "scopes": [
+            "https://www.googleapis.com/auth/drive"
+          ]
+        }
+      ],
+      "description": "Starts a flow for each new file in Drive or a selected folder.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "folderId": "invoices-folder-id",
+            "pollMinutes": 1
+          },
+          "title": "Watch invoices"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "folder",
+      "inputs": [],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "folderId": {
+            "description": "Leave empty to watch all Drive files.",
+            "title": "Folder ID",
+            "type": "string"
+          },
+          "pollMinutes": {
+            "default": 1,
+            "maximum": 60,
+            "minimum": 1,
+            "title": "Check every (min)",
+            "type": "integer"
+          },
+          "sampleItems": {
+            "default": [],
+            "description": "The items Test run starts with, as a JSON list of objects.",
+            "items": {
+              "type": "object"
+            },
+            "title": "Sample data for test runs",
+            "type": "array",
+            "x-widget": "json"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "New file (Google Drive)",
+      "trigger": true,
+      "typeId": "trigger.drive.new_file",
       "version": 1
     },
     {
