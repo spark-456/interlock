@@ -533,7 +533,12 @@ Attachment ({role}): {}",
             w.remove(&ev.build_id);
         }
         match answers {
-            Ok(Ok(a)) => Ok(a),
+            Ok(Ok(a)) => {
+                // Marks the questions answered at once: planning again can take a minute, and until
+                // the next event a follower (the MCP's get_build) would still see them open.
+                ev.log("Got your answers. Planning the steps with them.").await;
+                Ok(a)
+            }
             _ => Err("no answers to the questions, so the build stopped".into()),
         }
     }

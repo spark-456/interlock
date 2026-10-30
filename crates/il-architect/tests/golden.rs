@@ -248,6 +248,9 @@ async fn asks_questions_then_builds_with_the_answers() {
     let evs = events(fakes.store.as_ref(), &id, ended).await;
 
     assert!(matches!(evs.last().unwrap().kind, BuildEventKind::Ready { .. }), "{evs:#?}");
+    // The answers are acknowledged right after the questions, before planning again (Q26).
+    let asked = evs.iter().position(|e| matches!(e.kind, BuildEventKind::Question { .. })).unwrap();
+    assert!(matches!(&evs[asked + 1].kind, BuildEventKind::Log { text } if text.starts_with("Got your answers")));
     assert!(last_user_message(&fakes.models).contains("Which Slack channel should approvals go to? #support"));
     assert!(architect.answer(&id, BuildAnswers { answers: BTreeMap::new() }).await.is_err());
 }
