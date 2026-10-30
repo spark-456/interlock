@@ -96,6 +96,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 85 | Q32 | Safety check hands off honest "not covered, want a ticket?" answers; agent invented a payment method | P1 | — | done | claude-a | t/Q32-answer-quality | 2026-10-30 13:25 | [#107](https://github.com/spark-456/interlock/pull/107): agents with knowledge get one "search first" reminder; the safety check writes a check before its verdict (16/20 → 20/20 with thinking off) |
 | 86 | Q33 | Generate video/voice/image can't use the user's own provider keys; no shot-list prompting; captions aren't timed to the voiceover | P1 | — | claimed | claude-a | t/Q33-media-keys-shots | 2026-10-30 14:00 | |
 | 87 | Q34 | Sign in with Google or GitHub; remove demo mode; everyone works in their own workspace | P0 | — | claimed | claude-a | t/Q34-auth | 2026-10-30 14:19 | |
+| 88 | Q35 | First-run onboarding: welcome, guided tour over the real screens, and a getting-started checklist | P1 | — | claimed | claude-a | t/Q35-onboarding | 2026-10-30 14:22 | |
 
 ## Waiting on the owner
 
