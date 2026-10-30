@@ -5,7 +5,10 @@ const flows: FlowSummary[] = [
   { id: 'flw_auto', name: 'Auto', kind: 'automation', version: 1, active: false, updatedAt: '', lastRun: null, apps: [] },
   { id: 'flw_app', name: 'App', kind: 'app', version: 1, active: false, updatedAt: '', lastRun: null, apps: [] }
 ];
-vi.mock('$lib/api', () => ({ api: { flows: vi.fn(async () => flows) } }));
+const sample: FlowSummary = { id: 'flw_sample', name: 'Larkspur support agent', kind: 'app', version: 1, active: false, updatedAt: '', lastRun: null, apps: [] };
+const listed = vi.fn(async (): Promise<FlowSummary[]> => flows);
+const useTemplate = vi.fn(async (id: string) => ({ id: id === 'tpl_support_agent' ? 'flw_sample' : 'flw_other' }));
+vi.mock('$lib/api', () => ({ api: { flows: () => listed(), useTemplate: (id: string) => useTemplate(id) } }));
 
 const { endTour, moveTour, onboarding, remember, signIn, startTour } = await import('./state.svelte');
 const { TOUR } = await import('./tour');
@@ -48,7 +51,28 @@ describe('onboarding state', () => {
     expect(onboarding.welcomeOpen).toBe(false);
     expect(onboarding.helpOpen).toBe(false);
     expect(onboarding.progress.welcomed).toBe(true);
-    expect(onboarding.tour).toMatchObject({ index: 0, flow: { id: 'flw_app' } });
+    expect(onboarding.tour).toMatchObject({ index: 0, flow: { id: 'flw_app' }, sample: false });
+    expect(useTemplate).not.toHaveBeenCalled();
+  });
+
+  it('adds the sample app when the workspace has no AI app, so every step has its screen', async () => {
+    let added = false;
+    listed.mockImplementation(async () => (added ? [flows[0]!, sample] : [flows[0]!]));
+    useTemplate.mockImplementationOnce(async (id: string) => ((added = true), { id: id === 'tpl_support_agent' ? 'flw_sample' : 'x' }));
+    await startTour();
+    expect(useTemplate).toHaveBeenCalledWith('tpl_support_agent');
+    expect(onboarding.tour).toMatchObject({ flow: { id: 'flw_sample' }, sample: true });
+    listed.mockImplementation(async () => flows);
+  });
+
+  it('still starts when the sample cannot be added', async () => {
+    listed.mockImplementation(async () => []);
+    useTemplate.mockImplementationOnce(async () => {
+      throw new Error('offline');
+    });
+    await startTour();
+    expect(onboarding.tour).toMatchObject({ flow: null, sample: false });
+    listed.mockImplementation(async () => flows);
   });
 
   it('moves within the steps and ends after the last one', async () => {
