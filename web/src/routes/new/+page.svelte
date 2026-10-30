@@ -14,7 +14,7 @@
   import TopBar from '$lib/design/TopBar.svelte';
   import { toast } from '$lib/design/toasts.svelte';
   import VoiceButton from './VoiceButton.svelte';
-  import { EXAMPLES, MAX_BYTES, buildRequest, detectApps, fileDraft, linkDraft, uploaded, type Draft } from './create';
+  import { EXAMPLES, MAX_BYTES, buildRequest, detectApps, fileDraft, isSpec, linkDraft, uploaded, type Draft } from './create';
 
   let goal = $state('');
   let drafts = $state<Draft[]>([]);
@@ -26,7 +26,6 @@
   let starting = $state(false);
   const ICONS = { link: 'globe', file: 'docs', audio: 'mic', api: 'plug' } as const;
   let appNames = $state<Record<string, string>>({});
-  let specPicker = $state<HTMLInputElement>();
 
   loadAppNames().then((names) => (appNames = names), () => {});
 
@@ -66,12 +65,6 @@
     drafts = [...drafts, d];
     if (kind === 'link') link = '';
     else spec = '';
-  }
-
-  function picked(input: HTMLInputElement | undefined, asSpec = false) {
-    const files = [...(input?.files ?? [])];
-    if (input) input.value = '';
-    if (files.length) void addFiles(files, asSpec);
   }
 
   async function build() {
@@ -131,9 +124,14 @@
     <h2 id="s2"><span class="num">2</span>What should it know?<span class="aside">Optional</span></h2>
     <DropZone
       title="Drop files or paste a link"
+      label="Drop knowledge files"
       hint="PDF, DOCX, Markdown, TXT, CSV or a voice memo, up to {MAX_BYTES / 1024 / 1024} MB. Websites are crawled for you."
       accept=".pdf,.docx,.md,.txt,.csv,audio/*"
-      onfiles={(files) => void addFiles(files)}
+      onfiles={(files) => {
+        // A spec dropped here is an API to call, not a document to read.
+        void addFiles(files.filter((f) => !isSpec(f)));
+        void addFiles(files.filter(isSpec), true);
+      }}
       onlink={(url) => {
         link = url;
         addLink('link');
@@ -188,6 +186,17 @@
     {:else}
       <p class="muted">Apps you mention in your goal show up here. You connect accounts after the build.</p>
     {/if}
+    <DropZone
+      title="Drop an OpenAPI spec"
+      label="Drop an API spec"
+      hint="JSON or YAML. Its safe actions become tools; risky ones like deleting are left out."
+      accept=".json,.yaml,.yml"
+      onfiles={(files) => void addFiles(files, true)}
+      onlink={(url) => {
+        spec = url;
+        addLink('api');
+      }}
+    />
     <form
       class="add"
       onsubmit={(e) => {
@@ -197,8 +206,6 @@
     >
       <Input label="OpenAPI link" mono placeholder="https://api.example.com/openapi.json" bind:value={spec} error={specError || undefined} />
       <Button type="submit" disabled={!spec.trim()}>Add API</Button>
-      <Button icon="upload" onclick={() => specPicker?.click()}>Upload spec</Button>
-      <input bind:this={specPicker} type="file" hidden accept=".json,.yaml,.yml" onchange={() => picked(specPicker, true)} />
     </form>
     {#if apis.length}
       <ul class="list" aria-label="APIs">

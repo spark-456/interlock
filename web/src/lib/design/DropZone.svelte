@@ -6,12 +6,13 @@
 
   let {
     title,
+    label = 'Drop files here',
     hint,
     accept = '',
     onfiles,
     onlink,
     children
-  }: { title: string; hint?: string; accept?: string; onfiles: (files: File[]) => void; onlink?: (url: string) => void; children?: Snippet } =
+  }: { title: string; label?: string; hint?: string; accept?: string; onfiles: (files: File[]) => void; onlink?: (url: string) => void; children?: Snippet } =
     $props();
   let dragging = $state(false);
   let picker: HTMLInputElement | undefined = $state();
@@ -30,7 +31,7 @@
   class="drop"
   class:dragging
   role="region"
-  aria-label="Drop files here"
+  aria-label={label}
   ondragover={(e) => {
     e.preventDefault();
     dragging = true;

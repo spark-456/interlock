@@ -15,7 +15,8 @@ test('fills a goal from an example, attaches knowledge and starts a build', asyn
   await apps.getByRole('button', { name: 'Gmail', exact: true }).click();
   await expect(apps.getByRole('button', { name: 'Gmail', exact: true })).toHaveAttribute('aria-pressed', 'false');
 
-  await page.getByTestId('file-input').setInputFiles({ name: 'Refund policy.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(2048) });
+  const knowledge = page.getByRole('region', { name: 'Drop knowledge files' }).getByTestId('file-input');
+  await knowledge.setInputFiles({ name: 'Refund policy.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(2048) });
   const list = page.getByRole('list', { name: 'Attachments' });
   await expect(list).toContainText('Refund policy.pdf');
   await expect(list).toContainText('PDF · 2 KB');
@@ -28,6 +29,15 @@ test('fills a goal from an example, attaches knowledge and starts a build', asyn
   await page.getByLabel('Link', { exact: true }).fill('https://help.larkspur.example');
   await page.getByRole('button', { name: 'Add link' }).click();
   await expect(list).toContainText('help.larkspur.example');
+
+  // Specs go to APIs, whether dropped in their own box or with the knowledge files.
+  const spec = { mimeType: 'application/json', buffer: Buffer.from('{"openapi": "3.0.3"}') };
+  await page.getByRole('region', { name: 'Drop an API spec' }).getByTestId('file-input').setInputFiles({ name: 'customers.json', ...spec });
+  await knowledge.setInputFiles({ name: 'billing.yaml', ...spec });
+  const apisList = page.getByRole('list', { name: 'APIs' });
+  await expect(apisList).toContainText('customers.json');
+  await expect(apisList).toContainText('billing.yaml');
+  await expect(list).not.toContainText('billing.yaml');
 
   await build.click();
   await expect(page).toHaveURL(/\/new\/bld_larkspur\/building/);

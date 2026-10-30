@@ -44,6 +44,9 @@ const extension = (name: string) => name.split('.').pop()?.toUpperCase() ?? 'Fil
 let seq = 0;
 const nextKey = () => `a${++seq}`;
 
+/** OpenAPI specs are JSON or YAML; knowledge files never are. */
+export const isSpec = (f: File) => /\.(json|ya?ml)$/i.test(f.name);
+
 /** A row for a picked file: audio is a voice memo (instructions), other files are knowledge. */
 export function fileDraft(f: File): Draft {
   const audio = f.type.startsWith('audio/');
