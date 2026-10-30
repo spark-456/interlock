@@ -186,6 +186,7 @@ mod tests {
             runner: runner.clone(),
             architect: Arc::new(FakeArchitect),
             flow_tools: Arc::new(il_sdk::services::NoFlowTools),
+            activation: std::sync::Arc::new(il_sdk::services::NoActivation),
             config: Value::Null,
         };
         let args = serde_json::from_value(json!({"invoiceId":"inv_1"})).unwrap();

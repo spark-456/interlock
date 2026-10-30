@@ -18,10 +18,28 @@ pub async fn ask(
     message: &str,
     focus: &[String],
 ) -> Result<(AskDiff, f64), CompileError> {
-    let mut revised = revise(models, catalog, flow, &request(flow, message, focus)).await?;
-    keep_unfocused(flow, &mut revised.flow, focus);
-    let mut diff = diff(flow, &revised.flow);
-    diff.notes = revised.notes;
+    let revised = revise(models, catalog, flow, &request(flow, message, focus)).await?;
+    let mut kept = revised.flow.clone();
+    keep_unfocused(flow, &mut kept, focus);
+    let mut notes = revised.notes;
+    // A change that only works elsewhere (a sign-off goes in the reply steps, not the agent) is
+    // shown as made rather than dropped to "No changes".
+    let unchanged = |f: &Flow| f.nodes.iter().all(|n| flow.node(&n.id).is_some_and(|old| !changed(old, n)));
+    let result = if unchanged(&kept) && !unchanged(&revised.flow) {
+        let elsewhere: Vec<&str> = revised
+            .flow
+            .nodes
+            .iter()
+            .filter(|n| flow.node(&n.id).is_none_or(|old| changed(old, n)))
+            .map(|n| n.name.as_str())
+            .collect();
+        notes.insert(0, format!("Made in other steps than the ones you picked: {}.", elsewhere.join(", ")));
+        revised.flow
+    } else {
+        kept
+    };
+    let mut diff = diff(flow, &result);
+    diff.notes = notes;
     Ok((diff, revised.cost_usd))
 }
 

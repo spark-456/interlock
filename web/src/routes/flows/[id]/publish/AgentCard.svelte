@@ -7,7 +7,11 @@
   import { platformMcpInstall, type Endpoints } from './publish';
 
   let { endpoints, appName }: { endpoints: Endpoints; appName: string } = $props();
-  const TOOLS = ['list_flows', 'get_integration_guide', 'add_documents', 'create_flow_from_goal', 'run_flow'];
+  // The main platform MCP tools (il-publish `mcp/platform`); it has a few more for knowledge and runs.
+  const TOOLS = [
+    'create_flow_from_goal', 'get_build', 'get_flow', 'refine_flow', 'update_flow', 'test_flow', 'set_flow_active',
+    'get_run', 'decide_approval', 'get_integration_guide'
+  ];
   const prompt = $derived(`Add the ${appName} assistant as a chat panel in this app.`);
   let copied = $state(false);
 

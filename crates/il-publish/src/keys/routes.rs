@@ -128,6 +128,7 @@ mod tests {
             runner: Arc::new(FakeRunner::default()),
             architect: Arc::new(FakeArchitect),
             flow_tools: Arc::new(il_sdk::services::NoFlowTools),
+            activation: std::sync::Arc::new(il_sdk::services::NoActivation),
             config: json!({"auth":{"github":{"client_id":"configured"}}}),
         };
         let router = routes(&ctx);
@@ -191,6 +192,7 @@ mod tests {
             runner: Arc::new(FakeRunner::default()),
             architect: Arc::new(FakeArchitect),
             flow_tools: Arc::new(il_sdk::services::NoFlowTools),
+            activation: std::sync::Arc::new(il_sdk::services::NoActivation),
             config: json!({"server":{"local_workspace":true},"auth":{"github":{"client_id":""}}}),
         };
         let request = || {

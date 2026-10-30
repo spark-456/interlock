@@ -62,6 +62,29 @@ fn user_messages(gw: &FakeGateway) -> Vec<String> {
 }
 
 #[tokio::test]
+async fn q23_a_focused_change_made_elsewhere_is_kept_and_named() {
+    let catalog = catalog();
+    let flow = compiled("fb", FB).await;
+    let focus = ["n_draft".to_string()];
+
+    // The model rewrites the picked step and another one: only the picked step changes.
+    let both = with_setting(with_setting(draft("fb"), "n_draft", "instructions", "Warm."), "n_reply", "body", "x");
+    let gw = FakeGateway::default();
+    gw.push_json(both);
+    let (d, _) = ask(&gw, &catalog, &flow, "Make replies warmer", &focus).await.unwrap();
+    assert_eq!(d.summary, "1 changed");
+    assert!(d.notes.iter().all(|n| !n.starts_with("Made in other steps")));
+
+    // The model changes only another step: that change is kept rather than dropped, and named.
+    let elsewhere = with_setting(draft("fb"), "n_reply", "body", "{{ item.text }}\n\nLarkspur support");
+    let gw = FakeGateway::default();
+    gw.push_json(elsewhere);
+    let (d, _) = ask(&gw, &catalog, &flow, "Sign the replies", &focus).await.unwrap();
+    assert_eq!(d.summary, "1 changed");
+    assert!(d.notes[0].starts_with("Made in other steps than the ones you picked: Reply"), "{:?}", d.notes);
+}
+
+#[tokio::test]
 async fn ask_returns_a_patch_that_reproduces_the_revision() {
     let catalog = catalog();
     let mut flow = compiled("fb", FB).await;
