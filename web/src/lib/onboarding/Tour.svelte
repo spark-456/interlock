@@ -108,6 +108,8 @@
         <p>{step.body}</p>
         {#if missing}
           <p class="note"><Icon name="info" size={14} />{step.app ? 'Build an AI app' : 'Build a flow'} and this step points at the real screen.</p>
+        {:else if tour.sample && step.page.includes(':flow')}
+          <p class="note"><Icon name="info" size={14} />This is a sample app the tour added to your workspace. Delete it from Flows when you're done.</p>
         {/if}
       </div>
       <footer>

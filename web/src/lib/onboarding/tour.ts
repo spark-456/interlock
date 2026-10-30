@@ -1,5 +1,8 @@
 // Guided tour (Q35): coach-marks over the real screens. Steps that need a flow use the workspace's
-// first AI app (else its first flow); without one they show as a centred card wherever the tour is.
+// first AI app; a workspace without one gets the sample app, so every step shows its real screen.
+
+/** The template the tour adds when the workspace has no AI app to show (Q40). */
+export const SAMPLE_TEMPLATE = 'tpl_support_agent';
 
 import type { FlowSummary } from '$lib/api';
 
