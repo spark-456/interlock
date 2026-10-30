@@ -34,13 +34,13 @@ pub struct ProviderFactory {
 inventory::collect!(ProviderFactory);
 
 /// Builds a media generator with its config and shared file store.
-pub type MediaGenBuilder = fn(&Value, Arc<dyn FileStore>) -> Result<Arc<dyn MediaGen>, MediaError>;
+pub type MediaGenBuilder = fn(&Value, Arc<dyn FileStore>, Option<String>) -> Result<Arc<dyn MediaGen>, MediaError>;
 
 /// Registers a media generator by config name (`recorded`, …).
 pub struct MediaGenFactory {
     pub name: &'static str,
     pub kinds: &'static [MediaKind],
-    /// Builds the generator from its config section.
+    /// Builds the generator from its config section and, when given, the user's own key.
     pub make: MediaGenBuilder,
 }
 inventory::collect!(MediaGenFactory);

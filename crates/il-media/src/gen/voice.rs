@@ -16,6 +16,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
     )
     .icon("voice")
     .status(NodeStatus::Ready)
+    .credential(super::own_key())
     .cost(CostHint::Medium)
     .settings_schema(json!({
         "type": "object",

@@ -29,7 +29,7 @@ impl MediaGen for Recorded {
     }
 }
 
-fn make(_: &Value, files: Arc<dyn FileStore>) -> Result<Arc<dyn MediaGen>, MediaError> {
+fn make(_: &Value, files: Arc<dyn FileStore>, _: Option<String>) -> Result<Arc<dyn MediaGen>, MediaError> {
     Ok(Arc::new(Recorded { files }))
 }
 

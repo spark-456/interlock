@@ -73,6 +73,34 @@ impl<N: NodeExecutor> NodeHarness<N> {
         self
     }
 
+    /// The context `run` gives the node, for testing helpers that take a `NodeCtx`.
+    pub fn ctx(&self) -> NodeCtx {
+        self.ctx_with(self.settings.clone(), 0)
+    }
+
+    fn ctx_with(&self, settings: Value, item_index: usize) -> NodeCtx {
+        NodeCtx {
+            settings,
+            run: RunInfo {
+                run_id: "run_test".into(),
+                flow_id: "flw_test".into(),
+                workspace_id: "ws_test".into(),
+                node_id: "n_test".into(),
+                node_name: self.node.manifest().title.clone(),
+                trigger: "test".into(),
+                attempt: 1,
+                item_index,
+                test: true,
+            },
+            services: self.fakes.services(),
+            credential_ids: self.credentials.clone(),
+            cancel: CancellationToken::new(),
+            progress: self.progress.clone(),
+            approvals: self.approvals.clone(),
+            resume: self.resume.clone(),
+        }
+    }
+
     /// Validates settings, then executes per item (merging outputs) or once for batch nodes.
     pub async fn run(&self) -> Result<NodeOutput, NodeError> {
         self.node.validate(&self.settings).map_err(NodeError::InvalidSettings)?;
@@ -89,26 +117,7 @@ impl<N: NodeExecutor> NodeHarness<N> {
             let current = items.first().map(Item::scope_json).unwrap_or(Value::Null);
             let scope = Scope::new().item(current).items(all.clone());
             let settings = render_value(&self.settings, &scope).map_err(|e| NodeError::Failed(e.to_string()))?;
-            let mut ctx = NodeCtx {
-                settings,
-                run: RunInfo {
-                    run_id: "run_test".into(),
-                    flow_id: "flw_test".into(),
-                    workspace_id: "ws_test".into(),
-                    node_id: "n_test".into(),
-                    node_name: self.node.manifest().title.clone(),
-                    trigger: "test".into(),
-                    attempt: 1,
-                    item_index: index,
-                    test: true,
-                },
-                services: self.fakes.services(),
-                credential_ids: self.credentials.clone(),
-                cancel: CancellationToken::new(),
-                progress: self.progress.clone(),
-                approvals: self.approvals.clone(),
-                resume: self.resume.clone(),
-            };
+            let mut ctx = self.ctx_with(settings, index);
             let node_input =
                 self.ports.clone().map(|ports| NodeInput { ports }).unwrap_or_else(|| NodeInput::items(items));
             let out = self.node.execute(&mut ctx, node_input).await?;

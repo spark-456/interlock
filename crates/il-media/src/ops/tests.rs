@@ -108,3 +108,18 @@ async fn m01_ffmpeg_ops_process_real_fixture() {
         .expect("default file expression falls back to item.files");
     assert!(output.ports["out"][0].files.contains_key("thumbnail"));
 }
+
+#[tokio::test]
+async fn q33_generated_shots_join_into_one_video() {
+    let Some(video) = tiny_video().await else { return };
+    let harness = NodeHarness::new(super::thumbnail::MediaThumbnail);
+    let mut clips = Vec::new();
+    for _ in 0..2 {
+        clips.push(harness.fakes.files.put("shot.mp4", "video/mp4", Bytes::copy_from_slice(&video)).await.unwrap());
+    }
+    let ctx = harness.ctx();
+    let joined = super::join::join_clips(&ctx, &clips, "9:16").await.expect("joined");
+    let path = super::ffmpeg::input_path(&ctx, &joined.id).await.unwrap();
+    let seconds = super::ffmpeg::duration(&path).await.unwrap();
+    assert!((1.8..2.5).contains(&seconds), "two 1 s shots joined: {seconds}");
+}
