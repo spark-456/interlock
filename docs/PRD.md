@@ -165,7 +165,7 @@ P1: Outlook, Notion, Google Drive new file, HubSpot, Airtable, Code node (sandbo
 |---|---|---|
 | PB-1 | OpenAI-compatible `POST /v1/chat/completions` (streaming and non-streaming) and `GET /v1/models`; `model` = published flow slug; Bearer API key | P0 |
 | PB-2 | Per-flow MCP server (streamable HTTP) exposing `ask_<slug>`, `search_<kb>` and each tool | P0 |
-| PB-3 | Platform MCP for coding agents, covering what a person does in the app: `list_flows`, `get_flow`, `update_flow`, `refine_flow` (with `focus` steps), `set_flow_active`, `get_integration_guide`, `create_flow_from_goal`, `get_build`, `answer_build_questions`, `list_step_types`, `list_knowledge_bases`, `add_documents`, `test_flow` (no side effects), `run_flow`, `get_run`, `list_runs`, `list_approvals`, `decide_approval` | P0 |
+| PB-3 | Platform MCP for coding agents, covering what a person does in the app: `list_flows`, `get_flow`, `update_flow`, `refine_flow` (with `focus` steps), `set_flow_active`, `get_integration_guide`, `create_flow_from_goal`, `get_build`, `answer_build_questions`, `list_step_types`, `list_knowledge_bases`, `add_documents`, `test_flow` (no side effects), `run_flow`, `get_run`, `list_runs`, `list_approvals`, `decide_approval`; local files a build attaches are uploaded first with `POST /mcp/files` (same API key) | P0 |
 | PB-4 | Chat widget: one script tag; themable; streams answers with sources | P0 |
 | PB-5 | Integration guide (`INTERLOCK.md`) generated per flow: endpoints, auth, schemas, examples in cURL, JS, Python, Rust | P0 |
 | PB-6 | API keys: create, reveal once, revoke, last used | P0 |

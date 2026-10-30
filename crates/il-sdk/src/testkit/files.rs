@@ -60,6 +60,10 @@ impl FileStore for FakeFiles {
         Ok(())
     }
 
+    async fn owner(&self, id: &str) -> Result<Option<String>, FileError> {
+        Ok(self.owners.lock().map_err(|_| FileError::Backend("poisoned".into()))?.get(id).cloned())
+    }
+
     async fn get(&self, id: &str) -> Result<(FileRef, Bytes), FileError> {
         self.files
             .lock()
