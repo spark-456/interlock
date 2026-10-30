@@ -91,7 +91,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 80 | Q27 | MCP kit run findings: agents read out other customers' accounts; chat shows raw markdown; approval card shows raw JSON; Refine-added steps overlap | P0 | — | done | claude-a | t/Q27-kit-findings | 2026-10-30 07:40 | [#102](https://github.com/spark-456/interlock/pull/102): privacy rule last in every agent's prompt; markdown renderer; approval shows the reply text; revisions that add steps are laid out afresh |
 | 81 | Q28 | Playground replies take 8–13 s or more | P0 | — | done | claude-a | t/Q28-faster-replies | 2026-10-30 09:52 | [#103](https://github.com/spark-456/interlock/pull/103): KNN vector search (7 s → 0.07 s), hedged query embeddings with a 4 s keyword fallback, `[models.request]` (agent thinking off, fast reasoning low), parallel tool calls, at most 3 searches; Test 2 median 3.4 s |
 | 82 | Q29 | Builds: tests fail on questions the documents don't cover; a fix round can leave two knowledge steps | P1 | — | claimed | claude-a | t/Q29-build-tests | 2026-10-30 12:00 | |
-| 83 | Q30 | The Publish page shows MCP setup for Claude Code only, not Codex | P2 | — | claimed | claude-a | t/Q30-codex-mcp | 2026-10-30 12:14 | |
+| 83 | Q30 | The Publish page shows MCP setup for Claude Code only, not Codex | P2 | — | done | claude-a | t/Q30-codex-mcp | 2026-10-30 12:26 | [#104](https://github.com/spark-456/interlock/pull/104): Codex `~/.codex/config.toml` table beside the Claude Code command, and an "Add to Codex" button on the app's MCP card |
 
 ## Waiting on the owner
 
