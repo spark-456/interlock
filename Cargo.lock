@@ -1340,6 +1340,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "cron",
+ "futures",
  "il-core",
  "il-sdk",
  "insta",

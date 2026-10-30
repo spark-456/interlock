@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_trait::async_trait;
 use chrono::Utc;
@@ -23,6 +24,11 @@ type Prepared = Vec<(ParsedDocument, Option<String>, &'static str)>;
 /// can take many seconds, so a page-by-page loop outlasted the step timeout.
 const EMBED_BATCH: usize = 128;
 const EMBED_PARALLEL: usize = 4;
+/// When a query's embedding hasn't come back by then, a second request is sent and the first answer wins:
+/// the embedding model sometimes takes many seconds, and a query costs almost nothing.
+const EMBED_HEDGE: Duration = Duration::from_millis(1500);
+/// After this, a search goes on by keywords alone rather than keep the person waiting.
+const EMBED_WAIT: Duration = Duration::from_secs(4);
 
 /// Production knowledge service. All model and file operations use SDK traits.
 #[derive(Clone)]
@@ -205,8 +211,10 @@ fn ensure_vec_table(tx: &rusqlite::Transaction<'_>, dimension: Option<usize>) ->
         Some(previous) if previous == dimension => Ok(()),
         Some(_) => Err(StoreError::Backend("embedding dimension changed".into())),
         None => {
-            tx.execute_batch(&format!("CREATE VIRTUAL TABLE kb_chunks_vec USING vec0(embedding float[{dimension}])"))
-                .map_err(db)?;
+            tx.execute_batch(&format!(
+                "CREATE VIRTUAL TABLE kb_chunks_vec USING vec0(embedding float[{dimension}] distance_metric=cosine)"
+            ))
+            .map_err(db)?;
             tx.execute("INSERT INTO kb_vec_meta (id,dimensions) VALUES (1,?1)", [dimension]).map_err(db)?;
             Ok(())
         }
@@ -322,15 +330,25 @@ impl KnowledgeService for Knowledge {
     }
 
     async fn search(&self, kb_id: &str, query: &str, top_k: usize) -> Result<Vec<SearchHit>, KnowledgeError> {
-        let vector = self
-            .models
-            .embed(&[query.to_owned()])
-            .await
-            .map_err(|e| KnowledgeError::Other(e.to_string()))?
-            .into_iter()
-            .next()
-            .ok_or_else(|| KnowledgeError::Other("embedding model returned nothing".into()))?;
-        search::hybrid(&self.store, kb_id, query, &vector, top_k).await
+        let texts = [query.to_owned()];
+        let second = async {
+            tokio::time::sleep(EMBED_HEDGE).await;
+            self.models.embed(&texts).await
+        };
+        let embedded = futures::future::select_ok([self.models.embed(&texts), Box::pin(second)]);
+        let vector = match tokio::time::timeout(EMBED_WAIT, embedded).await {
+            Ok(found) => {
+                let (vectors, _) = found.map_err(|e| KnowledgeError::Other(e.to_string()))?;
+                Some(
+                    vectors
+                        .into_iter()
+                        .next()
+                        .ok_or_else(|| KnowledgeError::Other("embedding model returned nothing".into()))?,
+                )
+            }
+            Err(_) => None,
+        };
+        search::hybrid(&self.store, kb_id, query, vector.as_deref(), top_k).await
     }
 
     async fn parse(&self, file_id: &str, format: Option<&str>) -> Result<Value, KnowledgeError> {
@@ -359,6 +377,7 @@ mod tests {
 
     use il_sdk::services::files::FileStore;
     use il_sdk::services::knowledge::{KnowledgeService, SourceInput};
+    use il_sdk::services::models::{ChatRequest, ChatResponse, ChatStream, ModelError, ModelRole, Transcript};
     use il_sdk::testkit::{FakeFiles, FakeGateway};
     use il_store::db::SqliteStore;
 
@@ -404,6 +423,91 @@ mod tests {
         drop(service);
         let service = Knowledge::new(Arc::new(SqliteStore::open(path).unwrap()), files, models, None);
         assert_eq!(service.search(&kb, "return", 5).await.unwrap()[0].source_id, ids[0]);
+    }
+
+    /// The fake gateway, except that the embedding requests numbered in `hang` never answer.
+    struct Stalls {
+        inner: FakeGateway,
+        calls: std::sync::atomic::AtomicUsize,
+        hang: std::ops::Range<usize>,
+    }
+
+    #[async_trait::async_trait]
+    impl il_sdk::services::ModelGateway for Stalls {
+        async fn chat(&self, role: ModelRole, req: ChatRequest) -> Result<ChatResponse, ModelError> {
+            self.inner.chat(role, req).await
+        }
+        async fn chat_stream(&self, role: ModelRole, req: ChatRequest) -> Result<ChatStream, ModelError> {
+            self.inner.chat_stream(role, req).await
+        }
+        async fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>, ModelError> {
+            if self.hang.contains(&self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst)) {
+                std::future::pending::<()>().await;
+            }
+            self.inner.embed(texts).await
+        }
+        async fn transcribe(&self, file: &il_core::FileRef, bytes: &[u8]) -> Result<Transcript, ModelError> {
+            self.inner.transcribe(file, bytes).await
+        }
+    }
+
+    /// A base with one source, searched while the embedding requests in `hang` stall.
+    async fn search_while_stalled(
+        hang: std::ops::Range<usize>,
+    ) -> (Vec<il_sdk::services::knowledge::SearchHit>, String) {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Arc::new(SqliteStore::open(dir.path().join("k.sqlite")).unwrap());
+        // Request 0 embeds the source; the query's requests come after.
+        let models = Arc::new(Stalls { inner: FakeGateway::default(), calls: Default::default(), hang });
+        let service = Knowledge::new(store, Arc::new(FakeFiles::default()), models, None);
+        let kb = service.create_base("ws_test", "Help").await.unwrap();
+        let ids = service
+            .add_sources(
+                &kb,
+                vec![SourceInput::Text { title: "Returns".into(), text: "Return within thirty days.".into() }],
+            )
+            .await
+            .unwrap();
+        let hits = tokio::time::timeout(std::time::Duration::from_secs(10), service.search(&kb, "return", 5))
+            .await
+            .expect("the search doesn't wait on a stalled request")
+            .unwrap();
+        (hits, ids[0].clone())
+    }
+
+    #[tokio::test]
+    async fn q28_a_stalled_query_embedding_is_sent_again() {
+        let (hits, source) = search_while_stalled(1..2).await;
+        assert_eq!(hits[0].source_id, source);
+    }
+
+    #[tokio::test]
+    async fn q28_search_goes_on_by_keywords_when_embeddings_stall() {
+        let (hits, source) = search_while_stalled(1..3).await;
+        assert_eq!(hits[0].source_id, source);
+    }
+
+    #[tokio::test]
+    async fn q28_vector_search_stays_inside_its_base() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Arc::new(SqliteStore::open(dir.path().join("k.sqlite")).unwrap());
+        let service = Knowledge::new(store, Arc::new(FakeFiles::default()), Arc::new(FakeGateway::default()), None);
+        let mut bases = Vec::new();
+        for (name, text) in
+            [("Returns", "You may return an item within thirty days."), ("Shipping", "Orders ship in two days.")]
+        {
+            let kb = service.create_base("ws_test", name).await.unwrap();
+            let ids = service
+                .add_sources(&kb, vec![SourceInput::Text { title: name.into(), text: text.into() }])
+                .await
+                .unwrap();
+            bases.push((kb, ids[0].clone()));
+        }
+        for (kb, source) in &bases {
+            // No word matches, so every hit comes from the vector search.
+            let hits = service.search(kb, "zzz", 5).await.unwrap();
+            assert!(!hits.is_empty() && hits.iter().all(|h| &h.source_id == source), "{hits:?}");
+        }
     }
 
     #[tokio::test]

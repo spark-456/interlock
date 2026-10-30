@@ -228,3 +228,20 @@ fn starts_on_a_fallback_when_the_provider_cannot_start() {
     let alone = json!({"provider": "missing", "fallbacks": [{"provider": "also-missing"}]});
     assert!(matches!(Gateway::from_config(&alone, false), Err(ModelError::Config(_))));
 }
+
+#[tokio::test]
+async fn q28_sends_each_roles_request_fields() {
+    let p = Arc::new(Scripted::default());
+    p.text("a").text("b");
+    let off = json!({"chat_template_kwargs": {"enable_thinking": false}});
+    let config = GatewayConfig {
+        roles: Roles { architect: "m-arch".into(), agent: "m-agent".into(), ..Default::default() },
+        request: HashMap::from([("agent".to_string(), off.clone())]),
+        ..Default::default()
+    };
+    let gw = Gateway::new(p.clone(), config);
+    gw.chat(ModelRole::Agent, ask("x")).await.unwrap();
+    gw.chat(ModelRole::Architect, ask("y")).await.unwrap();
+    assert_eq!(p.seen()[0].1.extra, Some(off));
+    assert_eq!(p.seen()[1].1.extra, None, "the architect keeps its reasoning");
+}

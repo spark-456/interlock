@@ -28,16 +28,17 @@ fn candidate(row: &Row<'_>) -> rusqlite::Result<Candidate> {
     })
 }
 
-/// Returns top results for one base, normalized to scores between zero and one.
+/// Returns top results for one base, normalized to scores between zero and one; by keywords alone
+/// without a `vector`.
 pub async fn hybrid(
     store: &SqliteStore,
     kb_id: &str,
     query: &str,
-    vector: &[f32],
+    vector: Option<&[f32]>,
     top_k: usize,
 ) -> Result<Vec<SearchHit>, KnowledgeError> {
     let kb_id = kb_id.to_owned();
-    let vector = serde_json::to_string(vector).map_err(|e| KnowledgeError::Other(e.to_string()))?;
+    let vector = vector.map(serde_json::to_string).transpose().map_err(|e| KnowledgeError::Other(e.to_string()))?;
     let terms = query
         .split(|ch: char| !ch.is_alphanumeric())
         .filter(|part| !part.is_empty())
@@ -56,18 +57,22 @@ pub async fn hybrid(
             }
             let limit = top_k.clamp(1, 50) as i64;
             let mut fused = BTreeMap::<i64, (SearchHit, f32)>::new();
-            let mut vec_stmt = conn
-                .prepare(
-                    "SELECT c.id,c.source_id,c.title,c.section,s.url,c.text
-             FROM kb_chunks_vec v JOIN kb_chunks c ON c.id=v.rowid
-             JOIN kb_sources s ON s.id=c.source_id WHERE c.kb_id=?2
-             ORDER BY vec_distance_cosine(v.embedding,vec_f32(?1)) LIMIT ?3",
-                )
-                .map_err(db)?;
-            let vectors = vec_stmt.query_map(params![vector, kb_id, limit * 4], candidate).map_err(db)?;
-            for (rank, row) in vectors.enumerate() {
-                let row = row.map_err(db)?;
-                fused.insert(row.id, (row.hit, 1.0 / (60.0 + rank as f32 + 1.0)));
+            if let Some(vector) = vector {
+                let mut vec_stmt = conn
+                    .prepare(
+                        // A KNN query scans the vectors in bulk; reading them row by row is about 100 times slower.
+                        "SELECT c.id,c.source_id,c.title,c.section,s.url,c.text
+                 FROM kb_chunks_vec v JOIN kb_chunks c ON c.id=v.rowid
+                 JOIN kb_sources s ON s.id=c.source_id
+                 WHERE v.embedding MATCH vec_f32(?1) AND v.k=?3 AND v.rowid IN (SELECT id FROM kb_chunks WHERE kb_id=?2)
+                 ORDER BY v.distance",
+                    )
+                    .map_err(db)?;
+                let vectors = vec_stmt.query_map(params![vector, kb_id, limit * 4], candidate).map_err(db)?;
+                for (rank, row) in vectors.enumerate() {
+                    let row = row.map_err(db)?;
+                    fused.insert(row.id, (row.hit, 1.0 / (60.0 + rank as f32 + 1.0)));
+                }
             }
             if !terms.is_empty() {
                 let mut fts_stmt = conn

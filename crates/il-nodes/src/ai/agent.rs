@@ -4,11 +4,16 @@
 
 use super::common;
 use il_sdk::prelude::*;
-use il_sdk::services::models::{ChatMessage, ChatRequest, ModelRole, ToolSpec};
+use il_sdk::services::knowledge::SearchHit;
+use il_sdk::services::models::{ChatMessage, ChatRequest, ModelRole, ToolCall, ToolSpec};
 
 const PROMPT: &str = include_str!("../../../../prompts/nodes/agent.md");
 /// Last in the system message: flow instructions come before it, and models follow what comes last.
 const PRIVACY: &str = include_str!("../../../../prompts/nodes/agent_privacy.md");
+
+/// Searches per answer. Each one waits on the embedding model, and rewording a search rarely finds
+/// what the first two missed.
+const MAX_SEARCHES: usize = 3;
 
 /// Agent node.
 #[derive(Debug, Default)]
@@ -148,6 +153,7 @@ impl NodeExecutor for AiAgent {
         ];
         let max_steps = ctx.settings["maxSteps"].as_u64().unwrap_or(8).clamp(1, 20);
         let mut sources = Vec::new();
+        let mut searches = 0;
         for _ in 0..max_steps {
             let response = ctx
                 .models()
@@ -170,40 +176,30 @@ impl NodeExecutor for AiAgent {
             let mut assistant = ChatMessage::assistant(response.content);
             assistant.tool_calls = response.tool_calls.clone();
             messages.push(assistant);
-            for call in response.tool_calls {
-                let result = if let Some(base) = bases.iter().find(|base| call.name == format!("search_{base}")) {
-                    // Like a failing tool, a failed search is the model's to explain, not a failed step.
-                    let query = call.arguments["query"].as_str().filter(|q| !q.trim().is_empty());
-                    let found = match query {
-                        Some(query) => ctx.knowledge().search(base, query, 5).await.map_err(|e| e.to_string()),
-                        None => Err("the search needs a query".into()),
-                    };
-                    match found {
-                        Ok(hits) => {
-                            // One entry per document: several passages often come from the same one.
-                            for hit in &hits {
-                                if !sources.iter().any(|s: &Value| s["sourceId"] == hit.source_id) {
-                                    sources.push(json!({"sourceId":hit.source_id,"title":hit.title,"section":hit.section,"url":hit.url}));
-                                }
-                            }
-                            json!(hits)
-                        }
-                        Err(error) => {
-                            tracing::warn!(run_id = %ctx.run.run_id, node_id = %ctx.run.node_id, %error, "knowledge search failed");
-                            json!({ "error": error })
-                        }
-                    }
-                } else {
-                    let Some(tool) =
-                        ctx.tools().iter().find(|tool| tool.name() == call.name && selected.contains(&tool.name()))
-                    else {
-                        let warning = format!("tool {} is unavailable", call.name);
+            // The calls in one reply don't depend on each other, so they run at the same time.
+            let shared: &NodeCtx = ctx;
+            let results = futures::future::join_all(response.tool_calls.iter().map(|call| {
+                let search = bases.iter().any(|base| call.name == format!("search_{base}"));
+                searches += usize::from(search);
+                call_tool(shared, &bases, &selected, call, !search || searches <= MAX_SEARCHES)
+            }))
+            .await;
+            for (call, result) in response.tool_calls.into_iter().zip(results) {
+                let result = match result {
+                    Called::Unavailable(warning) => {
                         activity.push(json!({"tool":call.name,"warning":warning}));
                         messages.push(ChatMessage::tool(call.id, json!({"error":warning}).to_string()));
                         continue;
-                    };
-                    // The model can tell the person the system is unavailable; failing the step shows a raw error.
-                    tool.invoke(call.arguments).await.unwrap_or_else(|e| json!({"error": e.to_string()}))
+                    }
+                    Called::Done(result, hits) => {
+                        // One entry per document: several passages often come from the same one.
+                        for hit in &hits {
+                            if !sources.iter().any(|s: &Value| s["sourceId"] == hit.source_id) {
+                                sources.push(json!({"sourceId":hit.source_id,"title":hit.title,"section":hit.section,"url":hit.url}));
+                            }
+                        }
+                        result
+                    }
                 };
                 activity.push(json!({"tool":call.name,"result":result}));
                 messages.push(ChatMessage::tool(call.id, result.to_string()));
@@ -211,6 +207,41 @@ impl NodeExecutor for AiAgent {
         }
         Err(NodeError::Failed(format!("agent exceeded {max_steps} steps")))
     }
+}
+
+/// What one tool call gave: its result for the model with any passages found, or why the tool is missing.
+enum Called {
+    Done(Value, Vec<SearchHit>),
+    Unavailable(String),
+}
+
+async fn call_tool(ctx: &NodeCtx, bases: &[&str], selected: &[&str], call: &ToolCall, allowed: bool) -> Called {
+    if let Some(base) = bases.iter().find(|base| call.name == format!("search_{base}")) {
+        // Like a failing tool, a failed search is the model's to explain, not a failed step.
+        let query = call.arguments["query"].as_str().filter(|q| !q.trim().is_empty());
+        let found = match query {
+            _ if !allowed => Err(format!(
+                "you have searched {MAX_SEARCHES} times; answer from what you found, and say so if it doesn't cover the question"
+            )),
+            Some(query) => ctx.knowledge().search(base, query, 5).await.map_err(|e| e.to_string()),
+            None => Err("the search needs a query".into()),
+        };
+        return match found {
+            Ok(hits) => Called::Done(json!(hits), hits),
+            Err(error) => {
+                tracing::warn!(run_id = %ctx.run.run_id, node_id = %ctx.run.node_id, %error, "knowledge search failed");
+                Called::Done(json!({ "error": error }), Vec::new())
+            }
+        };
+    }
+    let Some(tool) = ctx.tools().iter().find(|tool| tool.name() == call.name && selected.contains(&tool.name())) else {
+        return Called::Unavailable(format!("tool {} is unavailable", call.name));
+    };
+    // The model can tell the person the system is unavailable; failing the step shows a raw error.
+    Called::Done(
+        tool.invoke(call.arguments.clone()).await.unwrap_or_else(|e| json!({"error": e.to_string()})),
+        Vec::new(),
+    )
 }
 
 inventory::submit! { NodeFactory::new(|| Box::new(AiAgent)) }
@@ -259,6 +290,20 @@ mod tests {
         let out = harness.run().await.unwrap();
         assert_eq!(out.ports["out"][0].json["answer"], "What would you like to know?");
         assert_eq!(out.ports["out"][0].json["activity"][0]["result"]["error"], "the search needs a query");
+    }
+
+    #[tokio::test]
+    async fn q28_searching_stops_after_three_tries() {
+        let harness = NodeHarness::new(super::AiAgent)
+            .settings(json!({"instructions":"Answer","knowledgeBases":["help"],"maxSteps":6}));
+        for query in ["a", "b", "c", "d"] {
+            harness.fakes.models.push_tool_call("search_help", json!({"query": query}));
+        }
+        harness.fakes.models.push_text("I couldn't find that.");
+        let out = harness.run().await.unwrap();
+        let activity = &out.ports["out"][0].json["activity"];
+        assert!(activity[2]["result"].is_array(), "the first three searches run");
+        assert!(activity[3]["result"]["error"].as_str().unwrap().contains("answer from what you found"));
     }
 
     #[tokio::test]
@@ -355,6 +400,50 @@ mod tests {
         assert_eq!(out.ports["out"][0].json["answer"], "I can help with general questions.");
         assert_eq!(out.ports["out"][0].json["activity"][0]["warning"], "tool get_invoice is unavailable");
         assert!(harness.fakes.models.calls()[0].1.tools.is_empty());
+    }
+
+    /// Finishes only once both calls in a reply have started, so it hangs if they run one after another.
+    struct MeetTool(std::sync::Arc<tokio::sync::Barrier>);
+
+    #[async_trait]
+    impl AgentTool for MeetTool {
+        fn name(&self) -> &str {
+            "get_invoice"
+        }
+        fn description(&self) -> &str {
+            "Look up an invoice"
+        }
+        fn schema(&self) -> serde_json::Value {
+            json!({"type":"object"})
+        }
+        async fn invoke(&self, args: serde_json::Value) -> Result<serde_json::Value, ToolError> {
+            self.0.wait().await;
+            Ok(json!({"id": args["id"]}))
+        }
+    }
+
+    #[tokio::test]
+    async fn q28_calls_in_one_reply_run_together_and_keep_their_order() {
+        use il_sdk::services::models::{ChatResponse, ToolCall};
+        let mut harness = NodeHarness::new(super::AiAgent)
+            .settings(json!({"instructions":"Check invoices","tools":["get_invoice"],"maxSteps":3}));
+        harness.fakes.tools.push(std::sync::Arc::new(MeetTool(std::sync::Arc::new(tokio::sync::Barrier::new(2)))));
+        let call =
+            |id: &str| ToolCall { id: format!("call_{id}"), name: "get_invoice".into(), arguments: json!({"id": id}) };
+        harness
+            .fakes
+            .models
+            .push(ChatResponse { tool_calls: vec![call("a"), call("b")], ..Default::default() })
+            .push_text("Both paid.");
+        let out = tokio::time::timeout(std::time::Duration::from_secs(5), harness.run())
+            .await
+            .expect("calls ran one at a time")
+            .unwrap();
+        let activity = &out.ports["out"][0].json["activity"];
+        assert_eq!(
+            (activity[0]["result"]["id"].as_str(), activity[1]["result"]["id"].as_str()),
+            (Some("a"), Some("b"))
+        );
     }
 
     #[tokio::test]
