@@ -97,6 +97,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 86 | Q33 | Generate video/voice/image can't use the user's own provider keys; no shot-list prompting; captions aren't timed to the voiceover | P1 | — | claimed | claude-a | t/Q33-media-keys-shots | 2026-10-30 14:00 | |
 | 87 | Q34 | Sign in with Google or GitHub; remove demo mode; everyone works in their own workspace | P0 | — | claimed | claude-a | t/Q34-auth | 2026-10-30 14:19 | |
 | 88 | Q35 | First-run onboarding: welcome, guided tour over the real screens, and a getting-started checklist | P1 | — | claimed | claude-a | t/Q35-onboarding | 2026-10-30 14:22 | |
+| 89 | Q36 | Export as code: download a flow as a self-contained bundle (engine binary/container, flow JSON, `.env.example`, README, `INTERLOCK.md`) that runs with no dependency on the hosted service | P1 | — | claimed | claude-a | t/Q36-export | 2026-10-30 14:24 | |
 
 ## Waiting on the owner
 
