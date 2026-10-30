@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_BYTES, buildRequest, detectApps, fileDraft, linkDraft, uploaded, type Draft } from './create';
+import { buildRequest, detectApps, fileDraft, isSpec, linkDraft, MAX_BYTES, type Draft, uploaded } from './create';
 
 const APPS = ['bluesky', 'gmail', 'sheets', 'shopify', 'slack', 'x', 'youtube'];
 const file = (name: string, type: string, size: number) => ({ name, type, size }) as File;
@@ -45,5 +45,13 @@ describe('create', () => {
         { kind: 'link', name: 'help.example.com', role: 'knowledge', fileId: null, url: 'https://help.example.com/' }
       ]
     });
+  });
+});
+
+describe('Q24 specs', () => {
+  it('tells an OpenAPI spec from a knowledge file', () => {
+    const file = (name: string) => new File(['{}'], name);
+    expect(['api.json', 'openapi.YAML', 'spec.yml'].map((n) => isSpec(file(n)))).toEqual([true, true, true]);
+    expect(['faq.pdf', 'notes.md', 'json.txt'].map((n) => isSpec(file(n)))).toEqual([false, false, false]);
   });
 });
