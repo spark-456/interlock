@@ -33,14 +33,20 @@ export function mcpInstall(e: Endpoints) {
   const json = JSON.stringify({ mcpServers: { [e.model]: { url: e.mcp, headers: { Authorization: 'Bearer ${INTERLOCK_KEY}' } } } }, null, 2);
   return [
     { id: 'claude', label: 'Add to Claude Code', text: `claude mcp add --transport http ${e.model} ${e.mcp} --header "Authorization: Bearer $INTERLOCK_KEY"` },
+    { id: 'codex', label: 'Add to Codex', text: codexConfig(e.model, e.mcp) },
     { id: 'cursor', label: 'Add to Cursor', text: json },
     { id: 'vscode', label: 'Add to VS Code', text: JSON.stringify({ servers: { [e.model]: { type: 'http', url: e.mcp } } }, null, 2) }
   ];
 }
 
-/** Command to connect a coding agent to the platform MCP server. */
+/** Command to connect Claude Code to the platform MCP server. */
 export function platformMcpInstall(e: Endpoints): string {
   return `claude mcp add --transport http interlock ${e.platformMcp} --header "Authorization: Bearer $INTERLOCK_KEY"`;
+}
+
+/** Codex has no command for a bearer-token server, so this is a table for `~/.codex/config.toml`. */
+export function codexConfig(name: string, url: string): string {
+  return `[mcp_servers.${name}]\nurl = "${url}"\nbearer_token_env_var = "INTERLOCK_KEY"`;
 }
 
 /** Quick-start code for each tab. */

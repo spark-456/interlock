@@ -4,7 +4,7 @@
   import Chip from '$lib/design/Chip.svelte';
   import CopyField from '$lib/design/CopyField.svelte';
   import Icon from '$lib/design/Icon.svelte';
-  import { platformMcpInstall, type Endpoints } from './publish';
+  import { codexConfig, platformMcpInstall, type Endpoints } from './publish';
 
   let { endpoints, appName }: { endpoints: Endpoints; appName: string } = $props();
   // The main platform MCP tools (il-publish `mcp/platform`); it has a few more for knowledge and runs.
@@ -29,7 +29,10 @@
   </header>
   <CopyField label="Interlock MCP" value={endpoints.platformMcp} />
   <ol>
-    <li><CopyField label="Add it to Claude Code" value={platformMcpInstall(endpoints)} /></li>
+    <li class="installs">
+      <CopyField label="Add it to Claude Code" value={platformMcpInstall(endpoints)} />
+      <CopyField label="Or to Codex, in ~/.codex/config.toml" value={codexConfig('interlock', endpoints.platformMcp)} />
+    </li>
     <li>
       <p class="prompt">“{prompt}”</p>
       <Button size="s" icon={copied ? 'check' : 'copy'} onclick={copy}>{copied ? 'Copied' : 'Copy prompt'}</Button>
@@ -49,6 +52,7 @@
   header p { margin: 0; color: var(--text-3); font: var(--t-small); }
   ol { margin: 0; padding-left: var(--s-5); display: flex; flex-direction: column; gap: var(--s-3); }
   li::marker { color: var(--primary); font-weight: 600; }
+  .installs { display: flex; flex-direction: column; gap: var(--s-3); }
   .prompt { margin: 0 0 var(--s-2); color: var(--text); }
   .tools { display: flex; flex-wrap: wrap; gap: var(--s-2); }
 </style>

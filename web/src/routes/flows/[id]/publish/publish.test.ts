@@ -21,7 +21,10 @@ describe('publish', () => {
     for (const t of tabs.slice(0, 4)) expect(t.code).toContain('larkspur-support');
     expect(tabs[0]?.code).toContain('"Can I get a refund?"');
     expect(mcpInstall(e)[0]?.text).toContain('claude mcp add --transport http larkspur-support https://il.example/mcp/larkspur-support');
-    expect(JSON.parse(mcpInstall(e)[1]!.text).mcpServers['larkspur-support'].url).toBe(e.mcp);
+    expect(mcpInstall(e)[1]?.text).toBe(
+      '[mcp_servers.larkspur-support]\nurl = "https://il.example/mcp/larkspur-support"\nbearer_token_env_var = "INTERLOCK_KEY"'
+    );
+    expect(JSON.parse(mcpInstall(e)[2]!.text).mcpServers['larkspur-support'].url).toBe(e.mcp);
   });
 
   it('P02 includes the bearer header in the platform MCP command', () => {
