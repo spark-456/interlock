@@ -46,7 +46,7 @@ pub(crate) async fn drive(
     let mut tasks: JoinSet<(String, CallResult)> = JoinSet::new();
     let mut running: BTreeSet<String> = BTreeSet::new();
     if let Some((node_id, r)) = resume
-        && let Some(node) = flow.node(&node_id).cloned()
+        && let Some(node) = flow.node(&node_id).map(|n| with_linked_knowledge(n, &flow))
     {
         running.insert(node_id.clone());
         let (inner2, base2, scopes, cancel2) =
@@ -89,7 +89,7 @@ pub(crate) async fn drive(
                     continue;
                 }
                 let mut input = Ports::new();
-                for e in &incoming {
+                for e in incoming.iter().filter(|e| e.from.port != KNOWLEDGE_PORT) {
                     let items =
                         cp.outputs.get(&e.from.node).and_then(|p| p.get(&e.from.port)).cloned().unwrap_or_default();
                     append_paired(input.entry(e.to.port.clone()).or_default(), items);
@@ -120,8 +120,13 @@ pub(crate) async fn drive(
                 inner.bus.emit(&run.id, Some(&node.id), RunEventKind::NodeStarted {}).await;
                 running.insert(node.id.clone());
                 progressed = true;
-                let (inner2, base2, scopes, cancel2, node2) =
-                    (inner.clone(), base.clone(), scopes_for_input(&cp, &input), cancel.clone(), node.clone());
+                let (inner2, base2, scopes, cancel2, node2) = (
+                    inner.clone(),
+                    base.clone(),
+                    scopes_for_input(&cp, &input),
+                    cancel.clone(),
+                    with_linked_knowledge(node, &flow),
+                );
                 let (id, services2) = (node.id.clone(), services.clone());
                 tasks.spawn(async move {
                     (id, run_node(inner2, services2, base2, node2, input, scopes, cancel2, None).await)
@@ -323,6 +328,39 @@ fn nodes_scope(cp: &Checkpoint, current: Option<&Item>) -> Value {
         map.insert(id.clone(), json!({ "json": first.unwrap_or(Value::Null), "items": items }));
     }
     Value::Object(map)
+}
+
+/// The output port of knowledge base steps. An edge from it links the base to the next step (its
+/// `knowledgeBases`) rather than sending items: an Agent fed the base's summary as a message answered it.
+const KNOWLEDGE_PORT: &str = "kb";
+
+/// `node` with the knowledge steps connected to it as its `knowledgeBases`. A base named by a
+/// connected step's name (`"Travel policy"`) means that step: searching the name finds nothing.
+fn with_linked_knowledge(node: &Node, flow: &Flow) -> Node {
+    let mut node = node.clone();
+    let linked: Vec<&Node> = flow
+        .incoming(&node.id)
+        .filter(|e| e.from.port == KNOWLEDGE_PORT)
+        .filter_map(|e| flow.node(&e.from.node))
+        .collect();
+    if linked.is_empty() {
+        return node;
+    }
+    let named = |v: &Value, step: &Node| v == step.name.as_str() || v == &step.settings["name"];
+    let mut bases: Vec<Value> = node.settings["knowledgeBases"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|v| !linked.iter().any(|step| named(v, step)))
+        .cloned()
+        .collect();
+    for step in linked {
+        if !bases.contains(&json!(step.id)) {
+            bases.push(json!(step.id));
+        }
+    }
+    node.settings["knowledgeBases"] = Value::Array(bases);
+    node
 }
 
 /// Steps a node names as its knowledge bases (`"knowledgeBases": ["n_kb"]`); it waits for them as for an input.
