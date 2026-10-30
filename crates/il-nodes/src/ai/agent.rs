@@ -7,6 +7,8 @@ use il_sdk::prelude::*;
 use il_sdk::services::models::{ChatMessage, ChatRequest, ModelRole, ToolSpec};
 
 const PROMPT: &str = include_str!("../../../../prompts/nodes/agent.md");
+/// Last in the system message: flow instructions come before it, and models follow what comes last.
+const PRIVACY: &str = include_str!("../../../../prompts/nodes/agent_privacy.md");
 
 /// Agent node.
 #[derive(Debug, Default)]
@@ -137,9 +139,10 @@ impl NodeExecutor for AiAgent {
         }
         let mut messages = vec![
             ChatMessage::system(format!(
-                "{}\n{}",
+                "{}\n{}\n\n{}",
                 PROMPT.trim(),
-                ctx.settings["instructions"].as_str().unwrap_or_default()
+                ctx.settings["instructions"].as_str().unwrap_or_default(),
+                PRIVACY.trim()
             )),
             ChatMessage::user(common::input_text(&ctx.settings, &input)),
         ];
@@ -293,6 +296,8 @@ mod tests {
         let out = harness.run().await.unwrap();
         assert_eq!(out.ports["out"][0].json["activity"][0]["result"]["status"], "paid");
         assert_eq!(harness.fakes.models.calls()[0].1.tools[0].name, "get_invoice");
+        let system = &harness.fakes.models.calls()[0].1.messages[0].content;
+        assert!(system.ends_with(super::PRIVACY.trim()), "the privacy rule comes after the flow's instructions");
     }
 
     struct DownTool;

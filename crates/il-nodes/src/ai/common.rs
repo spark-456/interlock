@@ -64,6 +64,7 @@ mod tests {
             ("translate", include_str!("../../../../prompts/nodes/translate.md")),
             ("decide", include_str!("../../../../prompts/nodes/decide.md")),
             ("agent", include_str!("../../../../prompts/nodes/agent.md")),
+            ("agent_privacy", include_str!("../../../../prompts/nodes/agent_privacy.md")),
             ("describe_image", include_str!("../../../../prompts/nodes/describe_image.md")),
         ];
         let combined =

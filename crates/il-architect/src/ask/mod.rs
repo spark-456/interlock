@@ -25,7 +25,7 @@ pub async fn ask(
     // A change that only works elsewhere (a sign-off goes in the reply steps, not the agent) is
     // shown as made rather than dropped to "No changes".
     let unchanged = |f: &Flow| f.nodes.iter().all(|n| flow.node(&n.id).is_some_and(|old| !changed(old, n)));
-    let result = if unchanged(&kept) && !unchanged(&revised.flow) {
+    let mut result = if unchanged(&kept) && !unchanged(&revised.flow) {
         let elsewhere: Vec<&str> = revised
             .flow
             .nodes
@@ -38,6 +38,8 @@ pub async fn ask(
     } else {
         kept
     };
+    // Steps put back as they were bring their old places; lay out again around any new ones.
+    crate::layout::settle(flow, &mut result);
     let mut diff = diff(flow, &result);
     diff.notes = notes;
     Ok((diff, revised.cost_usd))

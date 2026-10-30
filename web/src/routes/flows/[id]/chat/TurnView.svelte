@@ -6,6 +6,7 @@
   import Icon from '$lib/design/Icon.svelte';
   import Spinner from '$lib/design/Spinner.svelte';
   import { clock } from '$lib/design/format';
+  import { markdown } from '$lib/design/markdown';
   import type { Turn } from './chat';
 
   let { turn, onsource, onask }: { turn: Turn; onsource: (sourceId: string) => void; onask: (message: string) => void } = $props();
@@ -31,7 +32,8 @@
   <article class="answer" class:blocked={!!turn.guardrail} aria-live="polite">
     {#if turn.answer}
       {#if turn.by}<p class="by">{turn.by.name}{#if turn.by.ms !== undefined} · <span class="mono">{(turn.by.ms / 1000).toFixed(1)} s</span>{/if}</p>{/if}
-      <p class="text">{turn.answer}</p>
+      <!-- markdown() escapes the answer before adding its own tags. -->
+      <div class="text">{@html markdown(turn.answer)}</div>
       {#if turn.sources.length}
         <div class="chips">
           {#each turn.sources as s (s.sourceId)}
@@ -73,7 +75,18 @@
   .answer.blocked { border-style: dashed; }
   .by { margin: 0; font: var(--t-small); font-weight: 600; color: var(--primary); }
   .mono { font-family: var(--font-mono); color: var(--text-3); font-weight: 400; }
-  .text { margin: 0; white-space: pre-wrap; }
+  .text { overflow-wrap: anywhere; }
+  .text :global(:is(p, ul, ol, pre, h4)) { margin: 0 0 var(--s-2); }
+  .text :global(:last-child) { margin-bottom: 0; }
+  .text :global(:is(ul, ol)) { padding-left: var(--s-5); }
+  .text :global(h4) { font-weight: 600; }
+  .text :global(code) { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface-2); border-radius: var(--r-chip); padding: 0 4px; }
+  .text :global(pre) { overflow-x: auto; padding: var(--s-2) var(--s-3); background: var(--surface-2); border-radius: var(--r-card); }
+  .text :global(pre code) { padding: 0; background: none; }
+  .text :global(a) { color: var(--primary); }
+  .text :global(table) { border-collapse: collapse; margin: 0 0 var(--s-2); font: var(--t-small); }
+  .text :global(:is(th, td)) { border: 1px solid var(--border); padding: var(--s-1) var(--s-2); text-align: left; vertical-align: top; }
+  .text :global(th) { background: var(--surface-2); font-weight: 600; }
   .chips, .actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
   .guard { margin: 0; display: inline-flex; align-items: center; gap: var(--s-1); color: var(--error-text); font: var(--t-small); }
   .hint { margin: 0; color: var(--text-3); font: var(--t-small); }
