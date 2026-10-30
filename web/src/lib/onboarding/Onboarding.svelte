@@ -1,7 +1,7 @@
 <script lang="ts">
   // First-run onboarding (Q35): the welcome on a person's first visit, the guided tour and the Help dialog.
   // Progress is remembered per user in the browser.
-  import { afterNavigate } from '$app/navigation';
+  import { beforeNavigate } from '$app/navigation';
   import type { Me } from '$lib/api';
   import Button from '$lib/design/Button.svelte';
   import Modal from '$lib/design/Modal.svelte';
@@ -16,8 +16,9 @@
     if (me) signIn(me.user?.id ?? me.workspaceId);
   });
 
-  // A checklist link leaves the Help dialog behind otherwise.
-  afterNavigate(() => (onboarding.helpOpen = false));
+  // A checklist link leaves the Help dialog behind otherwise. Only navigations that start while it is
+  // open close it: one the tour started earlier may finish after Help was opened.
+  beforeNavigate(() => (onboarding.helpOpen = false));
 </script>
 
 <Welcome />
