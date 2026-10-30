@@ -1365,6 +1365,7 @@ dependencies = [
  "il-core",
  "il-sdk",
  "inventory",
+ "mime_guess",
  "rmcp",
  "serde",
  "serde_json",

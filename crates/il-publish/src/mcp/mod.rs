@@ -2,10 +2,11 @@
 
 use axum::Router;
 use axum::body::Body;
+use axum::extract::DefaultBodyLimit;
 use axum::extract::{Path, Request, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::any;
+use axum::routing::{any, post};
 use il_core::Flow;
 use il_sdk::registry::{RouteCtx, RouteFactory};
 use rmcp::model::{
@@ -25,6 +26,7 @@ use crate::openai::{published, slug};
 
 mod flow;
 mod platform;
+mod upload;
 
 #[derive(Clone)]
 enum Scope {
@@ -89,10 +91,12 @@ impl ServerHandler for McpServer {
     }
 }
 
-/// Registers platform MCP on `/mcp` and per-flow MCP on `/mcp/:slug`.
+/// Registers platform MCP on `/mcp`, file uploads on `/mcp/files`, and per-flow MCP on `/mcp/:slug`
+/// (an app whose name slugs to `files` is served by its OpenAI endpoint, not MCP).
 pub fn routes(ctx: &RouteCtx) -> Router {
     Router::new()
         .route("/mcp", any(platform_request))
+        .route("/mcp/files", post(upload::upload).layer(DefaultBodyLimit::max(upload::MAX_UPLOAD)))
         .route("/mcp/{flow_slug}", any(flow_request))
         .with_state(ctx.clone())
 }

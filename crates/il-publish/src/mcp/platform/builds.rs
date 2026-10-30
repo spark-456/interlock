@@ -17,10 +17,19 @@ pub(super) fn tools() -> Vec<Tool> {
     vec![
         tool(
             "create_flow_from_goal",
-            "Start building a flow from a goal in plain words, optionally with links to learn from (help \
-             centers, docs) and OpenAPI specs it may call. Takes one to a few minutes: follow it with get_build.",
+            &format!(
+                "Start building a flow from a goal in plain words, optionally with links to learn from (help \
+                 centers, docs), OpenAPI specs it may call, and local files (documents, voice memos). Upload each \
+                 file first with `{}`; it returns the file_id. Takes one to a few minutes: follow it with get_build.",
+                crate::mcp::upload::COMMAND
+            ),
             json!({"type": "object", "properties": {
                 "goal": {"type": "string"},
+                "files": {"type": "array", "description": "Uploaded files", "items": {"type": "object", "properties": {
+                    "file_id": {"type": "string"},
+                    "role": {"type": "string", "enum": ["knowledge", "instructions"], "description":
+                        "knowledge: documents to answer from (default); instructions: rules for the agents (default for audio)"}
+                }, "required": ["file_id"]}},
                 "links": {"type": "array", "items": {"type": "string"}, "description": "Websites it should know"},
                 "api_specs": {"type": "array", "items": {"type": "string"},
                     "description": "OpenAPI spec URLs; their safe operations become the agents' tools"}
@@ -95,11 +104,36 @@ async fn create(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonObject) -> R
             role: AttachmentRole::Knowledge,
         })
     };
-    let attachments = linked("links", AttachmentKind::Link).chain(linked("api_specs", AttachmentKind::Api)).collect();
+    let mut attachments: Vec<Attachment> =
+        linked("links", AttachmentKind::Link).chain(linked("api_specs", AttachmentKind::Api)).collect();
+    for entry in arguments.get("files").and_then(Value::as_array).into_iter().flatten() {
+        attachments.push(uploaded(ctx, workspace_id, entry).await?);
+    }
     let req = BuildRequest { goal, kind: None, attachments, hints: vec![] };
     let id = ctx.architect.start_build(workspace_id, req).await.map_err(|e| e.to_string())?;
     ctx.services.store.kv_put(&owner_key(&id), &json!(workspace_id)).await.map_err(|e| e.to_string())?;
     Ok(json!({"build_id": id, "next": "Call get_build every 20 seconds or so until status is ready or failed."}))
+}
+
+/// An uploaded file as an attachment; another workspace's file reads as missing.
+async fn uploaded(ctx: &RouteCtx, workspace_id: &str, entry: &Value) -> Result<Attachment, String> {
+    let id = entry["file_id"].as_str().unwrap_or_default();
+    let missing = || format!("file {id} not found; upload it to /mcp/files first");
+    let owner = ctx.services.files.owner(id).await.map_err(|_| missing())?;
+    if owner.as_deref() != Some(workspace_id) {
+        return Err(missing());
+    }
+    let (file, _) = ctx.services.files.get(id).await.map_err(|_| missing())?;
+    let audio = file.mime.starts_with("audio/");
+    // As in the app, a voice memo is the person's instructions unless they say otherwise.
+    let role = match entry["role"].as_str() {
+        Some("instructions") => AttachmentRole::Instructions,
+        Some(_) => AttachmentRole::Knowledge,
+        None if audio => AttachmentRole::Instructions,
+        None => AttachmentRole::Knowledge,
+    };
+    let kind = if audio { AttachmentKind::Audio } else { AttachmentKind::File };
+    Ok(Attachment { kind, name: file.name, file_id: Some(file.id), url: None, role })
 }
 
 async fn owned(ctx: &RouteCtx, workspace_id: &str, build_id: &str) -> Result<(), String> {
@@ -204,7 +238,7 @@ mod tests {
 
     use async_trait::async_trait;
     use il_core::Flow;
-    use il_core::dto::{AskDiff, AttachmentKind, BuildAnswers, BuildRequest};
+    use il_core::dto::{AskDiff, AttachmentKind, AttachmentRole, BuildAnswers, BuildRequest};
     use il_sdk::registry::RouteCtx;
     use il_sdk::services::architect::ArchitectError;
     use il_sdk::services::{ArchitectService, NoActivation, NoFlowTools};
@@ -251,5 +285,37 @@ mod tests {
                 (AttachmentKind::Api, "https://api.example/openapi.json".to_string())
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn q31_builds_take_uploaded_files_of_their_own_workspace() {
+        let architect = Arc::new(Recording::default());
+        let fakes = FakeServices::default();
+        let ctx = RouteCtx {
+            services: fakes.services(),
+            runner: Arc::new(FakeRunner::default()),
+            architect: architect.clone(),
+            flow_tools: Arc::new(NoFlowTools),
+            activation: Arc::new(NoActivation),
+            config: json!({}),
+        };
+        let files = &ctx.services.files;
+        let pdf = files.put_for_workspace("ws_a", "faq.pdf", "application/pdf", "x".into()).await.unwrap();
+        let memo = files.put_for_workspace("ws_a", "rules.mp3", "audio/mpeg", "x".into()).await.unwrap();
+        let other = files.put_for_workspace("ws_b", "theirs.pdf", "application/pdf", "x".into()).await.unwrap();
+        let args = json!({"goal": "support agent", "files": [{"file_id": pdf.id}, {"file_id": memo.id}]});
+        super::create(&ctx, "ws_a", args.as_object().unwrap()).await.unwrap();
+        let req = architect.0.lock().unwrap().remove(0);
+        let got: Vec<_> = req.attachments.iter().map(|a| (a.kind, a.role, a.name.as_str())).collect();
+        assert_eq!(
+            got,
+            [
+                (AttachmentKind::File, AttachmentRole::Knowledge, "faq.pdf"),
+                (AttachmentKind::Audio, AttachmentRole::Instructions, "rules.mp3")
+            ]
+        );
+        let theirs = json!({"goal": "x", "files": [{"file_id": other.id}]});
+        let error = super::create(&ctx, "ws_a", theirs.as_object().unwrap()).await.unwrap_err();
+        assert!(error.contains("not found"), "{error}");
     }
 }
