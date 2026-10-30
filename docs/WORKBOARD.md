@@ -38,7 +38,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 27 | W07 | Landing, demo mode, settings, error states | P0 | T00 | done | claude-a | t/W07-states | 2026-10-27 21:46 | [PR #26](https://github.com/spark-456/interlock/pull/26), [PR #28](https://github.com/spark-456/interlock/pull/28) |
 | 28 | R02 | Deploy to Nebius | P0 | B04 | blocked | codex-1 | t/R02-deploy-nebius | 2026-10-29 07:19 | Image, Compose + Caddy, runbook and smoke script merged ([#39](https://github.com/spark-456/interlock/pull/39), [#79](https://github.com/spark-456/interlock/pull/79): all fixtures in the image, public deploy settings). Left for the owner: Nebius VM + disk, DNS, secrets.env, then deploy/README.md steps and smoke |
 | 29 | R03 | Integration pass & E2E | P0 | B03, B04, A01, W02, W03 | claimed | claude-a | t/R03-integration | 2026-10-27 23:08 | Part 1 merged ([PR #37](https://github.com/spark-456/interlock/pull/37)): fake-mode integration fixes, journey e2e; bugs filed as R05, R06. Left: run F-A/F-B/F-C on a staging deploy (needs R02 and the owner's keys) |
-| 30 | R04 | README, docs, video script, Devpost | P0 | — | claimed | claude-a | t/R04-drafts | 2026-10-27 23:35 | Drafts merged ([PR #43](https://github.com/spark-456/interlock/pull/43)): docs/submission/video-script.md and devpost.md. Left for the owner at submission: README, Apache-2.0 switch, demo URL, video, real feedback |
+| 30 | R04 | README, docs, video script, Devpost | P0 | — | claimed | claude-a | t/R04-drafts | 2026-10-30 13:56 | Drafts merged ([PR #43](https://github.com/spark-456/interlock/pull/43)): docs/submission/video-script.md and devpost.md. README with screenshots and GIFs, and the Apache-2.0 switch (owner approved 2026-10-30). Left for the owner: demo URL, video, real feedback |
 | 31 | W01b | Remaining design components + `/dev/components` gallery | P0 | T00 | done | claude-a | t/W01b-components | 2026-10-27 23:31 | [PR #42](https://github.com/spark-456/interlock/pull/42) |
 | 32 | N01 | Node: `ai.guardrails` (AR-9 safety rules) | P0 | T00 | done | codex-1 | t/N01-guardrails | 2026-10-27 20:42 | [PR #19](https://github.com/spark-456/interlock/pull/19) squash merged after Ubuntu and Windows CI passed. |
 | 33 | B04b | Server: GitHub sign-in, rate limits, startup recovery, demo seed | P0 | T00 | done | codex-1 | t/B04b-server-finish | 2026-10-27 17:34 | [PR #12](https://github.com/spark-456/interlock/pull/12); Ubuntu and Windows CI passed |
@@ -112,7 +112,7 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 | Bluesky app password | C02 | Settings → App passwords | open |
 | `IL_MASTER_KEY` | B01 | 32 random bytes, base64. Encrypts stored credentials | open |
 | Nebius deployment account | R02 | Provide project access and VM/persistent-disk budget, public DNS name, and runtime keys via environment; then verify HTTPS demo access | open |
-| Final licence and README | R04 | Switch to Apache-2.0 and write the README at submission | open |
+| Final licence and README | R04 | Switch to Apache-2.0 and write the README at submission | done |
 
 ## Blockers and known issues
 
