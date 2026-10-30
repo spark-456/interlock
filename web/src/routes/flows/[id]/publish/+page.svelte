@@ -1,6 +1,6 @@
 <script lang="ts">
   // Publish (design S4 "Connect"): AI apps get API, MCP and widget cards, quick start, the
-  // integration pack and the platform MCP; automations get the Activate state.
+  // integration pack and the platform MCP; automations get the Activate state. Both can export as code.
   import { page } from '$app/state';
   import { api, type Flow } from '$lib/api';
   import Button from '$lib/design/Button.svelte';
@@ -11,6 +11,7 @@
   import { toast } from '$lib/design/toasts.svelte';
   import AgentCard from './AgentCard.svelte';
   import ApiCard from './ApiCard.svelte';
+  import ExportCard from './ExportCard.svelte';
   import GuideCard from './GuideCard.svelte';
   import McpCard from './McpCard.svelte';
   import QuickStart from './QuickStart.svelte';
@@ -93,6 +94,7 @@
         <GuideCard {flowId} />
         <AgentCard endpoints={ends} appName={flow.name} />
       </div>
+      <ExportCard {flowId} name={flow.name} origin={page.url.origin} />
       <section class="works" aria-label="Works with">
         <div><h2>Works with</h2><p>Any OpenAI-compatible client or MCP host.</p></div>
         <ul>{#each WORKS_WITH as w (w)}<li><PartnerSlot name={w} height={28} /></li>{/each}</ul>
@@ -105,6 +107,7 @@
           Every run shows up in the flow’s history, and steps that send or post wait for approval where you asked for it.
         </p>
       </section>
+      <ExportCard {flowId} name={flow.name} origin={page.url.origin} />
     {/if}
   {/if}
 </div>

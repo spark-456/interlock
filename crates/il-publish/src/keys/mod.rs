@@ -43,10 +43,23 @@ impl KeyManager {
     pub async fn create(&self, workspace_id: &str, name: &str) -> Result<(String, String), KeyError> {
         let id = ulid::Ulid::new().to_string();
         let raw = format!("ilk_{id}_{}{}", ulid::Ulid::new(), ulid::Ulid::new());
+        self.save(&id, workspace_id, name, &raw).await?;
+        Ok((id, raw))
+    }
+
+    /// Registers a key chosen outside Interlock, such as a self-hosted bundle's `INTERLOCK_API_KEY`:
+    /// any value of 32 or more characters (else `None`). Returns its id; it is stored hashed like any other.
+    pub async fn import(&self, workspace_id: &str, name: &str, raw: &str) -> Result<Option<String>, KeyError> {
+        let Some(id) = key_id(raw) else { return Ok(None) };
+        self.save(&id, workspace_id, name, raw).await?;
+        Ok(Some(id))
+    }
+
+    async fn save(&self, id: &str, workspace_id: &str, name: &str, raw: &str) -> Result<(), KeyError> {
         let record = KeyRecord {
             workspace_id: workspace_id.into(),
             name: name.into(),
-            hash: hash(&raw),
+            hash: hash(raw),
             revoked: false,
             last_used_at: None,
         };
@@ -65,11 +78,13 @@ impl KeyManager {
             .transpose()
             .map_err(|e| StoreError::Backend(e.to_string()))?
             .unwrap_or_default();
-        ids.push(id.clone());
+        if !ids.iter().any(|known| known == id) {
+            ids.push(id.into());
+        }
         self.store
             .kv_put(&index_key, &serde_json::to_value(ids).map_err(|e| StoreError::Backend(e.to_string()))?)
             .await?;
-        Ok((id, raw))
+        Ok(())
     }
 
     /// Lists keys for one workspace without revealing secrets.
@@ -101,12 +116,7 @@ impl KeyManager {
 
     /// Returns the workspace only for a valid, active key.
     pub async fn authenticate(&self, raw: &str) -> Result<Option<String>, KeyError> {
-        let Some(id) = raw.strip_prefix("ilk_").and_then(|rest| rest.split_once('_')).map(|(id, _)| id) else {
-            return Ok(None);
-        };
-        if id.len() != 26 {
-            return Ok(None);
-        }
+        let Some(id) = key_id(raw) else { return Ok(None) };
         let Some(value) = self.store.kv_get(&format!("publish_api_key:{id}")).await? else { return Ok(None) };
         let mut record: KeyRecord = serde_json::from_value(value).map_err(|e| StoreError::Backend(e.to_string()))?;
         let candidate = hash(raw);
@@ -139,6 +149,14 @@ impl KeyManager {
     }
 }
 
+/// A key's id: from `ilk_<id>_…` keys that Interlock made, else from the hash of an imported key.
+fn key_id(raw: &str) -> Option<String> {
+    match raw.strip_prefix("ilk_") {
+        Some(rest) => rest.split_once('_').map(|(id, _)| id).filter(|id| id.len() == 26).map(str::to_owned),
+        None => (raw.len() >= 32).then(|| format!("h{}", &hash(raw)[..25])),
+    }
+}
+
 fn hash(raw: &str) -> String {
     format!("{:x}", Sha256::digest(raw.as_bytes()))
 }
@@ -157,5 +175,18 @@ mod tests {
         assert!(manager.authenticate(&format!("{raw}x")).await.unwrap().is_none());
         manager.revoke("ws_a", &id).await.unwrap();
         assert!(manager.authenticate(&raw).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn q36_imported_keys_authenticate_and_short_ones_are_refused() {
+        let manager = KeyManager::new(Arc::new(MemoryStore::default()));
+        let raw = "a-self-hosted-key-of-at-least-32-chars";
+        let id = manager.import("ws_local", "INTERLOCK_API_KEY", raw).await.unwrap().unwrap();
+        let again = manager.import("ws_local", "INTERLOCK_API_KEY", raw).await.unwrap();
+        assert_eq!(again, Some(id), "importing twice is a no-op");
+        assert_eq!(manager.list("ws_local").await.unwrap().len(), 1);
+        assert_eq!(manager.authenticate(raw).await.unwrap().as_deref(), Some("ws_local"));
+        assert!(manager.authenticate("a-self-hosted-key-of-at-least-32-chars!").await.unwrap().is_none());
+        assert!(manager.import("ws_local", "short", "too-short").await.unwrap().is_none());
     }
 }

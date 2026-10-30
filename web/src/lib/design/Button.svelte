@@ -11,13 +11,15 @@
     loading?: boolean;
     icon?: string;
     href?: string;
+    /** With `href`: download the link's target under this file name. */
+    download?: string;
     children: Snippet;
   };
-  let { variant = 'secondary', size = 'm', loading = false, icon, href, children, disabled, type = 'button', ...rest }: Props = $props();
+  let { variant = 'secondary', size = 'm', loading = false, icon, href, download, children, disabled, type = 'button', ...rest }: Props = $props();
 </script>
 
 {#if href && !disabled}
-  <a class="btn {variant} {size}" {href}>
+  <a class="btn {variant} {size}" {href} {download}>
     {#if icon}<Icon name={icon} size={16} />{/if}
     {@render children()}
   </a>

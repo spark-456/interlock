@@ -47,6 +47,8 @@ export const api = {
   /** Where each webhook step listens (made on first ask; refused until the flow is on). */
   hooks: (flowId: string) => get<WebhookUrl[]>(`/api/flows/${flowId}/hooks`),
   guide: (flowId: string) => get<string>(`/api/flows/${flowId}/guide`),
+  /** Where the flow downloads as code to run self-hosted (a zip; Q36). */
+  exportHref: (flowId: string) => `/api/flows/${flowId}/export`,
   /** Starts an anonymous demo workspace (sets the session cookie). */
   demoSession: () => post<Me>('/api/demo/session', {}),
   /** Clears the current demo session and its browser cookie. */

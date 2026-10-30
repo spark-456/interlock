@@ -2,6 +2,7 @@
 
 mod builds;
 mod connections;
+mod export;
 mod flows;
 mod github;
 mod misc;
@@ -32,6 +33,7 @@ pub fn router() -> Router<AppState> {
         .merge(templates::routes())
         .merge(usage::routes())
         .merge(connections::routes())
+        .merge(export::routes())
 }
 
 /// An API error response: status + `{ error: { code, message, details } }`.

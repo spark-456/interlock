@@ -18,8 +18,11 @@ serde.workspace = true
 serde_json.workspace = true
 sha2 = "0.10"
 thiserror.workspace = true
+toml.workspace = true
 tower.workspace = true
+tracing.workspace = true
 ulid.workspace = true
+zip = { version = "2.4", default-features = false, features = ["deflate"] }
 rmcp = { version = "3.8.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
 
 [dev-dependencies]

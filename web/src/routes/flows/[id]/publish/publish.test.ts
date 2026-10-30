@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { endpoints, mcpInstall, platformMcpInstall, quickStart, slug } from './publish';
+import { endpoints, exportCommand, mcpInstall, platformMcpInstall, quickStart, slug } from './publish';
 
 describe('publish', () => {
   it('slugs names the way il-publish does', () => {
@@ -32,5 +32,12 @@ describe('publish', () => {
     const command = platformMcpInstall(e);
     expect(command).toContain('https://il.example/mcp --header "Authorization: Bearer $INTERLOCK_KEY"');
     expect(quickStart(e, 'Hello').find((tab) => tab.value === 'claude')?.code).toContain(command);
+  });
+
+  it('Q36 gives coding agents the export download command', () => {
+    expect(exportCommand('https://il.example', 'flw_1', 'Larkspur Support')).toBe(
+      'curl -fsSL -H "Authorization: Bearer $INTERLOCK_KEY" https://il.example/mcp/flows/flw_1/export ' +
+        '-o larkspur-support-interlock.zip && unzip -q larkspur-support-interlock.zip && rm larkspur-support-interlock.zip'
+    );
   });
 });
