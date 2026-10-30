@@ -86,6 +86,8 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 75 | Q22 | Refine can't keep editing or be pointed at steps | P0 | — | done | claude-a | t/Q22-refine | 2026-10-30 06:10 | [#97](https://github.com/spark-456/interlock/pull/97): Ask uses the editor's flow; Refine stays open; @ or click picks steps and only those change; knowledge steps survive revisions |
 | 76 | Q23 | Workspace MCP can't build, edit, test or switch flows on | P0 | — | done | claude-a | t/Q23-workspace-mcp | 2026-10-30 06:10 | [#98](https://github.com/spark-456/interlock/pull/98): 18 platform MCP tools; FlowActivation in il-sdk; verified live as an MCP client |
 | 77 | Q24 | API specs can only be added through the file picker | P1 | — | done | claude-a | t/Q24-drop-spec | 2026-10-30 06:10 | [#99](https://github.com/spark-456/interlock/pull/99): spec drop box; specs dropped with knowledge go to APIs |
+| 78 | Q25 | MCP builds can't attach an API spec | P1 | — | done | claude-a | t/Q25-mcp-specs | 2026-10-30 06:45 | [#100](https://github.com/spark-456/interlock/pull/100): create_flow_from_goal takes api_specs |
+| 79 | Q26 | MCP get_build shows answered questions as still open | P1 | — | done | claude-a | t/Q26-answers-ack | 2026-10-30 06:45 | [#101](https://github.com/spark-456/interlock/pull/101): the build logs the answers at once. Testing kit run over MCP: 7/7 tests behave, see notes in the owner improvement list |
 
 ## Waiting on the owner
 
