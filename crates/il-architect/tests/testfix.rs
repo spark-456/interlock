@@ -269,10 +269,10 @@ async fn an_app_runs_its_suite_and_fixes_failed_answers() {
     m.push_json(draft("fc"));
     m.push_json(json!({"cases": [
         {"kind": "knowledge", "input": "What is the refund window?", "expect": "says 30 days"},
-        {"kind": "tool", "input": "What is the status of invoice 42?", "expect": "looks the invoice up"}]}));
+        {"kind": "knowledge", "input": "When are invoices sent?", "expect": "says the 3rd of each month"}]}));
     m.push_json(json!({"pass": true}));
-    m.push_json(json!({"pass": false, "reason": "it did not look anything up"}));
-    m.push_json(with_setting(draft("fc"), "n_billing", "instructions", "Always look invoices up with the tool."));
+    m.push_json(json!({"pass": false, "reason": "it gave no date"}));
+    m.push_json(with_setting(draft("fc"), "n_billing", "instructions", "Quote invoice dates from the help center."));
     m.push_json(json!({"pass": true}));
     m.push_json(json!({"pass": true}));
     let runner = Arc::new(FakeRunner::default());
@@ -289,10 +289,10 @@ async fn an_app_runs_its_suite_and_fixes_failed_answers() {
     assert_eq!(sources, ["Test suite"]);
     let asked: Vec<_> = runner.started().iter().map(|r| r.items[0].json["message"].clone()).collect();
     assert_eq!(asked.len(), 4);
-    assert_eq!(asked[1], "What is the status of invoice 42?");
+    assert_eq!(asked[1], "When are invoices sent?");
     let flow = saved(&fakes, &evs).await;
     assert_eq!(flow.kind, FlowKind::App);
-    assert_eq!(flow.node("n_billing").unwrap().settings["instructions"], "Always look invoices up with the tool.");
+    assert_eq!(flow.node("n_billing").unwrap().settings["instructions"], "Quote invoice dates from the help center.");
     assert_eq!(final_state(&evs, "n_billing"), Some(il_core::events::BuildNodeStatus::Fixed));
     assert_eq!(
         final_state(&evs, "n_tests"),
