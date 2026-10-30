@@ -147,20 +147,16 @@ fn credits(task: &Value) -> Option<f64> {
     task.get("cost").or_else(|| task.get("estimatedCost"))?.get("credits")?.as_f64()
 }
 
-fn model(section: &Value, field: &str) -> Result<String, MediaError> {
-    section
-        .get(field)
-        .and_then(Value::as_str)
-        .filter(|s| !s.is_empty())
-        .map(str::to_owned)
-        .ok_or_else(|| MediaError::Other(format!("set [providers.media].{field}")))
+/// The configured model, or the default a user's own key runs with when the server has none.
+fn model(section: &Value, field: &str, default: &str) -> String {
+    section.get(field).and_then(Value::as_str).filter(|s| !s.is_empty()).unwrap_or(default).into()
 }
 
-fn make(section: &Value, files: Arc<dyn FileStore>) -> Result<Arc<dyn MediaGen>, MediaError> {
-    let key = std::env::var("RUNWAYML_API_SECRET")
-        .ok()
+fn make(section: &Value, files: Arc<dyn FileStore>, key: Option<String>) -> Result<Arc<dyn MediaGen>, MediaError> {
+    let key = key
+        .or_else(|| std::env::var("RUNWAYML_API_SECRET").ok())
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| MediaError::Other("set RUNWAYML_API_SECRET".into()))?;
+        .ok_or_else(|| MediaError::Other("set RUNWAYML_API_SECRET or connect a Runway key".into()))?;
     let http = SafeHttp::new().map_err(|e| MediaError::Other(e.to_string()))?;
     Ok(Arc::new(Runway {
         http,
@@ -172,9 +168,9 @@ fn make(section: &Value, files: Arc<dyn FileStore>) -> Result<Arc<dyn MediaGen>,
             .trim_end_matches('/')
             .into(),
         key,
-        video_model: model(section, "video_model")?,
-        voice_model: model(section, "voice_model")?,
-        image_model: model(section, "image_model")?,
+        video_model: model(section, "video_model", "gen4.5"),
+        voice_model: model(section, "voice_model", "eleven_multilingual_v2"),
+        image_model: model(section, "image_model", "gen4_image"),
     }))
 }
 
@@ -249,6 +245,7 @@ mod tests {
                     prompt: "sample".into(),
                     params: json!({"durationSec":5,"aspect":"16:9","voice":"Maya","size":"1024x1024"}),
                     recorded: false,
+                    key: None,
                 })
                 .await
                 .unwrap();

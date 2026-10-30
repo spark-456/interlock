@@ -74,7 +74,8 @@ impl MediaGen for FakeMedia {
                 preview_url: None,
             },
             cost_usd: 0.0,
-            provider: "fake".into(),
+            // A step's own key shows as its provider, so tests can see it was passed on.
+            provider: req.key.map_or_else(|| "fake".into(), |key| key.provider),
         })
     }
 }

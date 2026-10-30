@@ -85,19 +85,39 @@
       "notes": null
     },
     {
+      "id": "n_shots",
+      "type": "ai.shot_list",
+      "typeVersion": 1,
+      "name": "Plan shots",
+      "position": {
+        "x": 1216.0,
+        "y": 200.0
+      },
+      "group": "g_make",
+      "settings": {
+        "input": "{{ item.text }}",
+        "shots": 3,
+        "totalSec": 15,
+        "style": "bright, clean studio product ad"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
       "id": "n_video",
       "type": "ai.generate_video",
       "typeVersion": 1,
       "name": "Generate promo video",
       "position": {
-        "x": 1216.0,
+        "x": 1520.0,
         "y": 100.0
       },
       "group": "g_make",
       "settings": {
         "aspect": "16:9",
-        "durationSec": 5,
-        "prompt": "{{ item.text }}"
+        "prompt": "{{ item.text }}",
+        "shots": "{{ item.shots }}"
       },
       "credentials": {},
       "disabled": false,
@@ -109,7 +129,7 @@
       "typeVersion": 1,
       "name": "Generate voiceover",
       "position": {
-        "x": 1216.0,
+        "x": 1520.0,
         "y": 300.0
       },
       "group": "g_make",
@@ -122,12 +142,29 @@
       "notes": null
     },
     {
+      "id": "n_transcribe",
+      "type": "ai.transcribe",
+      "typeVersion": 1,
+      "name": "Time the captions",
+      "position": {
+        "x": 1824.0,
+        "y": 200.0
+      },
+      "group": "g_make",
+      "settings": {
+        "audio": "{{ item.files.audio }}"
+      },
+      "credentials": {},
+      "disabled": false,
+      "notes": null
+    },
+    {
       "id": "n_merge",
       "type": "media.merge_av",
       "typeVersion": 1,
       "name": "Add voiceover",
       "position": {
-        "x": 1520.0,
+        "x": 2128.0,
         "y": 200.0
       },
       "group": "g_make",
@@ -145,7 +182,7 @@
       "typeVersion": 1,
       "name": "Cut for each platform",
       "position": {
-        "x": 1824.0,
+        "x": 2432.0,
         "y": 200.0
       },
       "group": "g_cut",
@@ -167,13 +204,14 @@
       "typeVersion": 1,
       "name": "Add captions",
       "position": {
-        "x": 2128.0,
+        "x": 2736.0,
         "y": 200.0
       },
       "group": "g_cut",
       "settings": {
         "text": "{{ item.text }}",
-        "video": "{{ item.files.video }}"
+        "video": "{{ item.files.video }}",
+        "segments": "{{ nodes.n_transcribe.json.segments }}"
       },
       "credentials": {},
       "disabled": false,
@@ -185,7 +223,7 @@
       "typeVersion": 1,
       "name": "Write post text",
       "position": {
-        "x": 2432.0,
+        "x": 3040.0,
         "y": 200.0
       },
       "group": "g_post",
@@ -206,7 +244,7 @@
       "typeVersion": 1,
       "name": "Approve in Slack",
       "position": {
-        "x": 2736.0,
+        "x": 3344.0,
         "y": 200.0
       },
       "group": "g_post",
@@ -229,7 +267,7 @@
       "typeVersion": 1,
       "name": "YouTube Shorts (private)",
       "position": {
-        "x": 3040.0,
+        "x": 3648.0,
         "y": -400.0
       },
       "group": "g_post",
@@ -248,7 +286,7 @@
       "typeVersion": 1,
       "name": "Bluesky",
       "position": {
-        "x": 3040.0,
+        "x": 3648.0,
         "y": -200.0
       },
       "group": "g_post",
@@ -266,7 +304,7 @@
       "typeVersion": 1,
       "name": "Discord",
       "position": {
-        "x": 3040.0,
+        "x": 3648.0,
         "y": 0.0
       },
       "group": "g_post",
@@ -284,7 +322,7 @@
       "typeVersion": 1,
       "name": "Instagram Reels (dry-run)",
       "position": {
-        "x": 3040.0,
+        "x": 3648.0,
         "y": 200.0
       },
       "group": "g_post",
@@ -302,7 +340,7 @@
       "typeVersion": 1,
       "name": "TikTok (dry-run)",
       "position": {
-        "x": 3040.0,
+        "x": 3648.0,
         "y": 400.0
       },
       "group": "g_post",
@@ -320,7 +358,7 @@
       "typeVersion": 1,
       "name": "LinkedIn (dry-run)",
       "position": {
-        "x": 3040.0,
+        "x": 3648.0,
         "y": 600.0
       },
       "group": "g_post",
@@ -338,7 +376,7 @@
       "typeVersion": 1,
       "name": "Log in Google Sheets",
       "position": {
-        "x": 3040.0,
+        "x": 3648.0,
         "y": 800.0
       },
       "group": "g_post",
@@ -390,9 +428,20 @@
       }
     },
     {
-      "id": "e_script_video",
+      "id": "e_script_shots",
       "from": {
         "node": "n_script",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_shots",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_shots_video",
+      "from": {
+        "node": "n_shots",
         "port": "out"
       },
       "to": {
@@ -412,9 +461,20 @@
       }
     },
     {
-      "id": "e_voice_merge",
+      "id": "e_voice_transcribe",
       "from": {
         "node": "n_voice",
+        "port": "out"
+      },
+      "to": {
+        "node": "n_transcribe",
+        "port": "in"
+      }
+    },
+    {
+      "id": "e_transcribe_merge",
+      "from": {
+        "node": "n_transcribe",
         "port": "out"
       },
       "to": {

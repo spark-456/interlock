@@ -27,6 +27,23 @@ pub struct MediaRequest {
     /// Force fixture media for test runs and demo workspaces.
     #[serde(default)]
     pub recorded: bool,
+    /// The user's own provider key from the step's credential; unset uses the server's provider.
+    #[serde(skip)]
+    pub key: Option<MediaKey>,
+}
+
+/// A provider key saved on /connections. Never serialized or logged.
+#[derive(Clone, PartialEq)]
+pub struct MediaKey {
+    /// Registered provider name (`runway`), the credential's app.
+    pub provider: String,
+    pub secret: String,
+}
+
+impl std::fmt::Debug for MediaKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MediaKey").field("provider", &self.provider).finish_non_exhaustive()
+    }
 }
 
 /// Generated media.

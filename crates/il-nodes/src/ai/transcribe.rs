@@ -13,7 +13,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "ai.transcribe",
         Category::Ai,
         "Transcribe audio",
-        "Turns speech into text, optionally marked as knowledge or instructions.",
+        "Turns speech into text with timed segments, optionally marked as knowledge or instructions.",
     )
     .icon("mic")
     .status(NodeStatus::Ready)
@@ -75,6 +75,13 @@ impl NodeExecutor for AiTranscribe {
         }
         item.json["transcript"] = json!(transcript.text);
         item.json["language"] = json!(transcript.language);
+        // Timed segments let Add captions follow the voiceover.
+        let segments: Vec<Value> = transcript
+            .segments
+            .iter()
+            .map(|s| json!({"start": s.start_sec, "end": s.end_sec, "text": s.text.trim()}))
+            .collect();
+        item.json["segments"] = json!(segments);
         item.json["markAs"] = json!(ctx.settings["markAs"].as_str().unwrap_or("none"));
         Ok(NodeOutput::out(vec![item]))
     }

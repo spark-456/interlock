@@ -6,6 +6,7 @@ pub mod captions;
 pub mod convert;
 pub mod cut_clips;
 mod ffmpeg;
+pub(crate) mod join;
 
 pub mod merge_av;
 pub mod resize;

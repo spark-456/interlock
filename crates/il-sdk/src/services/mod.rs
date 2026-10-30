@@ -19,7 +19,7 @@ pub use architect::ArchitectService;
 pub use clock::{Clock, SystemClock};
 pub use files::{FileError, FileStore};
 pub use knowledge::{KnowledgeError, KnowledgeService, SearchHit};
-pub use media::{MediaError, MediaGen, MediaKind, MediaRequest, MediaResult};
+pub use media::{MediaError, MediaGen, MediaKey, MediaKind, MediaRequest, MediaResult};
 pub use models::{ModelError, ModelGateway, ModelProvider, ModelRole};
 pub use notifier::{Notification, Notifier, NotifyError};
 pub use runner::{FlowActivation, FlowRunner, NoActivation, RunnerError, StartRun};
