@@ -39,6 +39,11 @@
   let online = $state(typeof navigator === 'undefined' || navigator.onLine);
 
   const user = $derived(me?.user?.name ?? 'Guest');
+
+  async function signOut() {
+    await api.signOut().catch(() => {});
+    location.assign('/');
+  }
 </script>
 
 {#if page.route.id === '/' || page.route.id === '/signin'}
@@ -46,7 +51,16 @@
   {@render children()}
 {:else}
 <div class="app">
-  <Sidebar collapsed={isCanvasRoute(page.route.id)} path={page.url.pathname} {user} plan="Free plan" onhelp={() => (onboarding.helpOpen = true)} />
+  <Sidebar
+    collapsed={isCanvasRoute(page.route.id)}
+    path={page.url.pathname}
+    {user}
+    plan="Free plan"
+    avatarUrl={me?.user?.avatarUrl}
+    signedIn={!!me?.user}
+    onhelp={() => (onboarding.helpOpen = true)}
+    onsignout={signOut}
+  />
   <div class="content">
     {#if !online}<Banner kind="offline">You're offline. Saving, builds and runs work again once you reconnect.</Banner>{/if}
     <main>{@render children()}</main>

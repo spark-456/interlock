@@ -12,7 +12,7 @@ test('sign-in offers each configured provider and shows why a sign-in failed', a
 });
 
 test('deleting an account needs DELETE typed out, then leaves for the landing page', async ({ page }) => {
-  await page.goto('/settings');
+  await page.goto('/profile');
   await page.getByRole('button', { name: 'Delete my account' }).click();
   const dialog = page.getByRole('dialog', { name: 'Delete your account?' });
   const confirm = dialog.getByRole('button', { name: 'Delete everything' });
@@ -20,4 +20,16 @@ test('deleting an account needs DELETE typed out, then leaves for the landing pa
   await dialog.getByLabel('Type DELETE').fill('DELETE');
   await confirm.click();
   await expect(page).toHaveURL(/\/$/);
+});
+
+test('the account menu opens Profile, Settings and Sign out, and the profile shows who is signed in', async ({ page }) => {
+  await page.goto('/flows');
+  await page.getByRole('button', { name: 'Account: Dana Ruiz' }).click();
+  const menu = page.getByRole('menu');
+  await expect(menu.getByRole('menuitem')).toHaveText(['Profile', 'Settings', 'Sign out']);
+  await menu.getByRole('menuitem', { name: 'Profile' }).click();
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page.getByRole('heading', { name: 'Dana Ruiz' })).toBeVisible();
+  await expect(page.getByText('dana@larkspur.example')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
 });

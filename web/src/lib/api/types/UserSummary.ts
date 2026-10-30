@@ -3,4 +3,8 @@
 /**
  * Signed-in user.
  */
-export type UserSummary = { id: string, name: string, avatarUrl: string | null, };
+export type UserSummary = { id: string, name: string, avatarUrl: string | null, 
+/**
+ * The email the sign-in provider shared; missing for older sessions and private GitHub emails.
+ */
+email?: string, };
