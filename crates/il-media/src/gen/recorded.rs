@@ -1,4 +1,4 @@
-//! Checked-in media returned in test and demo runs.
+//! Checked-in media returned in test runs.
 
 use std::sync::Arc;
 

@@ -56,26 +56,21 @@ fn client_ip(headers: &axum::http::HeaderMap) -> Option<IpAddr> {
     value.rsplit(',').next()?.trim().parse().ok()
 }
 
-/// Applies limits to hooks, published APIs, MCP, widget chat, sign-in and demo sessions.
+/// Applies limits to hooks, published APIs, MCP, widget chat and sign-in.
 pub async fn middleware(State(state): State<AppState>, request: Request, next: Next) -> Response {
     let path = request.uri().path();
-    let demo = path == "/api/demo/session";
     let widget_chat = request.method() == Method::POST && path.starts_with("/w/") && path.ends_with("/chat");
-    let public = ["/hooks", "/v1", "/mcp", "/api/auth/github/start", "/api/auth/github/callback"]
+    let public = ["/hooks", "/v1", "/mcp", "/api/auth"]
         .iter()
         .any(|prefix| path == *prefix || path.starts_with(&format!("{prefix}/")));
-    if !demo && !public && !widget_chat {
+    if !public && !widget_chat {
         return next.run(request).await;
     }
     let peer = request.extensions().get::<ConnectInfo<SocketAddr>>().map(|info| info.0.ip());
     let forwarded = state.config.server.trust_proxy.then(|| client_ip(request.headers())).flatten();
     let ip = forwarded.or(peer).unwrap_or(IpAddr::V4(Ipv4Addr::LOCALHOST));
-    let (class, limit, window) = if demo {
-        ("demo", state.config.server.demo_sessions_per_hour, Duration::from_secs(3600))
-    } else {
-        ("public", state.config.server.public_requests_per_minute, Duration::from_secs(60))
-    };
-    if state.rate_limiter.allow(ip, class, limit, window) {
+    let limit = state.config.server.public_requests_per_minute;
+    if state.rate_limiter.allow(ip, "public", limit, Duration::from_secs(60)) {
         next.run(request).await
     } else {
         (StatusCode::TOO_MANY_REQUESTS, Json(ApiError::new("rate_limited", "Try again later."))).into_response()

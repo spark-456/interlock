@@ -1,4 +1,4 @@
-//! Me, demo sessions, files, knowledge.
+//! Me, sign-out, files, knowledge.
 
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Multipart, Path, State};
@@ -12,7 +12,7 @@ use il_sdk::services::knowledge::SourceInput;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::session::{SESSION_COOKIE, Session, session_key};
+use super::session::{SESSION_COOKIE, cookie_value, session_key, set_cookie};
 use super::{ApiErr, ApiResult, Ws};
 use crate::wiring::AppState;
 
@@ -22,70 +22,24 @@ const MAX_UPLOAD: usize = 50 * 1024 * 1024;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/api/me", get(me))
-        .route("/api/demo/session", post(demo_session).delete(leave_demo))
+        .route("/api/auth/sign-out", post(sign_out))
         .route("/api/files", post(upload).layer(DefaultBodyLimit::max(MAX_UPLOAD + 64 * 1024)))
         .route("/api/files/{id}", get(download))
         .route("/api/knowledge", get(list_knowledge).post(add_knowledge))
 }
 
 async fn me(ws: Ws) -> Json<Me> {
-    Json(Me { user: ws.0.user.clone(), workspace_id: ws.0.workspace_id.clone(), demo: ws.0.demo })
+    Json(Me { user: ws.0.user.clone(), workspace_id: ws.0.workspace_id.clone() })
 }
 
-/// WS-2: a fresh demo workspace per browser, as an http-only cookie.
-async fn demo_session(State(state): State<AppState>) -> ApiResult<Response> {
-    let token = format!("{}{}", il_sdk::id("ses"), il_sdk::id("")).replace('_', "");
-    let session = Session { workspace_id: il_sdk::id("ws_demo"), user: None, demo: true };
-    state
-        .services
-        .store
-        .register_demo_workspace(&session.workspace_id, state.services.clock.now())
-        .await
-        .map_err(ApiErr::internal)?;
-    super::templates::seed(&state, &session.workspace_id).await?;
-    let value = serde_json::to_value(&session).map_err(ApiErr::internal)?;
-    state.services.store.kv_put(&session_key(&token), &value).await.map_err(ApiErr::internal)?;
-    let secure = if state.config.server.public_url.as_deref().is_some_and(|url| url.starts_with("https://")) {
-        "; Secure"
-    } else {
-        ""
-    };
-    let cookie = format!("{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800{secure}");
-    let me = Me { user: None, workspace_id: session.workspace_id, demo: true };
-    Ok(([(header::SET_COOKIE, cookie)], Json(me)).into_response())
-}
-
-/// Ends only the caller's demo session and expires its browser cookie. An expired session (a demo
-/// reset overnight) only has its cookie cleared, so the browser can start again.
-async fn leave_demo(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<Response> {
-    let token = headers
-        .get(header::COOKIE)
-        .and_then(|value| value.to_str().ok())
-        .and_then(|cookies| {
-            cookies
-                .split(';')
-                .filter_map(|cookie| cookie.trim().split_once('='))
-                .find(|(name, _)| *name == SESSION_COOKIE)
-        })
-        .map(|(_, token)| token)
-        .ok_or_else(|| ApiErr::bad_request("The demo session cookie is missing."))?;
-    let session = state.services.store.kv_get(&session_key(token)).await.map_err(ApiErr::internal)?;
-    if let Some(session) = session.and_then(|value| serde_json::from_value::<Session>(value).ok()) {
-        if !session.demo {
-            return Err(ApiErr(
-                StatusCode::FORBIDDEN,
-                il_core::ApiError::new("not_demo", "This is not a demo session."),
-            ));
-        }
-        state.services.store.kv_put(&session_key(token), &Value::Null).await.map_err(ApiErr::internal)?;
+/// Ends the caller's session and clears its cookie. Works for an expired session too, so the
+/// browser can drop a cookie that no longer signs anyone in.
+async fn sign_out(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<Response> {
+    if let Some(token) = cookie_value(&headers, SESSION_COOKIE) {
+        state.services.store.kv_put(&session_key(&token), &Value::Null).await.map_err(ApiErr::internal)?;
     }
-    let secure = if state.config.server.public_url.as_deref().is_some_and(|url| url.starts_with("https://")) {
-        "; Secure"
-    } else {
-        ""
-    };
-    let cookie = format!("{SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0{secure}");
-    Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, cookie)]).into_response())
+    let cleared = set_cookie(&state, SESSION_COOKIE, "", 0, "/");
+    Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, cleared)]).into_response())
 }
 
 /// Multipart upload: every file part is stored; returns their `FileRef`s.

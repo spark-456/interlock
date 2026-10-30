@@ -13,7 +13,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use url::Url;
 
-use super::session::{SESSION_COOKIE, Session, session_key};
+use super::session::{SESSION_COOKIE, Session, cookie_value, session_key, set_cookie};
 use super::{ApiErr, ApiResult};
 use crate::wiring::AppState;
 
@@ -48,26 +48,6 @@ fn state_key(token: &str) -> String {
     format!("auth:github:state:{token}")
 }
 
-fn cookie_value(headers: &HeaderMap, name: &str) -> Option<String> {
-    headers
-        .get(header::COOKIE)?
-        .to_str()
-        .ok()?
-        .split(';')
-        .filter_map(|part| part.trim().split_once('='))
-        .find(|(key, _)| *key == name)
-        .map(|(_, value)| value.to_owned())
-}
-
-fn cookie(state: &AppState, name: &str, value: &str, max_age: u32, path: &str) -> String {
-    let secure = if state.config.server.public_url.as_deref().is_some_and(|url| url.starts_with("https://")) {
-        "; Secure"
-    } else {
-        ""
-    };
-    format!("{name}={value}; Path={path}; HttpOnly; SameSite=Lax; Max-Age={max_age}{secure}")
-}
-
 fn unconfigured() -> ApiErr {
     ApiErr(StatusCode::SERVICE_UNAVAILABLE, ApiError::new("github_unconfigured", "GitHub sign-in is not configured."))
 }
@@ -97,7 +77,7 @@ async fn start(State(state): State<AppState>) -> ApiResult<Response> {
     let mut response = Redirect::temporary(url.as_str()).into_response();
     response.headers_mut().insert(
         header::SET_COOKIE,
-        HeaderValue::from_str(&cookie(&state, STATE_COOKIE, &token, 600, "/api/auth/github"))
+        HeaderValue::from_str(&set_cookie(&state, STATE_COOKIE, &token, 600, "/api/auth/github"))
             .map_err(ApiErr::internal)?,
     );
     Ok(response)
@@ -158,7 +138,7 @@ async fn callback(
         name: user.get("name").and_then(Value::as_str).filter(|s| !s.is_empty()).unwrap_or(login).into(),
         avatar_url: user.get("avatar_url").and_then(Value::as_str).map(str::to_owned),
     };
-    let session = Session { workspace_id: format!("ws_gh_{id}"), user: Some(summary), demo: false };
+    let session = Session { workspace_id: format!("ws_gh_{id}"), user: Some(summary) };
     let session_token = il_sdk::id("ses");
     state
         .services
@@ -168,8 +148,8 @@ async fn callback(
         .map_err(ApiErr::internal)?;
     let mut response = Redirect::to("/").into_response();
     for value in [
-        cookie(&state, SESSION_COOKIE, &session_token, 604800, "/"),
-        cookie(&state, STATE_COOKIE, "", 0, "/api/auth/github"),
+        set_cookie(&state, SESSION_COOKIE, &session_token, 604800, "/"),
+        set_cookie(&state, STATE_COOKIE, "", 0, "/api/auth/github"),
     ] {
         response.headers_mut().append(header::SET_COOKIE, HeaderValue::from_str(&value).map_err(ApiErr::internal)?);
     }

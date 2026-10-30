@@ -50,9 +50,6 @@ async fn workspace(ctx: &RouteCtx, headers: &HeaderMap) -> Result<String, RouteE
         .await
         .map_err(|_| error(StatusCode::INTERNAL_SERVER_ERROR, "internal", "Could not read the session."))?
         .ok_or_else(|| error(StatusCode::UNAUTHORIZED, "unauthorized", "Sign in again."))?;
-    if value["demo"] == true {
-        return Err(error(StatusCode::FORBIDDEN, "demo_restricted", "API keys are unavailable in demo mode."));
-    }
     value["workspaceId"]
         .as_str()
         .map(str::to_owned)
@@ -122,7 +119,7 @@ mod tests {
     #[tokio::test]
     async fn p01_key_routes_reveal_once_and_track_last_use() {
         let fakes = FakeServices::default();
-        fakes.store.kv_put("ws:session:local", &json!({"workspaceId":"ws_a","demo":false})).await.unwrap();
+        fakes.store.kv_put("ws:session:local", &json!({"workspaceId":"ws_a"})).await.unwrap();
         let ctx = RouteCtx {
             services: fakes.services(),
             runner: Arc::new(FakeRunner::default()),

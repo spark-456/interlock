@@ -125,7 +125,6 @@
       <Button onclick={() => toast('Saved.', 'success')}>Toast</Button>
       <Button onclick={() => toast('Could not save.', 'error')}>Error toast</Button>
     </div>
-    <Banner kind="demo">You're in the demo. Builds use recorded media and small limits.</Banner>
     <Banner kind="offline">You're offline. Saving, builds and runs work again once you reconnect.</Banner>
     <Banner kind="cap">Spending cap reached (run). The run stopped instead of spending more.</Banner>
     <Modal bind:open={modal} title="A modal">
@@ -167,7 +166,7 @@
   <section aria-labelledby="c-feedback">
     <h2 id="c-feedback">EmptyState · Skeleton · Spinner</h2>
     <EmptyState title="Your first flow is two minutes away." text="Describe a goal, drop in a few documents, and Interlock does the rest.">
-      {#snippet actions()}<Button variant="primary">New flow</Button><Button>Try a demo</Button>{/snippet}
+      {#snippet actions()}<Button variant="primary">New flow</Button><Button>Browse templates</Button>{/snippet}
     </EmptyState>
     <div class="grid">
       <Skeleton lines={3} />

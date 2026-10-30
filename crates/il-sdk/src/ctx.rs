@@ -27,7 +27,7 @@ pub struct RunInfo {
     pub attempt: u32,
     /// Index of the item for per-item execution.
     pub item_index: usize,
-    /// True for test runs and demo replays (media providers default to `recorded`).
+    /// True for test runs and replays (media providers default to `recorded`).
     pub test: bool,
 }
 

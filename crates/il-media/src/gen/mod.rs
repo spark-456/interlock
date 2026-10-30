@@ -123,7 +123,7 @@ pub(super) async fn generate(
         workspace_id: ctx.run.workspace_id.clone(),
         prompt,
         params,
-        recorded: ctx.run.test || ctx.run.workspace_id.starts_with("ws_demo"),
+        recorded: ctx.run.test,
         key: bound_key(ctx).await?,
     };
     ctx.media().generate(request).await.map_err(|e| NodeError::Failed(e.to_string()))
@@ -179,7 +179,7 @@ mod tests {
             let result = media
                 .generate(MediaRequest {
                     kind,
-                    workspace_id: "ws_demo_1".into(),
+                    workspace_id: "ws_1".into(),
                     prompt: "sample".into(),
                     params: json!({}),
                     recorded: true,

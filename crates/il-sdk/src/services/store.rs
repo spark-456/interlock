@@ -70,12 +70,8 @@ pub enum SpendScope {
 /// Persistence used by engine, architect, publish and server.
 #[async_trait]
 pub trait Store: Send + Sync {
-    /// Records a demo workspace and its creation time.
-    async fn register_demo_workspace(&self, workspace_id: &str, created_at: DateTime<Utc>) -> StoreResult<()>;
-    /// Lists demos strictly older than the cutoff.
-    async fn expired_demo_workspaces(&self, cutoff: DateTime<Utc>) -> StoreResult<Vec<String>>;
-    /// Removes all records belonging to a registered demo workspace.
-    async fn delete_demo_workspace(&self, workspace_id: &str) -> StoreResult<()>;
+    /// Removes every record belonging to a workspace (its files are purged separately).
+    async fn delete_workspace(&self, workspace_id: &str) -> StoreResult<()>;
     // Flows (every put creates a version).
     async fn get_flow(&self, id: &str) -> StoreResult<Option<Flow>>;
     async fn put_flow(&self, flow: &Flow) -> StoreResult<u32>;

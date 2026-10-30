@@ -18,7 +18,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         Category::Ai,
         "Generate video",
         "Generates a short video from a prompt, or one clip per shot from a shot list, joined in order. \
-         Uses the recorded provider in demo mode and tests.",
+         Test runs use sample media.",
     )
     .icon("film")
     .status(NodeStatus::Ready)

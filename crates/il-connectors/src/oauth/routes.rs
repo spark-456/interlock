@@ -92,9 +92,6 @@ async fn workspace_id(state: &RouteState, headers: &HeaderMap) -> Result<String,
         .await
         .map_err(|_| error(StatusCode::INTERNAL_SERVER_ERROR, "internal", "Could not read the session."))?
         .ok_or_else(|| error(StatusCode::UNAUTHORIZED, "unauthorized", "Sign in again."))?;
-    if session["demo"] == true {
-        return Err(error(StatusCode::FORBIDDEN, "demo_restricted", "Connections are unavailable in demo mode."));
-    }
     session["workspaceId"]
         .as_str()
         .map(str::to_owned)
@@ -166,16 +163,15 @@ mod tests {
 
     use axum::body::Body;
     use axum::http::Request;
-    use il_sdk::services::{NoFlowTools, Store};
+    use il_sdk::services::NoFlowTools;
     use il_sdk::testkit::{FakeArchitect, FakeRunner, FakeServices};
     use tower::ServiceExt;
 
     use super::*;
 
     #[tokio::test]
-    async fn c01_oauth_routes_reject_demo_and_unbound_callback() {
+    async fn c01_oauth_routes_reject_unknown_sessions_and_unbound_callback() {
         let fakes = FakeServices::default();
-        fakes.store.kv_put("ws:session:demo", &json!({"workspaceId":"ws_demo","demo":true})).await.unwrap();
         let ctx = RouteCtx {
             services: fakes.services(),
             runner: Arc::new(FakeRunner::default()),
@@ -185,17 +181,17 @@ mod tests {
             config: json!({}),
         };
         let router = routes(&ctx);
-        let demo = router
+        let stale = router
             .clone()
             .oneshot(
                 Request::get("/api/oauth/google/start")
-                    .header(header::COOKIE, "il_session=demo")
+                    .header(header::COOKIE, "il_session=gone")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_eq!(demo.status(), StatusCode::FORBIDDEN);
+        assert_eq!(stale.status(), StatusCode::UNAUTHORIZED);
         let callback = router
             .oneshot(Request::get("/api/oauth/google/callback?state=missing&code=code").body(Body::empty()).unwrap())
             .await

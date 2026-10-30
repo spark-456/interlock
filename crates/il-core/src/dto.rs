@@ -303,7 +303,6 @@ pub enum ConnectionStatus {
 pub struct Me {
     pub user: Option<UserSummary>,
     pub workspace_id: String,
-    pub demo: bool,
 }
 
 /// Signed-in user.

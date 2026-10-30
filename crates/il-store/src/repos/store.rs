@@ -32,14 +32,8 @@ fn list<T: DeserializeOwned>(conn: &Connection, sql: &str, id: &str) -> StoreRes
 
 #[async_trait]
 impl Store for SqliteStore {
-    async fn register_demo_workspace(&self, workspace_id: &str, created_at: DateTime<Utc>) -> StoreResult<()> {
-        SqliteStore::register_demo_workspace(self, workspace_id, created_at).await
-    }
-    async fn expired_demo_workspaces(&self, cutoff: DateTime<Utc>) -> StoreResult<Vec<String>> {
-        SqliteStore::expired_demo_workspaces(self, cutoff).await
-    }
-    async fn delete_demo_workspace(&self, workspace_id: &str) -> StoreResult<()> {
-        SqliteStore::delete_demo_workspace(self, workspace_id).await
+    async fn delete_workspace(&self, workspace_id: &str) -> StoreResult<()> {
+        SqliteStore::delete_workspace(self, workspace_id).await
     }
     async fn get_flow(&self, id: &str) -> StoreResult<Option<Flow>> {
         let id = id.to_owned();

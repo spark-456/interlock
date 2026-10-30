@@ -37,7 +37,7 @@ pub struct Knowledge {
     files: Arc<dyn FileStore>,
     models: Arc<dyn ModelGateway>,
     tavily: Option<Tavily>,
-    /// Pages for `.example` sites, which can never exist online: the demo templates' help centers.
+    /// Pages for `.example` sites, which can never exist online: the templates' help centers.
     recorded: Option<PathBuf>,
 }
 

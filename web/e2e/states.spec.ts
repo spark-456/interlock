@@ -1,20 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// Demo picker, settings and the error, offline and cap-reached states, in fixture mode.
-
-test('the demo opens a seeded template and starts a build of your own', async ({ page }) => {
-  await page.goto('/demo');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Try Interlock without an account.');
-  await expect(page.getByRole('complementary', { name: 'Main' })).toHaveCount(0);
-  const card = page.getByRole('article').filter({ hasText: 'Weekly product promos' });
-  await expect(card).toContainText('Opens instantly');
-  await card.getByRole('button', { name: 'Open' }).click();
-  await expect(page).toHaveURL(/\/flows\/flw_promos$/);
-
-  await page.goto('/demo');
-  await page.getByRole('button', { name: 'Start' }).click();
-  await expect(page).toHaveURL(/\/new$/);
-});
+// Settings and the error, offline and cap-reached states, in fixture mode.
 
 test('settings show the workspace and manage API keys', async ({ page }) => {
   await page.goto('/settings');

@@ -1,5 +1,5 @@
 //! Replay a recorded run (EN-8): copies its events into a new run marked `replay: true`, with
-//! the original timing (gaps capped at 1.5 s), so demo mode can show a full run with no model
+//! the original timing (gaps capped at 1.5 s), so a template can show a full run with no model
 //! or media calls.
 
 use std::time::Duration;

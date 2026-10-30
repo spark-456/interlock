@@ -10,11 +10,11 @@ use url::Url;
 
 use super::spec::Operation;
 
-/// Where recorded answers for `.example` APIs live (the demo templates' sandbox services).
+/// Where recorded answers for `.example` APIs live (the templates' sandbox services).
 static RECORDED: OnceLock<PathBuf> = OnceLock::new();
 
 /// Answers calls to `<name>.example` hosts from `<dir>/<name>.mock.json`: such hosts can never
-/// exist online, so the demo templates' APIs would otherwise always fail.
+/// exist online, so the templates' APIs would otherwise always fail.
 pub fn record_example_apis(dir: PathBuf) {
     let _ = RECORDED.set(dir);
 }
