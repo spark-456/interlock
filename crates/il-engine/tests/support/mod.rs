@@ -93,6 +93,16 @@ impl NodeExecutor for Fake {
                     })
                     .collect(),
             )),
+            "test.kb" => Ok(NodeOutput::port("kb", vec![Item::json(json!({ "knowledgeBase": "kb_real" }))])),
+            "test.bases" => Ok(NodeOutput::out(
+                items
+                    .into_iter()
+                    .map(|mut i| {
+                        i.json["bases"] = s["knowledgeBases"].clone();
+                        i
+                    })
+                    .collect(),
+            )),
             "test.branch" => {
                 let item = items.into_iter().next().unwrap_or_default();
                 let port = if item.json["n"].as_i64().unwrap_or(0) % 2 == 0 { "even" } else { "odd" };
@@ -167,6 +177,8 @@ pub fn lookup() -> (NodeLookup, Arc<Fake>) {
         .with(Fake::new(m("test.text")))
         .with(Fake::new(m("test.field")))
         .with(Fake::new(m("test.split")))
+        .with(Fake::new(m("test.kb").inputs(&[]).outputs(&["kb"])))
+        .with(Fake::new(m("test.bases")))
         .with(Fake::new(m("test.branch").outputs(&["even", "odd"])))
         .with(Fake::new(m("test.collect").inputs(&["a", "b"]).batch()))
         .with(Fake::new(m("test.flaky")))

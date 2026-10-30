@@ -124,6 +124,13 @@ pub(super) fn apply(
             _ => None,
         })
         .collect();
+    // The model sees attachments by name and sometimes lists those names as file sources; ingesting
+    // them fails with "file not found". The uploaded file ids are added below instead.
+    for node in flow.nodes.iter_mut().filter(|n| n.node_type == "knowledge.base") {
+        if let Some(list) = node.settings.get_mut("sources").and_then(Value::as_array_mut) {
+            list.retain(|s| !(s["kind"] == "file" && attachments.iter().any(|a| s["value"] == a.name.as_str())));
+        }
+    }
     if !sources.is_empty() {
         let i = knowledge_step(flow);
         let node = &mut flow.nodes[i];
@@ -267,6 +274,26 @@ mod tests {
             "Be kind.\n\nFrom memo.mp3:\nKeep answers short."
         );
         assert_eq!(log.len(), 2);
+    }
+
+    #[test]
+    fn q21_file_sources_named_after_attachments_become_their_uploads() {
+        let mut f = flow(json!([{"id": "n_kb", "type": "knowledge.base", "name": "Help", "settings": {"sources": [
+            {"kind": "url", "value": "https://help.example"},
+            {"kind": "file", "value": "faq.pdf"},
+            {"kind": "file", "role": "instructions", "value": "memo.mp3"}
+        ]}}]));
+        let named =
+            |name: &str, kind, role, file| Attachment { name: name.into(), ..attachment(kind, role, file, None) };
+        let attachments = [
+            named("faq.pdf", AttachmentKind::File, AttachmentRole::Knowledge, Some("file_1")),
+            named("memo.mp3", AttachmentKind::Audio, AttachmentRole::Instructions, Some("file_2")),
+        ];
+        apply(&mut f, &attachments, &[], &[], &[]);
+        assert_eq!(
+            f.node("n_kb").unwrap().settings["sources"],
+            json!([{"kind": "url", "value": "https://help.example"}, {"kind": "file", "value": "file_1"}])
+        );
     }
 
     #[test]

@@ -169,20 +169,27 @@ impl NodeExecutor for AiAgent {
             messages.push(assistant);
             for call in response.tool_calls {
                 let result = if let Some(base) = bases.iter().find(|base| call.name == format!("search_{base}")) {
-                    let query = call.arguments["query"]
-                        .as_str()
-                        .ok_or_else(|| NodeError::Failed("knowledge search requires a query".into()))?;
-                    let hits =
-                        ctx.knowledge().search(base, query, 5).await.map_err(|e| NodeError::Failed(e.to_string()))?;
-                    // One entry per document: several passages often come from the same one.
-                    for hit in &hits {
-                        if !sources.iter().any(|s: &Value| s["sourceId"] == hit.source_id) {
-                            sources.push(
-                                json!({"sourceId":hit.source_id,"title":hit.title,"section":hit.section,"url":hit.url}),
-                            );
+                    // Like a failing tool, a failed search is the model's to explain, not a failed step.
+                    let query = call.arguments["query"].as_str().filter(|q| !q.trim().is_empty());
+                    let found = match query {
+                        Some(query) => ctx.knowledge().search(base, query, 5).await.map_err(|e| e.to_string()),
+                        None => Err("the search needs a query".into()),
+                    };
+                    match found {
+                        Ok(hits) => {
+                            // One entry per document: several passages often come from the same one.
+                            for hit in &hits {
+                                if !sources.iter().any(|s: &Value| s["sourceId"] == hit.source_id) {
+                                    sources.push(json!({"sourceId":hit.source_id,"title":hit.title,"section":hit.section,"url":hit.url}));
+                                }
+                            }
+                            json!(hits)
+                        }
+                        Err(error) => {
+                            tracing::warn!(run_id = %ctx.run.run_id, node_id = %ctx.run.node_id, %error, "knowledge search failed");
+                            json!({ "error": error })
                         }
                     }
-                    json!(hits)
                 } else {
                     let Some(tool) =
                         ctx.tools().iter().find(|tool| tool.name() == call.name && selected.contains(&tool.name()))
@@ -239,6 +246,16 @@ mod tests {
         assert_eq!(output.ports["out"][0].json["answer"], "Refunds within 30 days.");
         assert_eq!(output.ports["out"][0].json["sources"][0]["sourceId"], "src1");
         assert_eq!(harness.fakes.models.calls()[1].1.messages.len(), 4);
+    }
+
+    #[tokio::test]
+    async fn q21_a_search_without_a_query_is_reported_to_the_model() {
+        let harness = NodeHarness::new(super::AiAgent)
+            .settings(json!({"instructions":"Answer","knowledgeBases":["help"],"maxSteps":3}));
+        harness.fakes.models.push_tool_call("search_help", json!({})).push_text("What would you like to know?");
+        let out = harness.run().await.unwrap();
+        assert_eq!(out.ports["out"][0].json["answer"], "What would you like to know?");
+        assert_eq!(out.ports["out"][0].json["activity"][0]["result"]["error"], "the search needs a query");
     }
 
     #[tokio::test]

@@ -57,6 +57,27 @@ async fn linear_per_item_flow_renders_expressions_and_orders_events() {
 }
 
 #[tokio::test]
+async fn q21_a_connected_knowledge_step_is_searched_not_sent_as_a_message() {
+    let (fakes, svc) = services();
+    let (engine, _) = engine_with(svc, config());
+    let f = flow(
+        &[
+            ("t", "test.trigger", json!({})),
+            ("kb", "test.kb", json!({ "name": "Help center" })),
+            ("a", "test.bases", json!({ "knowledgeBases": ["Help center", "kb_saved"] })),
+        ],
+        &[("t", "out", "a", "in"), ("kb", "kb", "a", "in")],
+    );
+    fakes.store.put_flow(&f).await.unwrap();
+    let (run, _) = run_to_end(&engine, fakes.store.as_ref(), items(&[1])).await;
+    assert_eq!(run.status, RunStatus::Succeeded);
+    let out = outputs(&run, "a", "out");
+    assert_eq!(out.len(), 1, "only the message is an input item");
+    assert_eq!(out[0]["n"], 1);
+    assert_eq!(out[0]["bases"], json!(["kb_saved", "kb_real"]), "the step's name becomes its base id");
+}
+
+#[tokio::test]
 async fn w08_runs_only_the_chosen_step_with_given_items() {
     let (fakes, svc) = services();
     let (engine, _) = engine_with(svc, config());
