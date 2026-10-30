@@ -273,3 +273,16 @@ async fn a_build_that_cannot_be_repaired_fails_with_the_reason() {
     );
     assert!(fakes.store.list_flows("ws_1").await.unwrap().is_empty());
 }
+
+#[tokio::test]
+async fn q15_offline_ask_says_it_needs_the_models() {
+    let fakes = FakeServices::default();
+    let architect =
+        Architect::new_with_fake_templates(fakes.services(), Arc::new(FakeRunner::default()), catalog(), true);
+    let flow: il_core::Flow = serde_json::from_value(json!({"id": "flw_1", "workspaceId": "ws_1", "version": 1,
+        "name": "Help", "kind": "app", "nodes": [], "edges": []}))
+    .unwrap();
+    let error = architect.ask(&flow, "add a step").await.unwrap_err().to_string();
+    assert!(error.contains("needs the AI models"), "{error}");
+    assert!(fakes.models.calls().is_empty(), "no model call is made offline");
+}

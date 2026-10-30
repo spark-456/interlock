@@ -113,6 +113,13 @@ impl ArchitectService for Architect {
     }
 
     async fn ask(&self, flow: &Flow, message: &str) -> Result<AskDiff, ArchitectError> {
+        // The offline model can't edit a flow; its echo came back as "the flow needs a trigger step".
+        if self.inner.fake_templates {
+            return Err(ArchitectError::Failed(
+                "Ask Interlock needs the AI models, which are off in offline mode. Edit the steps directly, or                  start Interlock with your model keys."
+                    .into(),
+            ));
+        }
         let models = self.inner.services.models.as_ref();
         let context = ModelCallContext {
             workspace_id: flow.workspace_id.clone(),
