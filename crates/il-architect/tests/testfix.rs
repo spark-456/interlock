@@ -74,7 +74,7 @@ async fn ask_returns_a_patch_that_reproduces_the_revision() {
     revised["edges"].as_array_mut().unwrap().retain(|e| e["to"] != "n_spam");
     let gw = FakeGateway::default();
     gw.push_json(revised);
-    let (d, _) = ask(&gw, &catalog, &flow, "Make replies warmer and stop labelling spam").await.unwrap();
+    let (d, _) = ask(&gw, &catalog, &flow, "Make replies warmer and stop labelling spam", &[]).await.unwrap();
 
     assert_eq!(d.summary, "−1 step, 1 changed");
     let asked = user_messages(&gw).join("\n");

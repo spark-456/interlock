@@ -144,6 +144,13 @@ pub struct BuildAnswers {
 #[ts(export)]
 pub struct AskRequest {
     pub message: String,
+    /// The flow as the editor has it, unsaved edits included; the saved flow when absent.
+    #[serde(default)]
+    #[ts(optional)]
+    pub flow: Option<crate::Flow>,
+    /// Ids of the steps the person pointed at; the change is about them.
+    #[serde(default)]
+    pub focus: Vec<String>,
 }
 
 /// Response of Ask Interlock: a JSON-Patch diff to accept or discard (AR-8).
@@ -154,6 +161,9 @@ pub struct AskDiff {
     /// e.g. "+1 step, 1 changed".
     pub summary: String,
     pub json_patch: Json,
+    /// What the change does, in the model's words.
+    #[serde(default)]
+    pub notes: Vec<String>,
 }
 
 /// `POST /api/flows/:id/test` and `POST /api/flows/:id/nodes/:nodeId/run`

@@ -30,7 +30,7 @@ test('replaces a step, keeping its place', async ({ page }) => {
 test('shows an Ask Interlock diff, then accepts it', async ({ page }) => {
   await page.goto(URL);
   await page.getByRole('button', { name: 'Refine' }).click();
-  await page.getByRole('textbox', { name: 'Describe a change' }).fill('Also post to Telegram and drop TikTok');
+  await page.getByRole('combobox', { name: 'Describe a change' }).fill('Also post to Telegram and drop TikTok');
   await page.getByRole('button', { name: 'Propose' }).click();
 
   await expect(page.getByTestId('ask-bar')).toContainText('+1 step, 1 changed, 1 removed');
@@ -41,8 +41,28 @@ test('shows an Ask Interlock diff, then accepts it', async ({ page }) => {
   await page.getByRole('button', { name: 'Accept' }).click();
   await expect(page.getByTestId('node-n_tiktok')).toHaveCount(0);
   await expect(page.getByTestId('node-n_telegram')).not.toHaveAttribute('data-diff');
+  // Refine stays open for the next change, listing what was kept.
+  await expect(page.getByRole('list', { name: 'Changes so far' })).toContainText('Also post to Telegram and drop TikTok (+1 step, 1 changed, 1 removed)');
+  await expect(page.getByRole('combobox', { name: 'Describe a change' })).toBeVisible();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('Saved')).toBeVisible();
+});
+
+test('Q22 Refine is pointed at steps with @ or a click', async ({ page }) => {
+  await page.goto(URL);
+  await page.getByRole('button', { name: 'Refine' }).click();
+  const input = page.getByRole('combobox', { name: 'Describe a change' });
+  await input.fill('Make the captions bigger in @cut');
+  await page.getByRole('option', { name: 'Cut for each platform' }).waitFor();
+  await input.press('Enter');
+  const picked = page.getByLabel('Steps to change');
+  await expect(picked).toContainText('@Cut for each platform');
+  await expect(input).toHaveValue('Make the captions bigger in ');
+
+  await page.getByTestId('node-n_posts').click();
+  await expect(picked).toContainText('@Write post text');
+  await page.getByRole('button', { name: "Don't change Cut for each platform" }).click();
+  await expect(picked).not.toContainText('Cut for each platform');
 });
 
 test('a test run animates the canvas with item counts', async ({ page }) => {

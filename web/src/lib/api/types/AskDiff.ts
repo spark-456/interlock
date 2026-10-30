@@ -8,4 +8,8 @@ export type AskDiff = {
 /**
  * e.g. "+1 step, 1 changed".
  */
-summary: string, jsonPatch: JsonValue, };
+summary: string, jsonPatch: JsonValue, 
+/**
+ * What the change does, in the model's words.
+ */
+notes: Array<string>, };

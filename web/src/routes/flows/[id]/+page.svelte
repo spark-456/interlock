@@ -2,7 +2,7 @@
   // S6 editor (ED-1, ED-2, ED-6, ED-9): the flow on the canvas, a palette to add or replace steps,
   // undo/redo, tidy, save, a test run with live state from the run stream, and Ask Interlock diffs.
   // Selecting a step opens the node panel (ED-3) beside the canvas.
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
@@ -40,7 +40,10 @@
   let palette = $state<'add' | 'replace' | null>(null);
   let asking = $state(false);
   let askPending = $state(false);
-  let proposal = $state.raw<{ flow: Flow; summary: string } | null>(null);
+  let proposal = $state.raw<{ flow: Flow; summary: string; notes: string[]; message: string } | null>(null);
+  // Refine keeps going: the steps a request is about, and the changes accepted so far.
+  let mentions = $state<string[]>([]);
+  let applied = $state<string[]>([]);
   let run = $state.raw<RunState>(idleRun());
   let saving = $state(false);
   let listView = $state(false);
@@ -143,12 +146,25 @@
     }
   }
 
+  // A step clicked while Refine is open is one the next request is about.
+  $effect(() => {
+    if (asking && selected && !untrack(() => mentions).includes(selected)) mentions = [...untrack(() => mentions), selected];
+  });
+
+  function closeAsk() {
+    asking = false;
+    proposal = null;
+    mentions = [];
+    applied = [];
+  }
+
   async function ask(message: string) {
     if (!flow) return;
     askPending = true;
     try {
-      const d = await api.ask(flow.id, message);
-      proposal = { flow: applyPatch(flow, d.jsonPatch as unknown as PatchOp[]), summary: d.summary };
+      // The editor's flow, so the request builds on unsaved edits and earlier accepted changes.
+      const d = await api.ask(flow.id, { message, flow, focus: mentions });
+      proposal = { flow: applyPatch(flow, d.jsonPatch as unknown as PatchOp[]), summary: d.summary, notes: d.notes, message };
     } catch (e) {
       toast((e as Error).message, 'error');
     } finally {
@@ -157,10 +173,11 @@
   }
 
   function accept() {
-    const next = proposal?.flow;
+    if (!proposal) return;
+    const { flow: next, summary, message } = proposal;
     proposal = null;
-    asking = false;
-    if (next) change(next);
+    change(next);
+    applied = [...applied, `${message} (${summary})`];
   }
 
   /** Follows a run. A full run starts from a blank canvas; a single step only adds its own state
@@ -220,7 +237,7 @@
     {/snippet}
     {#snippet actions()}
       <Button icon="plus" size="s" aria-pressed={palette === 'add'} onclick={() => (palette = palette === 'add' ? null : 'add')}>Add step</Button>
-      <Button icon="sparkle" size="s" aria-pressed={asking} onclick={() => (asking = !asking)}>Refine</Button>
+      <Button icon="sparkle" size="s" aria-pressed={asking} onclick={() => (asking ? closeAsk() : (asking = true))}>Refine</Button>
       <Button icon="play" size="s" loading={run.status === 'running' || saving} disabled={!flow || !!proposal} onclick={testRun}>
         {dirty ? 'Save & test run' : 'Test run'}
       </Button>
@@ -278,10 +295,14 @@
           <AskBar
             pending={askPending}
             summary={proposal?.summary ?? null}
+            notes={proposal?.notes}
+            {applied}
+            steps={flow?.nodes ?? []}
+            bind:mentions
             onask={ask}
             onaccept={accept}
             ondiscard={() => (proposal = null)}
-            onclose={() => (asking = false)}
+            onclose={closeAsk}
           />
         </div>
       {/if}

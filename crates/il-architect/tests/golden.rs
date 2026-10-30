@@ -282,7 +282,7 @@ async fn q15_offline_ask_says_it_needs_the_models() {
     let flow: il_core::Flow = serde_json::from_value(json!({"id": "flw_1", "workspaceId": "ws_1", "version": 1,
         "name": "Help", "kind": "app", "nodes": [], "edges": []}))
     .unwrap();
-    let error = architect.ask(&flow, "add a step").await.unwrap_err().to_string();
+    let error = architect.ask(&flow, "add a step", &[]).await.unwrap_err().to_string();
     assert!(error.contains("needs the AI models"), "{error}");
     assert!(fakes.models.calls().is_empty(), "no model call is made offline");
 }

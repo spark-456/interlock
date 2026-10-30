@@ -112,7 +112,7 @@ impl ArchitectService for Architect {
             .map_err(|_| ArchitectError::Failed("the build stopped waiting for answers".into()))
     }
 
-    async fn ask(&self, flow: &Flow, message: &str) -> Result<AskDiff, ArchitectError> {
+    async fn ask(&self, flow: &Flow, message: &str, focus: &[String]) -> Result<AskDiff, ArchitectError> {
         // The offline model can't edit a flow; its echo came back as "the flow needs a trigger step".
         if self.inner.fake_templates {
             return Err(ArchitectError::Failed(
@@ -127,7 +127,7 @@ impl ArchitectService for Architect {
             run_id: None,
             build_id: None,
         };
-        let (diff, _) = with_model_context(context, crate::ask::ask(models, &self.inner.catalog, flow, message))
+        let (diff, _) = with_model_context(context, crate::ask::ask(models, &self.inner.catalog, flow, message, focus))
             .await
             .map_err(|e| ArchitectError::Failed(e.to_string()))?;
         Ok(diff)

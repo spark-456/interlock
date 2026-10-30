@@ -78,7 +78,7 @@ impl ArchitectService for FakeArchitect {
     async fn answer(&self, _id: &str, _answers: BuildAnswers) -> Result<(), ArchitectError> {
         Ok(())
     }
-    async fn ask(&self, _flow: &Flow, _message: &str) -> Result<AskDiff, ArchitectError> {
-        Ok(AskDiff { summary: "no changes".into(), json_patch: json!([]) })
+    async fn ask(&self, _flow: &Flow, _message: &str, _focus: &[String]) -> Result<AskDiff, ArchitectError> {
+        Ok(AskDiff { summary: "no changes".into(), json_patch: json!([]), notes: Vec::new() })
     }
 }
