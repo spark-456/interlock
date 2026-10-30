@@ -18,10 +18,12 @@ pub(super) fn tools() -> Vec<Tool> {
         tool(
             "create_flow_from_goal",
             "Start building a flow from a goal in plain words, optionally with links to learn from (help \
-             centers, docs). Takes one to a few minutes: follow it with get_build.",
+             centers, docs) and OpenAPI specs it may call. Takes one to a few minutes: follow it with get_build.",
             json!({"type": "object", "properties": {
                 "goal": {"type": "string"},
-                "links": {"type": "array", "items": {"type": "string"}, "description": "Websites it should know"}
+                "links": {"type": "array", "items": {"type": "string"}, "description": "Websites it should know"},
+                "api_specs": {"type": "array", "items": {"type": "string"},
+                    "description": "OpenAPI spec URLs; their safe operations become the agents' tools"}
             }, "required": ["goal"]}),
         ),
         tool(
@@ -84,16 +86,16 @@ fn owner_key(build_id: &str) -> String {
 
 async fn create(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonObject) -> Result<Value, String> {
     let goal = string_arg(arguments, "goal")?;
-    let attachments = strings_arg(arguments, "links")
-        .into_iter()
-        .map(|url| Attachment {
-            kind: AttachmentKind::Link,
+    let linked = |key, kind| {
+        strings_arg(arguments, key).into_iter().map(move |url| Attachment {
+            kind,
             name: url.clone(),
             file_id: None,
             url: Some(url),
             role: AttachmentRole::Knowledge,
         })
-        .collect();
+    };
+    let attachments = linked("links", AttachmentKind::Link).chain(linked("api_specs", AttachmentKind::Api)).collect();
     let req = BuildRequest { goal, kind: None, attachments, hints: vec![] };
     let id = ctx.architect.start_build(workspace_id, req).await.map_err(|e| e.to_string())?;
     ctx.services.store.kv_put(&owner_key(&id), &json!(workspace_id)).await.map_err(|e| e.to_string())?;
@@ -194,4 +196,60 @@ async fn add_documents(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonObjec
         .collect::<Result<_, _>>()?;
     let ids = ctx.services.knowledge.add_sources(&kb_id, sources).await.map_err(|e| e.to_string())?;
     Ok(json!({"source_ids": ids}))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use async_trait::async_trait;
+    use il_core::Flow;
+    use il_core::dto::{AskDiff, AttachmentKind, BuildAnswers, BuildRequest};
+    use il_sdk::registry::RouteCtx;
+    use il_sdk::services::architect::ArchitectError;
+    use il_sdk::services::{ArchitectService, NoActivation, NoFlowTools};
+    use il_sdk::testkit::{FakeRunner, FakeServices};
+    use serde_json::json;
+
+    #[derive(Default)]
+    struct Recording(Mutex<Vec<BuildRequest>>);
+
+    #[async_trait]
+    impl ArchitectService for Recording {
+        async fn start_build(&self, _ws: &str, req: BuildRequest) -> Result<String, ArchitectError> {
+            self.0.lock().unwrap().push(req);
+            Ok("bld_1".into())
+        }
+        async fn answer(&self, _id: &str, _answers: BuildAnswers) -> Result<(), ArchitectError> {
+            Ok(())
+        }
+        async fn ask(&self, _flow: &Flow, _message: &str, _focus: &[String]) -> Result<AskDiff, ArchitectError> {
+            Err(ArchitectError::Failed("unused".into()))
+        }
+    }
+
+    #[tokio::test]
+    async fn q25_builds_take_links_and_api_specs() {
+        let architect = Arc::new(Recording::default());
+        let ctx = RouteCtx {
+            services: FakeServices::default().services(),
+            runner: Arc::new(FakeRunner::default()),
+            architect: architect.clone(),
+            flow_tools: Arc::new(NoFlowTools),
+            activation: Arc::new(NoActivation),
+            config: json!({}),
+        };
+        let args = json!({"goal": "support agent", "links": ["https://help.example"],
+            "api_specs": ["https://api.example/openapi.json"]});
+        super::create(&ctx, "ws_a", args.as_object().unwrap()).await.unwrap();
+        let req = architect.0.lock().unwrap().remove(0);
+        let kinds: Vec<_> = req.attachments.iter().map(|a| (a.kind, a.url.clone().unwrap())).collect();
+        assert_eq!(
+            kinds,
+            [
+                (AttachmentKind::Link, "https://help.example".to_string()),
+                (AttachmentKind::Api, "https://api.example/openapi.json".to_string())
+            ]
+        );
+    }
 }
