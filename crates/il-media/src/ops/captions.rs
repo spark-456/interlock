@@ -80,10 +80,27 @@ fn timed_cues(value: &Value) -> Result<Vec<Cue>, NodeError> {
             return Err(NodeError::Failed("each timed segment needs start, end and text".into()));
         };
         let words: Vec<&str> = text.split_whitespace().collect();
-        if words.is_empty() || !start.is_finite() || !end.is_finite() || end <= start {
+        // Whisper hears "." or "..." in silence; those are not captions.
+        let spoken = text.chars().any(char::is_alphanumeric);
+        if !spoken || !start.is_finite() || !end.is_finite() || end <= start {
             continue;
         }
-        let lines: Vec<String> = words.chunks(WORDS_PER_CUE).map(|chunk| chunk.join(" ")).collect();
+        // A line ends at a sentence end or after WORDS_PER_CUE words.
+        let mut lines: Vec<String> = Vec::new();
+        let mut count = 0;
+        for word in words {
+            match lines.last_mut() {
+                Some(line) if count > 0 => {
+                    line.push(' ');
+                    line.push_str(word);
+                }
+                _ => lines.push(word.to_owned()),
+            }
+            count += 1;
+            if count == WORDS_PER_CUE || word.ends_with(['.', '!', '?']) {
+                count = 0;
+            }
+        }
         let chars: usize = lines.iter().map(|line| line.chars().count()).sum();
         let mut at = start;
         for line in lines {
@@ -232,17 +249,17 @@ mod tests {
     #[test]
     fn timed_segments_become_short_lines_that_follow_the_voice() {
         let segments = json!([
-            {"start": 0.0, "end": 4.0, "text": "Meet the Ember mug, it keeps your coffee hot"},
-            {"start": 4.5, "end": 5.0, "text": "  "},
+            {"start": 0.0, "end": 4.0, "text": "Meet the Ember mug. It keeps your coffee hot"},
+            {"start": 4.5, "end": 5.0, "text": " . "},
             {"start": 5.0, "end": 6.5, "text": "for three hours."}
         ]);
         let cues = super::timed_cues(&json!(segments.to_string())).unwrap();
         let lines: Vec<_> = cues.iter().map(|c| (c.text.as_str(), c.timing.unwrap())).collect();
         assert_eq!(lines.len(), 3);
-        assert_eq!(lines[0].0, "Meet the Ember mug, it keeps");
-        assert_eq!(lines[1].0, "your coffee hot");
+        assert_eq!(lines[0].0, "Meet the Ember mug.");
+        assert_eq!(lines[1].0, "It keeps your coffee hot");
         assert_eq!(lines[0].1.0, 0.0);
-        assert!((lines[0].1.1 - lines[1].1.0).abs() < 1e-9 && lines[0].1.1 > 2.0);
+        assert!((lines[0].1.1 - lines[1].1.0).abs() < 1e-9 && lines[0].1.1 > 1.5);
         assert!((lines[1].1.1 - 4.0).abs() < 1e-9);
         assert_eq!(lines[2], ("for three hours.", (5.0, 6.5)));
         assert!(super::timed_cues(&json!("")).unwrap().is_empty());
