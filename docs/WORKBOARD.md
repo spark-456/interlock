@@ -101,7 +101,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 90 | Q37 | Prebuilt engine image on GHCR (CI publishes on each merge), so an exported bundle's `docker compose up` pulls in seconds instead of building from source for ~10 minutes; exports pin the image tag | P1 | Q36 | ready | — | — | 2026-10-30 15:19 | Follow-up from Q36 |
 | 91 | Q38 | Export to GitHub: push a flow's bundle to a repository (new or existing branch/PR) the user picks | P2 | Q36 | ready | — | — | 2026-10-30 15:19 | Follow-up from Q36 |
 | 92 | Q39 | Generic OpenAI-compatible model provider (`provider = "openai"`, `OPENAI_API_KEY`, any `base_url`), so self-hosted bundles can run on OpenAI, Azure or the user's own model server | P1 | — | ready | — | — | 2026-10-30 15:19 | Follow-up from Q36 |
-| 93 | Q40 | Onboarding tour: steps after the flows list stay on one screen in a workspace with no AI app | P1 | — | claimed | claude-a | t/Q40-tour-sample | 2026-10-30 17:07 | |
+| 93 | Q40 | Onboarding tour: steps after the flows list stay on one screen in a workspace with no AI app | P1 | — | done | claude-a | t/Q40-tour-sample | 2026-10-30 17:48 | [#114](https://github.com/spark-456/interlock/pull/114): a workspace with no AI app gets the sample app when the tour starts, so all 15 steps open their own screen |
 | 94 | Q41 | Account menu (Profile, Settings, Sign in/out) on the sidebar, and a Profile page with name, email, picture and sign-in method | P1 | — | claimed | claude-a | t/Q41-profile | 2026-10-30 17:27 | |
 
 ## Waiting on the owner
