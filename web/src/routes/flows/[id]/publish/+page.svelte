@@ -22,11 +22,9 @@
   let active = $state(false);
   let switching = $state(false);
   let failed = $state(false);
-  let demo = $state(false);
 
   api.flow(flowId).then((f) => (flow = f), () => (failed = true));
   api.flows().then((list) => (active = list.find((f) => f.id === flowId)?.active ?? false), () => {});
-  api.me().then((me) => (demo = me.demo), () => {});
 
   const app = $derived(flow?.kind === 'app');
   const ends = $derived(flow ? endpoints(page.url.origin, flow.name) : null);
@@ -82,9 +80,8 @@
     </section>
 
     {#if app}
-      {#if demo}<p class="demo-note">API keys are unavailable in demo workspaces. Use a non-demo workspace to connect an external API or MCP client.</p>{/if}
       <div class="three" data-tour="publish">
-        <ApiCard endpoints={ends} appName={flow.name} {demo} />
+        <ApiCard endpoints={ends} appName={flow.name} />
         <McpCard endpoints={ends} tools={[`ask_${ends.model}`]} />
         <WidgetCard endpoints={ends} appName={flow.name} greeting={chat?.welcomeMessage ?? 'Hi! Ask me anything.'} />
       </div>
@@ -133,7 +130,6 @@
   .works ul { flex: 1; list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
   .works li { display: flex; flex-direction: column; align-items: center; gap: var(--s-1); font: var(--t-small); color: var(--text-2); }
   .error { color: var(--error-text); }
-  .demo-note { margin: 0; color: var(--text-2); }
   @media (max-width: 1023px) {
     .three, .two { grid-template-columns: minmax(0, 1fr); }
   }

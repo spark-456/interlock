@@ -4,4 +4,4 @@ import type { UserSummary } from "./UserSummary";
 /**
  * `GET /api/me`
  */
-export type Me = { user: UserSummary | null, workspaceId: string, demo: boolean, };
+export type Me = { user: UserSummary | null, workspaceId: string, };

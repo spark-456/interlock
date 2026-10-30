@@ -54,7 +54,7 @@ roles = { architect = "openai/gpt-oss-120b", agent = "openai/gpt-oss-120b", fast
 # prices = { architect = [0.15, 0.6], agent = [0.15, 0.6], fast = [0.075, 0.3] }   # on a paid Groq plan
 
 [providers.media]
-# `recorded` returns fixture media; it is the default in demo mode, test runs and tests.
+# `recorded` returns fixture media; test runs and tests always use it.
 # Real adapters exist but are not live-tested; they switch on only when their key is set.
 video = "recorded"
 voice = "recorded"
@@ -84,9 +84,6 @@ global_daily_usd = 25.0
 workspace_daily_usd = 5.0
 flow_daily_usd = 3.0
 run_usd = 1.0
-demo_run_usd = 0.10
-demo_models = ["fast", "agent"]   # Nano/Super only in demo
-demo_media = "replay"
 
 [storage]
 path = "data"           # SQLite db at data/interlock.db, files under data/files/

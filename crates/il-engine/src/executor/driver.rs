@@ -181,10 +181,6 @@ fn partial_announced(cp: &Checkpoint, node_id: &str, approval_id: &str) -> bool 
 /// The services a run's steps see: the engine's, plus the flow's own tools for its agents.
 async fn run_services(inner: &Inner, flow: &Flow, workspace_id: &str, test: bool) -> Services {
     let mut services = inner.services.clone();
-    if caps::is_demo(workspace_id) {
-        let allowed = inner.config.caps.demo_models.clone();
-        services.models = Arc::new(caps::DemoModels { inner: services.models.clone(), allowed });
-    }
     if flow.nodes.iter().any(|n| n.node_type == "ai.agent") {
         match services.flow_tools.for_flow(workspace_id, flow).await {
             // Test runs never send or post: tools that change things answer with a preview.

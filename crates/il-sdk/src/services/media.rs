@@ -1,5 +1,5 @@
 //! Media generation (video, voice, image). Adapters self-register via `MediaGenFactory`;
-//! the `recorded` provider (fixture media) is the default in demo mode, test runs and tests.
+//! the `recorded` provider (fixture media) is the default in test runs and tests.
 
 use async_trait::async_trait;
 use il_core::FileRef;
@@ -24,7 +24,7 @@ pub struct MediaRequest {
     /// Kind-specific parameters (duration, aspect, voice, size…).
     #[serde(default)]
     pub params: Value,
-    /// Force fixture media for test runs and demo workspaces.
+    /// Force fixture media for test runs.
     #[serde(default)]
     pub recorded: bool,
     /// The user's own provider key from the step's credential; unset uses the server's provider.

@@ -12,7 +12,6 @@ use crate::services::store::{Credential, CredentialInfo, SpendEntry, SpendScope,
 
 #[derive(Default)]
 struct Inner {
-    demo_workspaces: HashMap<String, DateTime<Utc>>,
     flows: HashMap<String, Vec<Flow>>,
     active: HashSet<String>,
     runs: HashMap<String, Run>,
@@ -48,21 +47,8 @@ impl MemoryStore {
 
 #[async_trait]
 impl Store for MemoryStore {
-    async fn register_demo_workspace(&self, workspace_id: &str, created_at: DateTime<Utc>) -> StoreResult<()> {
-        self.lock()?.demo_workspaces.insert(workspace_id.into(), created_at);
-        Ok(())
-    }
-    async fn expired_demo_workspaces(&self, cutoff: DateTime<Utc>) -> StoreResult<Vec<String>> {
-        let mut ids: Vec<_> =
-            self.lock()?.demo_workspaces.iter().filter(|(_, at)| **at < cutoff).map(|(id, _)| id.clone()).collect();
-        ids.sort();
-        Ok(ids)
-    }
-    async fn delete_demo_workspace(&self, workspace_id: &str) -> StoreResult<()> {
+    async fn delete_workspace(&self, workspace_id: &str) -> StoreResult<()> {
         let mut g = self.lock()?;
-        if g.demo_workspaces.remove(workspace_id).is_none() {
-            return Ok(());
-        }
         let flow_ids: HashSet<_> = g
             .flows
             .iter()

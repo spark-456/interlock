@@ -508,7 +508,7 @@
           "scopes": []
         }
       ],
-      "description": "Generates an image from a prompt. Uses the recorded provider in demo mode and tests.",
+      "description": "Generates an image from a prompt. Test runs use sample media.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -578,7 +578,7 @@
           "scopes": []
         }
       ],
-      "description": "Generates a short video from a prompt, or one clip per shot from a shot list, joined in order. Uses the recorded provider in demo mode and tests.",
+      "description": "Generates a short video from a prompt, or one clip per shot from a shot list, joined in order. Test runs use sample media.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -670,7 +670,7 @@
           "scopes": []
         }
       ],
-      "description": "Reads text aloud as a voiceover. Uses the recorded provider in demo mode and tests.",
+      "description": "Reads text aloud as a voiceover. Test runs use sample media.",
       "dynamicOutputs": null,
       "examples": [
         {

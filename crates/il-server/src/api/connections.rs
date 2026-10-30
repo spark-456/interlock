@@ -37,12 +37,6 @@ async fn create(
     ws: Ws,
     Json(req): Json<CreateConnectionRequest>,
 ) -> ApiResult<(StatusCode, Json<ConnectionSummary>)> {
-    if ws.0.demo {
-        return Err(ApiErr(
-            StatusCode::FORBIDDEN,
-            il_core::ApiError::new("demo_restricted", "Saving app keys is unavailable in demo mode."),
-        ));
-    }
     let app = req.app.trim();
     if app.is_empty() || req.secret.is_empty() || req.secret.values().any(|v| v.trim().is_empty()) {
         return Err(ApiErr::bad_request("Name the app and fill in every field."));

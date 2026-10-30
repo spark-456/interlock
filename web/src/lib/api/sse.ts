@@ -95,7 +95,7 @@ function live<E extends StreamEvent>(path: string, onEvent: (e: E) => void, opts
   return sub;
 }
 
-/** Delay between two events in a recorded stream, capped so demos never stall. */
+/** Delay between two events in a recorded stream, capped so replays never stall. */
 export function replayDelay(prevTs: string | undefined, ts: string, speed: number): number {
   if (!prevTs) return 0;
   const gap = Date.parse(ts) - Date.parse(prevTs);

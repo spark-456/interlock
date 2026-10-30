@@ -1,7 +1,7 @@
 [
   {
     "id": "apr_fa",
-    "workspaceId": "ws_demo",
+    "workspaceId": "ws_larkspur",
     "flowId": "flw_promos",
     "runId": "run_fa",
     "nodeId": "n_approve",
@@ -22,7 +22,7 @@
   },
   {
     "id": "apr_prev",
-    "workspaceId": "ws_demo",
+    "workspaceId": "ws_larkspur",
     "flowId": "flw_promos",
     "runId": "run_fa",
     "nodeId": "n_approve",

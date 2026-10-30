@@ -85,6 +85,17 @@
       busy = null;
     }
   }
+
+  async function signOut() {
+    busy = 'signout';
+    try {
+      await api.signOut();
+      location.assign('/');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not sign out.', 'error');
+      busy = null;
+    }
+  }
 </script>
 
 <svelte:head><title>Settings · Interlock</title></svelte:head>
@@ -96,11 +107,15 @@
     <h2 id="ws">Workspace</h2>
     {#if me}
       <dl>
-        <div><dt>Signed in as</dt><dd>{me.user?.name ?? (me.demo ? 'Demo visitor' : 'Guest')}</dd></div>
+        <div><dt>Signed in as</dt><dd>{me.user?.name ?? 'Guest (this computer only)'}</dd></div>
         <div><dt>Workspace</dt><dd class="mono">{me.workspaceId}</dd></div>
-        <div><dt>Plan</dt><dd>{me.demo ? 'Demo workspace (resets daily)' : 'Free plan'}</dd></div>
+        <div><dt>Plan</dt><dd>Free plan</dd></div>
       </dl>
-      {#if !me.user}<Button variant="primary" href="/api/auth/github/start">Sign in with GitHub</Button>{/if}
+      {#if me.user}
+        <Button loading={busy === 'signout'} onclick={signOut}>Sign out</Button>
+      {:else}
+        <Button variant="primary" href="/api/auth/github/start">Sign in with GitHub</Button>
+      {/if}
     {:else}
       <Skeleton lines={3} />
     {/if}
@@ -109,9 +124,7 @@
   <section aria-labelledby="keys">
     <h2 id="keys">API keys</h2>
     <p class="muted">Keys call your published apps over the OpenAI-compatible API and MCP. A key is shown once, when you create it.</p>
-    {#if me?.demo}
-      <p class="muted">API keys are unavailable in demo workspaces. Use a non-demo workspace to connect external clients.</p>
-    {:else if keysError}
+    {#if keysError}
       <p class="muted">{keysError}</p>
     {:else}
       <form class="create" onsubmit={(e) => (e.preventDefault(), create())}>
@@ -162,17 +175,15 @@
         <div><dt>Per flow, per day</dt><dd class="mono">{usd(usage.caps.flowDailyUsd)}</dd></div>
         <div><dt>Workspace, per day</dt><dd class="mono">{usd(usage.caps.workspaceDailyUsd)}</dd></div>
       </dl>
-      {#if !me?.demo}
-        <form class="cap-form" onsubmit={(e) => (e.preventDefault(), saveCaps())}>
-          <Input label="Per run (USD)" type="number" min="0.01" step="0.01" bind:value={runCap} />
-          <Input label="Per flow, per day (USD)" type="number" min="0.01" step="0.01" bind:value={flowCap} />
-          <Input label="Workspace, per day (USD)" type="number" min="0.01" step="0.01" bind:value={workspaceCap} />
-          <Button type="submit" variant="primary" loading={busy === 'caps'}>Save caps</Button>
-        </form>
-      {/if}
+      <form class="cap-form" onsubmit={(e) => (e.preventDefault(), saveCaps())}>
+        <Input label="Per run (USD)" type="number" min="0.01" step="0.01" bind:value={runCap} />
+        <Input label="Per flow, per day (USD)" type="number" min="0.01" step="0.01" bind:value={flowCap} />
+        <Input label="Workspace, per day (USD)" type="number" min="0.01" step="0.01" bind:value={workspaceCap} />
+        <Button type="submit" variant="primary" loading={busy === 'caps'}>Save caps</Button>
+      </form>
     {/if}
     <p class="muted">
-      When a cap is reached the run stops and says so. A flow can set its own lower per-run cap in its settings.{#if me?.demo} Demo workspaces use small caps, the smaller models and recorded media.{/if}
+      When a cap is reached the run stops and says so. A flow can set its own lower per-run cap in its settings.
     </p>
   </section>
 

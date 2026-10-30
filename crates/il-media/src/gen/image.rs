@@ -12,7 +12,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "ai.generate_image",
         Category::Ai,
         "Generate image",
-        "Generates an image from a prompt. Uses the recorded provider in demo mode and tests.",
+        "Generates an image from a prompt. Test runs use sample media.",
     )
     .icon("image")
     .status(NodeStatus::Ready)

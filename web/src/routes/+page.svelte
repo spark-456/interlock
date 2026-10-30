@@ -42,7 +42,7 @@
   </nav>
   <div class="nav-actions">
     <a class="signin" href="/api/auth/github/start">Sign in</a>
-    <Button variant="primary" size="s" href="/demo">Try the demo</Button>
+    <Button variant="primary" size="s" href="/flows">Get started</Button>
   </div>
 </header>
 
@@ -52,7 +52,7 @@
     <h1>Your AI backend, built from a sentence.</h1>
     <p class="lede">Describe the goal, drop in your documents and APIs. Interlock builds the knowledge base, agents, prompts, tools and tests, and hands you an API and an MCP server.</p>
     <div class="ctas">
-      <Button variant="primary" href="/demo">Try the demo — no sign-in <Icon name="arrow-right" size={16} /></Button>
+      <Button variant="primary" href="/flows">Get started <Icon name="arrow-right" size={16} /></Button>
       <Button href={GITHUB}>View on GitHub</Button>
     </div>
     <ul class="checks">
@@ -111,8 +111,8 @@
   <section class="cta">
     <Logo variant="app-icon" size={48} />
     <h2>Build your first backend in two minutes.</h2>
-    <p>Open a ready-made demo instantly, or build your own with up to 20 pages and one API. No sign-in.</p>
-    <Button href="/demo">Try the demo <Icon name="arrow-right" size={16} /></Button>
+    <p>Start from a template, or describe your own goal and drop in your documents and APIs.</p>
+    <Button href="/flows">Get started <Icon name="arrow-right" size={16} /></Button>
   </section>
 </main>
 

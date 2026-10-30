@@ -3,11 +3,9 @@
 use std::collections::BTreeMap;
 
 use axum::extract::State;
-use axum::http::StatusCode;
 use axum::routing::{get, put};
 use axum::{Json, Router};
 use chrono::{Duration, NaiveTime, Utc};
-use il_core::ApiError;
 use il_core::dto::{UsageCaps, UsageDay, UsageFlow, UsageReport, UsageRole};
 use il_engine::caps::{self, CapsConfig};
 use serde_json::json;
@@ -22,9 +20,6 @@ pub(super) fn routes() -> Router<AppState> {
 }
 
 async fn update_caps(State(state): State<AppState>, ws: Ws, Json(caps): Json<UsageCaps>) -> ApiResult<Json<UsageCaps>> {
-    if ws.0.demo {
-        return Err(ApiErr(StatusCode::FORBIDDEN, ApiError::new("demo_restricted", "Demo caps cannot be changed.")));
-    }
     let config: CapsConfig = state.config.section("caps").unwrap_or_default();
     if !caps::valid_workspace_caps(&caps, config.global_daily_usd) {
         return Err(ApiErr::bad_request(

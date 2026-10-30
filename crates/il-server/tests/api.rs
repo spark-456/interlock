@@ -36,6 +36,14 @@ async fn call(
     (status, body, set_cookie)
 }
 
+/// Signs someone in to their own workspace the way sign-in does, and returns their session cookie.
+async fn sign_in(state: &il_server::AppState, workspace_id: &str) -> String {
+    let token = format!("ses_{workspace_id}");
+    let session = json!({"workspaceId": workspace_id, "user": {"id": format!("github:{workspace_id}"), "name": "Pat"}});
+    state.services.store.kv_put(&format!("ws:session:{token}"), &session).await.unwrap();
+    format!("il_session={token}")
+}
+
 fn manual_flow() -> Value {
     json!({
         "name": "Hello",
@@ -112,50 +120,46 @@ async fn test_run_completes_and_streams_events() {
 }
 
 #[tokio::test]
-async fn demo_sessions_are_isolated_workspaces() {
-    let app = server();
-    let (s, me, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
-    assert_eq!(s, StatusCode::OK);
-    assert_eq!(me["demo"], true);
-    let cookie = cookie.unwrap();
-    assert!(cookie.contains("HttpOnly"));
-    let pair = cookie.split(';').next().unwrap().to_string();
-    let (_, me2, _) = call(&app, "GET", "/api/me", None, Some(&pair)).await;
-    assert_eq!(me2["workspaceId"], me["workspaceId"]);
-
-    let (_, created, _) = call(&app, "POST", "/api/flows", Some(manual_flow()), Some(&pair)).await;
-    let id = created["id"].as_str().unwrap();
-    let (s, _, _) = call(&app, "GET", &format!("/api/flows/{id}"), None, Some(&pair)).await;
-    assert_eq!(s, StatusCode::OK);
-    let (s, _, _) = call(&app, "GET", &format!("/api/flows/{id}"), None, None).await;
-    assert_eq!(s, StatusCode::NOT_FOUND, "other workspaces cannot see it");
-}
-
-#[tokio::test]
-async fn q12_leaving_demo_clears_the_cookie_and_session() {
-    let app = server();
-    let (_, _, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
-    let pair = cookie.unwrap().split(';').next().unwrap().to_string();
-    let (status, _, cleared) = call(&app, "DELETE", "/api/demo/session", None, Some(&pair)).await;
-    assert_eq!(status, StatusCode::NO_CONTENT);
-    assert!(cleared.unwrap().contains("Max-Age=0"));
-    let (status, _, _) = call(&app, "GET", "/api/me", None, Some(&pair)).await;
-    assert_eq!(status, StatusCode::UNAUTHORIZED, "the old demo token must no longer work");
-    let (_, me, _) = call(&app, "GET", "/api/me", None, None).await;
-    assert_eq!(me["demo"], false);
-}
-
-#[tokio::test]
-async fn q04_reset_demo_session_cannot_access_local_workspace() {
+async fn signed_in_people_have_their_own_workspaces() {
     let state = build_state(Config::from_value(json!({})).unwrap());
     let app = app(state.clone());
-    let (_, me, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
-    let id = me["workspaceId"].as_str().unwrap();
-    let pair = cookie.unwrap().split(';').next().unwrap().to_string();
-    state.services.files.delete_workspace_files(id).await.unwrap();
-    state.services.store.delete_demo_workspace(id).await.unwrap();
-    let (status, _, _) = call(&app, "GET", "/api/me", None, Some(&pair)).await;
+    let pat = sign_in(&state, "ws_gh_1").await;
+    let (s, me, _) = call(&app, "GET", "/api/me", None, Some(&pat)).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!((me["workspaceId"].as_str(), me["user"]["name"].as_str()), (Some("ws_gh_1"), Some("Pat")));
+
+    let (_, created, _) = call(&app, "POST", "/api/flows", Some(manual_flow()), Some(&pat)).await;
+    let id = created["id"].as_str().unwrap();
+    let (s, _, _) = call(&app, "GET", &format!("/api/flows/{id}"), None, Some(&pat)).await;
+    assert_eq!(s, StatusCode::OK);
+    let sam = sign_in(&state, "ws_gh_2").await;
+    let (s, _, _) = call(&app, "GET", &format!("/api/flows/{id}"), None, Some(&sam)).await;
+    assert_eq!(s, StatusCode::NOT_FOUND, "other people cannot see it");
+    let (s, _, _) = call(&app, "GET", &format!("/api/flows/{id}"), None, None).await;
+    assert_eq!(s, StatusCode::NOT_FOUND, "nor can the local workspace");
+}
+
+#[tokio::test]
+async fn q34_deleting_a_workspace_ends_its_sessions() {
+    let state = build_state(Config::from_value(json!({})).unwrap());
+    let app = app(state.clone());
+    let pat = sign_in(&state, "ws_gh_1").await;
+    state.services.files.delete_workspace_files("ws_gh_1").await.unwrap();
+    state.services.store.delete_workspace("ws_gh_1").await.unwrap();
+    let (status, _, _) = call(&app, "GET", "/api/me", None, Some(&pat)).await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn q34_signing_out_ends_the_session() {
+    let state = build_state(Config::from_value(json!({})).unwrap());
+    let app = app(state.clone());
+    let pat = sign_in(&state, "ws_gh_1").await;
+    let (status, _, cleared) = call(&app, "POST", "/api/auth/sign-out", None, Some(&pat)).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert!(cleared.unwrap().contains("Max-Age=0"));
+    let (status, _, _) = call(&app, "GET", "/api/me", None, Some(&pat)).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "the old token no longer works");
 }
 
 #[tokio::test]
@@ -322,8 +326,7 @@ async fn r05_support_template_seeds_openapi_spec_for_agent_tools() {
 
 #[tokio::test]
 async fn public_endpoints_are_limited_per_ip() {
-    let config =
-        Config::from_value(json!({"server":{"public_requests_per_minute":2,"demo_sessions_per_hour":1}})).unwrap();
+    let config = Config::from_value(json!({"server":{"public_requests_per_minute":2}})).unwrap();
     let app = app(build_state(config));
     for (ip, expected) in [
         (Ipv4Addr::new(10, 0, 0, 1), StatusCode::NOT_FOUND),
@@ -335,19 +338,14 @@ async fn public_endpoints_are_limited_per_ip() {
         req.extensions_mut().insert(ConnectInfo(SocketAddr::new(IpAddr::V4(ip), 1234)));
         assert_eq!(app.clone().oneshot(req).await.unwrap().status(), expected);
     }
-    let (first, _, _) = call(&app, "POST", "/api/demo/session", None, None).await;
-    let (second, error, _) = call(&app, "POST", "/api/demo/session", None, None).await;
-    assert_eq!(first, StatusCode::OK);
-    assert_eq!(second, StatusCode::TOO_MANY_REQUESTS);
-    assert_eq!(error["error"]["code"], "rate_limited");
 }
 
 #[tokio::test]
-async fn demo_session_seeds_template_flows_when_fixtures_exist() {
+async fn offline_builds_seed_the_templates_with_their_recorded_runs() {
     let dir = tempfile::tempdir().unwrap();
     let template = json!({
         "id":"template_1", "workspaceId":"template", "version":1,
-        "name":"Demo flow", "kind":"automation",
+        "name":"Sample flow", "kind":"automation",
         "nodes":[{"id":"n_start","type":"trigger.manual","name":"Start","settings":{}}], "edges":[]
     });
     let (templates, recorded) = (dir.path().join("templates"), dir.path().join("recorded"));
@@ -364,20 +362,16 @@ async fn demo_session_seeds_template_flows_when_fixtures_exist() {
     std::fs::write(recorded.join("demo.json"), recording.to_string()).unwrap();
     let config = Config::from_value(json!({"server":{"templates_dir":templates.to_str().unwrap()}})).unwrap();
     let app = app(build_state(config));
-    let (_, first, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
-    let cookie = cookie.unwrap();
-    let cookie = cookie.split(';').next().unwrap();
-    let (_, flows, _) = call(&app, "GET", "/api/flows", None, Some(cookie)).await;
-    assert_eq!(flows.as_array().unwrap().len(), 1);
-    assert_eq!(flows[0]["name"], "Demo flow");
+    let (s, _, _) = call(&app, "POST", "/api/builds", Some(json!({"goal": "Say hello"})), None).await;
+    assert_eq!(s, StatusCode::ACCEPTED);
+    let (_, flows, _) = call(&app, "GET", "/api/flows", None, None).await;
+    let seeded = flows.as_array().unwrap().iter().find(|f| f["name"] == "Sample flow").expect("the template is seeded");
     // The recorded run comes with it, as a finished replay run of the seeded flow.
-    let path = format!("/api/flows/{}/runs", flows[0]["id"].as_str().unwrap());
-    let (_, runs, _) = call(&app, "GET", &path, None, Some(cookie)).await;
+    let path = format!("/api/flows/{}/runs", seeded["id"].as_str().unwrap());
+    let (_, runs, _) = call(&app, "GET", &path, None, None).await;
     assert_eq!(runs.as_array().unwrap().len(), 1);
     assert_eq!((runs[0]["status"].as_str(), runs[0]["replay"].as_bool()), (Some("succeeded"), Some(true)));
     assert_eq!(runs[0]["costUsd"], 0.002);
-    let (_, second, _) = call(&app, "POST", "/api/demo/session", None, None).await;
-    assert_ne!(first["workspaceId"], second["workspaceId"]);
 }
 
 #[tokio::test]
@@ -429,11 +423,10 @@ async fn persistent_server_keeps_sessions_across_restarts() {
     let dir = tempfile::tempdir().unwrap();
     let config = Config::from_value(json!({"storage":{"path":dir.path().to_str().unwrap()}})).unwrap();
     let state = il_server::wiring::build_state_persistent(config.clone()).await.unwrap();
-    let (_, me, cookie) = call(&app(state), "POST", "/api/demo/session", None, None).await;
+    let pat = sign_in(&state, "ws_gh_1").await;
     let state = il_server::wiring::build_state_persistent(config).await.unwrap();
-    let pair = cookie.unwrap().split(';').next().unwrap().to_owned();
-    let (_, again, _) = call(&app(state), "GET", "/api/me", None, Some(&pair)).await;
-    assert_eq!(again["workspaceId"], me["workspaceId"]);
+    let (_, again, _) = call(&app(state), "GET", "/api/me", None, Some(&pat)).await;
+    assert_eq!(again["workspaceId"], "ws_gh_1");
 }
 
 #[tokio::test]
@@ -454,13 +447,6 @@ async fn key_connections_are_saved_listed_and_never_returned() {
     let (s, _, _) =
         call(&app, "POST", "/api/connections", Some(json!({"app": "telegram", "secret": {"token": " "}})), None).await;
     assert_eq!(s, StatusCode::BAD_REQUEST);
-
-    let (_, _, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
-    let cookie = cookie.unwrap();
-    let demo = cookie.split(';').next().unwrap();
-    let body = json!({"app": "discord", "secret": {"url": "https://discord.example/hook"}});
-    let (s, err, _) = call(&app, "POST", "/api/connections", Some(body), Some(demo)).await;
-    assert_eq!((s, err["error"]["code"].as_str()), (StatusCode::FORBIDDEN, Some("demo_restricted")));
 }
 
 #[tokio::test]
@@ -501,7 +487,7 @@ async fn usage_reports_thirty_days_by_day_and_flow_with_the_caps() {
 }
 
 #[tokio::test]
-async fn u02_owner_edits_workspace_caps_and_demo_cannot() {
+async fn u02_owner_edits_workspace_caps_within_the_global_cap() {
     let state = build_state(Config::from_value(json!({"caps":{"global_daily_usd":10.0}})).unwrap());
     let app = app(state.clone());
     let caps = json!({"runUsd":0.5,"flowDailyUsd":1.0,"workspaceDailyUsd":2.0});
@@ -521,10 +507,6 @@ async fn u02_owner_edits_workspace_caps_and_demo_cannot() {
     )
     .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
-    let (_, _, cookie) = call(&app, "POST", "/api/demo/session", None, None).await;
-    let pair = cookie.unwrap().split(';').next().unwrap().to_string();
-    let (status, _, _) = call(&app, "PUT", "/api/usage/caps", Some(caps), Some(&pair)).await;
-    assert_eq!(status, StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]

@@ -1,5 +1,5 @@
 //! Templates: checked-in Flow JSON under `templates_dir` (`<id>.json`), listed for the gallery and
-//! copied into a workspace on use or when a demo workspace starts.
+//! copied into a workspace on use (or all at once for offline builds with fake providers).
 
 use std::collections::BTreeSet;
 use std::path::{Path as FsPath, PathBuf};
@@ -37,7 +37,7 @@ pub(super) async fn load_all(dir: &str) -> ApiResult<Vec<(String, Flow)>> {
     Ok(out)
 }
 
-/// Copies every template into a new demo workspace, with its recorded run when it has one (MK-3).
+/// Copies every template into a workspace, with its recorded run when it has one (MK-3).
 pub(super) async fn seed(state: &AppState, workspace_id: &str) -> ApiResult<()> {
     let dir = &state.config.server.templates_dir;
     for (id, flow) in load_all(dir).await? {

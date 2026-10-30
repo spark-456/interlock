@@ -90,7 +90,7 @@
           <p>Describe a goal, drop in a few documents, and Interlock does the rest.</p>
           <div class="row">
             <Button variant="primary" href="/new">New flow</Button>
-            <Button href="/demo">Try a demo</Button>
+            <Button href="/templates">Browse templates</Button>
           </div>
         </section>
       {:else if !shown.length}

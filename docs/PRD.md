@@ -28,7 +28,7 @@ Promise: **Describe it. Interlock builds it. You can change anything.**
 3. Three hero flows working end to end: product promo videos, support inbox replies, support agent from documents and audio (section 4).
 4. AI apps published as an OpenAI-compatible API, a per-flow MCP server, a platform MCP for coding agents, and a chat widget.
 5. A modular codebase where new nodes, connectors, model providers and preview renderers are added without editing the engine, the architect or the UI shell.
-6. Hosted online, with a no-sign-in demo mode that stays up until 15 Dec 2026.
+6. Hosted online; everyone signs in and works in their own workspace (demo mode was removed on 30 Oct 2026).
 7. Full compliance with the hackathon rules (section 13).
 
 ### Non-goals (this build)
@@ -39,7 +39,6 @@ Multi-region scaling, enterprise SSO, billing, a marketplace, real-time multipla
 
 - **Builders without code**: founders, marketers, support leads and operations people who want work automated.
 - **Developers**: want an AI backend (agents + knowledge + tools) behind a stable API or MCP, integrated into their app by their coding agent.
-- **Judges** (for this build): open the demo with no account, try templates, build one flow live, watch the video.
 
 ## 4. Hero flows (acceptance scenarios)
 
@@ -176,18 +175,18 @@ P1: Outlook, Notion, Google Drive new file, HubSpot, Airtable, Code node (sandbo
 | ID | Requirement | P |
 |---|---|---|
 | WS-1 | Sign in with GitHub OAuth | P0 |
-| WS-2 | Demo mode with no sign-in: an ephemeral demo workspace per browser, templates and recorded runs, live builds capped (Nano/Super only, small limits, media generation replay-only) | P0 |
+| WS-2 | Removed 2026-10-30 (Q34): demo mode. Everyone signs in and works in their own workspace; templates are copied on use | — |
 | WS-3 | Connections page: OAuth for Google (Gmail, Sheets, YouTube), Slack, Discord/Telegram bots, Bluesky app password, API keys for "Any API"; tokens encrypted at rest; never returned to the browser | P0 |
 | WS-4 | Approvals inbox (desktop and mobile) | P0 mobile / P1 desktop |
 | WS-5 | Usage: spend by day and by model role; caps editable | P1 |
 
-### 5.8 Marketing site and demo
+### 5.8 Marketing site
 
 | ID | Requirement | P |
 |---|---|---|
 | MK-1 | Landing page per design | P0 |
 | MK-2 | Templates gallery with 10 templates (F-A, F-B, F-C + 7 more) | P0 |
-| MK-3 | Recorded runs for F-A and F-C that replay in demo mode | P0 |
+| MK-3 | Recorded runs for F-A and F-C, shown with their templates | P0 |
 
 ## 6. Non-functional requirements
 
@@ -198,7 +197,7 @@ P1: Outlook, Notion, Google Drive new file, HubSpot, Airtable, Code node (sandbo
 | Modularity | Adding a node, connector, provider or preview renderer touches only its own files (section 9). CI enforces crate dependency direction |
 | Reliability | Runs survive server restarts; Human waits persist; idempotent connector sends (dedupe key per node run) |
 | Security | Secrets encrypted with AES-256-GCM under a master key from env; SSRF guard on all outbound HTTP (block private ranges, redirects re-checked); webhook tokens; API keys hashed; CORS restricted; demo isolation; no secrets in logs; prompt-injected content can never change a node's destination, recipient or credentials (those come only from settings/credentials, never from item data, unless explicitly mapped by the user) |
-| Cost safety | Global daily spend cap from env; per-run and per-workspace caps; replay-only media in demo |
+| Cost safety | Global daily spend cap from env; per-run and per-workspace caps |
 | Observability | Structured JSON logs (tracing); `/healthz`; per-run cost and token accounting |
 | Portability | Builds and runs natively on Windows (PowerShell) and Linux; deploys as one Docker image |
 | Testability | Every module has unit tests that run offline with fake providers; CI runs fmt, clippy (deny warnings), tests, web build, type drift check, dependency check |
@@ -259,7 +258,7 @@ Rules:
 | `il-knowledge` | Parsers, chunker, Tavily client, ingestion pipeline, hybrid search, `KnowledgeService` impl | Call models except through `ModelGateway` |
 | `il-architect` | Goal → flow compiler, catalog prompting, validation/repair, layout, connection check, test-and-fix, Ask diff, AI-app tests and guardrails | Hardcode node types (reads the registry) |
 | `il-publish` | OpenAI-compatible API, MCP servers (rmcp), widget JS, integration guide, API keys | Execute flows except via the engine trait |
-| `il-server` | axum app, auth (GitHub OAuth, demo), route mounting (auto-registered), SSE, static assets (rust-embed), config loading, wiring | Contain domain logic |
+| `il-server` | axum app, auth (sign-in, sessions), route mounting (auto-registered), SSE, static assets (rust-embed), config loading, wiring | Contain domain logic |
 
 ### 7.3 Web app modules (`web/`)
 
@@ -426,9 +425,11 @@ Roles: `Architect`, `Agent`, `Fast`. Every call records tokens and cost against 
 
 - Multi-stage Dockerfile: build web (pnpm) → build Rust (release, embed web) → runtime (debian-slim + ffmpeg + ca-certificates), non-root, `/data` volume.
 - Host on Nebius (Serverless Endpoint CPU or a small VM) with a persistent volume and HTTPS. Confirm the endpoint can be public without a token for judges; if not, use a VM behind a TLS proxy.
-- `/healthz` for health checks; seed demo content on first boot; global spend cap on.
+- `/healthz` for health checks; global spend cap on.
 
 ## 13. Hackathon compliance checklist
+
+The team stopped pursuing the hackathon submission on 30 Oct 2026; Interlock continues as a product. Kept for the record.
 
 - [ ] Runtime calls to Nebius Token Factory; NVIDIA Nemotron Ultra, Super and Nano used by role (documented in README with where each is used)
 - [ ] Public GitHub repo with an Apache-2.0 LICENSE detectable in the About section; README with setup and run instructions

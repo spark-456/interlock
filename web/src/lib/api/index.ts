@@ -47,10 +47,8 @@ export const api = {
   /** Where each webhook step listens (made on first ask; refused until the flow is on). */
   hooks: (flowId: string) => get<WebhookUrl[]>(`/api/flows/${flowId}/hooks`),
   guide: (flowId: string) => get<string>(`/api/flows/${flowId}/guide`),
-  /** Starts an anonymous demo workspace (sets the session cookie). */
-  demoSession: () => post<Me>('/api/demo/session', {}),
-  /** Clears the current demo session and its browser cookie. */
-  leaveDemo: () => del<void>('/api/demo/session'),
+  /** Ends the session (even an expired one) and clears its browser cookie. */
+  signOut: () => post<void>('/api/auth/sign-out', {}),
   keys: () => get<{ id: string; name: string; revoked: boolean; lastUsedAt: string | null }[]>('/api/keys'),
   revokeKey: (id: string) => del<void>(`/api/keys/${id}`),
   /** Creates an API key; the full key is in this response only. */

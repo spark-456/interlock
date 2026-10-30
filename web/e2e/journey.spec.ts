@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-// The whole path in fixture mode: landing → demo → create → building → editor → test run → publish → chat.
+// The whole path in fixture mode: landing → flows → create → building → editor → test run → publish → chat.
 
 test('a visitor goes from the landing page to chatting with a published app', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: /Try the demo — no sign-in/ }).click();
-  await expect(page).toHaveURL(/\/demo$/);
-  await page.getByRole('button', { name: 'Start' }).click();
+  await page.getByRole('link', { name: 'Get started' }).first().click();
+  await expect(page).toHaveURL(/\/flows$/);
+  await page.getByRole('link', { name: 'New flow' }).first().click();
   await expect(page).toHaveURL(/\/new$/);
 
   await page.getByRole('button', { name: 'Support chat agent' }).click();

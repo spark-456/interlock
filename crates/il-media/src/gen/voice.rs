@@ -12,7 +12,7 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "ai.generate_voice",
         Category::Ai,
         "Generate voice",
-        "Reads text aloud as a voiceover. Uses the recorded provider in demo mode and tests.",
+        "Reads text aloud as a voiceover. Test runs use sample media.",
     )
     .icon("voice")
     .status(NodeStatus::Ready)
