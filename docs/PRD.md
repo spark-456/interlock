@@ -273,7 +273,7 @@ SvelteKit (Svelte 5, runes) + adapter-static SPA + TypeScript strict + pnpm. Can
 | `src/lib/previews/` | Output renderer registry; each renderer is one file, auto-discovered via `import.meta.glob` |
 | `src/lib/panel/` | Node panel (Settings / Input / Output) |
 | `src/lib/stores/` | App state (flows, runs, build session, auth) |
-| `src/routes/` | One folder per screen: `/`, `/new`, `/new/[id]/building`, `/flows`, `/flows/[id]`, `/flows/[id]/runs/[run]`, `/flows/[id]/publish`, `/flows/[id]/chat`, `/templates`, `/connections`, `/approvals`, `/settings`, `/demo` |
+| `src/routes/` | One folder per screen: `/`, `/new`, `/new/[id]/building`, `/flows`, `/flows/[id]`, `/flows/[id]/runs/[run]`, `/flows/[id]/publish`, `/flows/[id]/chat`, `/templates`, `/connections`, `/approvals`, `/settings`, `/profile`, `/signin`, `/demo` |
 | `widget/` | Chat widget source (separate tiny vanilla-TS bundle, no framework), built separately and served by `il-publish` at `/w/:slug.js` |
 
 **Fixture mode**: `VITE_FIXTURES=1` serves all API calls from `web/fixtures/*.json` and replays recorded SSE streams, so the UI can be built and demoed before the backend exists.

@@ -175,6 +175,7 @@ async fn q34_google_sign_in_asks_only_who_you_are_and_makes_your_workspace() {
     assert_eq!(scope, "openid email profile", "sign-in never asks for Gmail or Drive");
     let me = sign_in_through(&router, "google").await;
     assert_eq!((me["workspaceId"].as_str(), me["user"]["name"].as_str()), (Some("ws_gg_1077"), Some("Pat Lee")));
+    assert_eq!(me["user"]["email"], "pat@example.com", "the profile shows the email Google shared");
     google.verify().await;
 }
 

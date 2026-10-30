@@ -2,7 +2,8 @@
   "user": {
     "id": "usr_dana",
     "name": "Dana Ruiz",
-    "avatarUrl": null
+    "avatarUrl": null,
+    "email": "dana@larkspur.example"
   },
   "workspaceId": "ws_larkspur"
 }

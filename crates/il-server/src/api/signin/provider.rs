@@ -142,6 +142,7 @@ impl Provider {
                         id: format!("github:{id}"),
                         name: text("name").unwrap_or(login),
                         avatar_url: text("avatar_url"),
+                        email: text("email"),
                     },
                 })
             }
@@ -150,7 +151,12 @@ impl Provider {
                 let name = text("name").or_else(|| text("email")).unwrap_or_else(|| "Google user".into());
                 Ok(Profile {
                     workspace_id: format!("ws_gg_{sub}"),
-                    user: UserSummary { id: format!("google:{sub}"), name, avatar_url: text("picture") },
+                    user: UserSummary {
+                        id: format!("google:{sub}"),
+                        name,
+                        avatar_url: text("picture"),
+                        email: text("email"),
+                    },
                 })
             }
         }

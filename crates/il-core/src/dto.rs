@@ -322,6 +322,10 @@ pub struct UserSummary {
     pub id: String,
     pub name: String,
     pub avatar_url: Option<String>,
+    /// The email the sign-in provider shared; missing for older sessions and private GitHub emails.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub email: Option<String>,
 }
 
 /// `GET /healthz`
