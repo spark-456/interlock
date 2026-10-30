@@ -51,10 +51,17 @@
       cancelling = false;
     }
   }
+  // A card can be picked before the run reaches its step; its details get focus once they appear.
+  let focusing = $state<string | null>(null);
   function selectStep(id: string) {
-    selected = id;
-    document.getElementById(`run-step-${id}`)?.focus();
+    selected = focusing = id;
   }
+  $effect(() => {
+    if (focusing && view.steps.some((s) => s.nodeId === focusing)) {
+      document.getElementById(`run-step-${focusing}`)?.focus();
+      focusing = null;
+    }
+  });
   onDestroy(() => sub.close());
 
   // The approval this run is (or was) waiting on, for its card.

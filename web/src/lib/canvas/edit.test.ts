@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Flow, NodeManifest, RunEvent } from '$lib/api/types';
+import type { Flow, Node, NodeManifest, RunEvent } from '$lib/api/types';
 import {
   COLUMN, addNode, connect, diffFlows, edgeNear, insertOnEdge, record, redo, removeNodes, replaceNode, tidy, undo, type Manifest
 } from './edit';
@@ -110,6 +110,12 @@ describe('views', () => {
       ['a', undefined, undefined], ['c', 'added', 'Added'], ['b', 'removed', 'Removed']
     ]);
     expect(flowEdges(after, idleRun(), d)).toMatchObject([{ id: 'removed-e1', state: 'failed', diff: 'removed' }]);
+  });
+
+  it('Q22 a step with its fields in another order is unchanged', () => {
+    const shuffled = (n: Node) => Object.fromEntries(Object.entries(n).reverse()) as Node;
+    const after = { ...sample(), nodes: sample().nodes.map(shuffled) };
+    expect(diffFlows(sample(), after).changed.size).toBe(0);
   });
 
   it('turns settings into short card rows', () => {

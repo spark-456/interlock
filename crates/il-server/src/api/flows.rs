@@ -184,10 +184,16 @@ async fn ask(
     Path(id): Path<String>,
     Json(req): Json<AskRequest>,
 ) -> ApiResult<Json<AskDiff>> {
-    let flow = owned(&state, &ws, &id).await?;
+    let saved = owned(&state, &ws, &id).await?;
+    // The editor's copy keeps unsaved edits (an accepted change, a moved step) in the next request;
+    // its identity stays the saved flow's.
+    let flow = match req.flow {
+        Some(draft) => Flow { id: saved.id, workspace_id: saved.workspace_id, version: saved.version, ..draft },
+        None => saved,
+    };
     state
         .architect
-        .ask(&flow, &req.message)
+        .ask(&flow, &req.message, &req.focus)
         .await
         .map(Json)
         .map_err(|e| ApiErr(StatusCode::BAD_GATEWAY, il_core::ApiError::new("architect_failed", e.to_string())))

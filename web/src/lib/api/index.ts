@@ -5,6 +5,7 @@ import type {
   Approval,
   ApprovalDecision,
   AskDiff,
+  AskRequest,
   BuildAnswers,
   BuildCreated,
   BuildEvent,
@@ -39,7 +40,7 @@ export const api = {
   saveFlow: (flow: Flow) => put<Flow>(`/api/flows/${flow.id}`, flow),
   deleteFlow: (id: string) => del<void>(`/api/flows/${id}`),
   cancelRun: (runId: string) => post<void>(`/api/runs/${runId}/cancel`, {}),
-  ask: (flowId: string, message: string) => post<AskDiff>(`/api/flows/${flowId}/ask`, { message }),
+  ask: (flowId: string, req: AskRequest) => post<AskDiff>(`/api/flows/${flowId}/ask`, req),
   activate: (flowId: string) => post<void>(`/api/flows/${flowId}/activate`, {}),
   deactivate: (flowId: string) => post<void>(`/api/flows/${flowId}/deactivate`, {}),
   /** The integration guide (INTERLOCK.md) for a published AI app. */

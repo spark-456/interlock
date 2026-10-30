@@ -135,11 +135,20 @@ export interface FlowDiff {
   removedEdges: Edge[];
 }
 
+/** JSON with object keys sorted: the server's proposals list a step's fields in another order. */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_, v: unknown) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : v
+  );
+}
+
 /** What a proposed flow adds, changes and removes. Moving a node alone is not a change. */
 export function diffFlows(before: Flow, after: Flow): FlowDiff {
   const old = new Map(before.nodes.map((n) => [n.id, n]));
   const next = new Set(after.nodes.map((n) => n.id));
-  const content = (n: Node) => JSON.stringify({ ...n, position: null });
+  const content = (n: Node) => canonical({ ...n, position: null });
   const edgeKey = (e: Edge) => `${e.from.node}.${e.from.port}>${e.to.node}.${e.to.port}`;
   const oldEdges = new Set(before.edges.map(edgeKey));
   const newEdges = new Set(after.edges.map(edgeKey));

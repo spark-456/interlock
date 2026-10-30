@@ -20,6 +20,6 @@ pub trait ArchitectService: Send + Sync {
     async fn start_build(&self, workspace_id: &str, req: BuildRequest) -> Result<String, ArchitectError>;
     /// Answers clarifying questions.
     async fn answer(&self, build_id: &str, answers: BuildAnswers) -> Result<(), ArchitectError>;
-    /// Turns a change request into a JSON-Patch diff against `flow` (AR-8).
-    async fn ask(&self, flow: &Flow, message: &str) -> Result<AskDiff, ArchitectError>;
+    /// Turns a change request into a JSON-Patch diff against `flow` (AR-8), about the `focus` steps when given.
+    async fn ask(&self, flow: &Flow, message: &str, focus: &[String]) -> Result<AskDiff, ArchitectError>;
 }
