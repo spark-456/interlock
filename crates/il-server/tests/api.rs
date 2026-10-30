@@ -163,6 +163,28 @@ async fn q34_signing_out_ends_the_session() {
 }
 
 #[tokio::test]
+async fn q34_deleting_an_account_turns_off_and_removes_everything() {
+    let state = build_state(Config::from_value(json!({})).unwrap());
+    let app = app(state.clone());
+    let pat = sign_in(&state, "ws_gh_1").await;
+    let hook = json!({"name": "Hook", "nodes": [{"id": "n_hook", "type": "trigger.webhook", "name": "Hook", "settings": {}}],
+        "edges": []});
+    let (_, flow, _) = call(&app, "POST", "/api/flows", Some(hook), Some(&pat)).await;
+    let id = flow["id"].as_str().unwrap().to_owned();
+    let (s, _, _) = call(&app, "POST", &format!("/api/flows/{id}/activate"), None, Some(&pat)).await;
+    assert_eq!(s, StatusCode::OK);
+    let (s, _, cleared) = call(&app, "DELETE", "/api/me", None, Some(&pat)).await;
+    assert_eq!(s, StatusCode::NO_CONTENT);
+    assert!(cleared.unwrap().contains("Max-Age=0"));
+    assert!(!state.services.store.is_flow_active(&id).await.unwrap(), "its trigger is off");
+    assert!(state.services.store.get_flow(&id).await.unwrap().is_none());
+    let (s, _, _) = call(&app, "GET", "/api/me", None, Some(&pat)).await;
+    assert_eq!(s, StatusCode::UNAUTHORIZED);
+    let (s, _, _) = call(&app, "DELETE", "/api/me", None, None).await;
+    assert_eq!(s, StatusCode::BAD_REQUEST, "the local workspace has no account to delete");
+}
+
+#[tokio::test]
 async fn activate_and_deactivate() {
     let app = server();
     let body = json!({

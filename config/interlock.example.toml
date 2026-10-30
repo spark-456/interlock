@@ -7,14 +7,19 @@
 host = "127.0.0.1"
 port = 8080
 # public_url = "https://interlock.example"   # used for OAuth callbacks, webhooks, widget URLs
+# (with `cargo xtask dev`, set it to http://localhost:5173 so sign-in comes back to the web dev server)
 cors_origins = []
 # Requests without a session use the local workspace (fine self-hosted). Set false on a public deploy.
 local_workspace = true
 # Behind a TLS proxy (Caddy, nginx): rate limits use the client address it appends to X-Forwarded-For.
 trust_proxy = false
 
+# Sign-in. Callbacks: <public_url>/api/auth/github/callback and <public_url>/api/auth/google/callback.
 [auth.github]
 client_id = ""          # secret: GITHUB_CLIENT_SECRET
+
+[auth.google]
+client_id = ""          # or GOOGLE_CLIENT_ID (shared with Gmail/Drive connections); secret: GOOGLE_CLIENT_SECRET
 
 [models]
 # Nebius Token Factory, OpenAI-compatible. Key: NEBIUS_API_KEY.

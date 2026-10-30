@@ -11,6 +11,7 @@ export type * from './AskRequest';
 export type * from './Attachment';
 export type * from './AttachmentKind';
 export type * from './AttachmentRole';
+export type * from './AuthProvider';
 export type * from './BuildAnswers';
 export type * from './BuildCreated';
 export type * from './BuildEvent';
