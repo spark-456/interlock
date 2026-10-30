@@ -1,11 +1,41 @@
 //! Execution path shared by the node and Agent tool.
 
+use std::path::PathBuf;
+use std::sync::OnceLock;
+
 use il_sdk::{SafeHttp, services::Credential};
 use reqwest::Method;
 use serde_json::Value;
 use url::Url;
 
 use super::spec::Operation;
+
+/// Where recorded answers for `.example` APIs live (the demo templates' sandbox services).
+static RECORDED: OnceLock<PathBuf> = OnceLock::new();
+
+/// Answers calls to `<name>.example` hosts from `<dir>/<name>.mock.json`: such hosts can never
+/// exist online, so the demo templates' APIs would otherwise always fail.
+pub fn record_example_apis(dir: PathBuf) {
+    let _ = RECORDED.set(dir);
+}
+
+/// The recorded answer for a call to a `.example` host. A response may carry `when` (argument values
+/// it answers for, compared without case) and `otherwise` (the answer for any other values).
+async fn recorded(url: &Url, operation: &Operation, args: &Value) -> Option<Result<Value, String>> {
+    let name = url.host_str()?.strip_suffix(".example")?.rsplit('.').next()?.to_owned();
+    let text = tokio::fs::read_to_string(RECORDED.get()?.join(format!("{name}.mock.json"))).await.ok()?;
+    let mock: Value = serde_json::from_str(&text).ok()?;
+    let Some(response) = mock["responses"].get(&operation.id) else {
+        return Some(Err(format!("the {name} sandbox has no answer for {}", operation.id)));
+    };
+    let matches = response["when"].as_object().is_none_or(|when| {
+        when.iter().all(|(key, want)| {
+            let got = args.get(key).map(|v| v.as_str().map_or_else(|| v.to_string(), str::to_owned));
+            got.is_some_and(|got| want.as_str().is_some_and(|want| got.eq_ignore_ascii_case(want)))
+        })
+    });
+    Some(Ok(if matches { response["body"].clone() } else { response["otherwise"].clone() }))
+}
 
 /// Calls a selected operation with explicit settings parameters.
 pub async fn invoke(
@@ -51,6 +81,9 @@ pub async fn invoke(
                 url.query_pairs_mut().append_pair(&parameter.name, &scalar(value)?);
             }
         }
+    }
+    if let Some(answer) = recorded(&url, operation, args).await {
+        return answer;
     }
     let method = Method::from_bytes(operation.method.as_bytes()).map_err(|e| e.to_string())?;
     let mut request = http.request(method, url.as_str()).map_err(|e| e.to_string())?;
@@ -98,5 +131,31 @@ fn scalar(value: &Value) -> Result<String, String> {
         Value::Number(value) => Ok(value.to_string()),
         Value::Bool(value) => Ok(value.to_string()),
         _ => Err("parameter must be a string, number or boolean".into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn q20_example_hosts_answer_from_recorded_data() {
+        let dir = std::env::temp_dir().join(format!("il-recorded-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mock =
+            json!({"responses": {"find": {"when": {"email": "a@b.example"}, "body": {"id": 1}, "otherwise": []}}});
+        std::fs::write(dir.join("demo.mock.json"), mock.to_string()).unwrap();
+        record_example_apis(dir);
+        let spec = json!({"openapi": "3.0.3", "servers": [{"url": "https://api.demo.example"}], "paths": {
+            "/c": {"get": {"operationId": "find", "parameters": [{"name": "email", "in": "query"}]}},
+            "/x": {"get": {"operationId": "gone"}}}});
+        let ops = super::super::spec::parse(&spec.to_string()).unwrap();
+        let (find, gone) = (&ops[0], &ops[1]);
+        let http = SafeHttp::permissive_for_tests();
+        assert_eq!(invoke(&http, find, &json!({"email": "A@B.example"}), None).await.unwrap(), json!({"id": 1}));
+        assert_eq!(invoke(&http, find, &json!({"email": "someone@else.example"}), None).await.unwrap(), json!([]));
+        assert!(invoke(&http, gone, &json!({}), None).await.unwrap_err().contains("no answer for gone"));
     }
 }

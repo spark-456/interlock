@@ -17,7 +17,7 @@
       "group": "g_chat",
       "settings": {
         "suggestedQuestions": [
-          "Where is my order?",
+          "Can you check my last invoice? My email is maya@northfield.example",
           "How do refunds work?"
         ],
         "welcomeMessage": "Hi, I'm the Larkspur assistant. How can I help?",

@@ -192,7 +192,8 @@ impl NodeExecutor for AiAgent {
                         messages.push(ChatMessage::tool(call.id, json!({"error":warning}).to_string()));
                         continue;
                     };
-                    tool.invoke(call.arguments).await.map_err(|e| NodeError::Failed(e.to_string()))?
+                    // The model can tell the person the system is unavailable; failing the step shows a raw error.
+                    tool.invoke(call.arguments).await.unwrap_or_else(|e| json!({"error": e.to_string()}))
                 };
                 activity.push(json!({"tool":call.name,"result":result}));
                 messages.push(ChatMessage::tool(call.id, result.to_string()));
@@ -275,6 +276,39 @@ mod tests {
         let out = harness.run().await.unwrap();
         assert_eq!(out.ports["out"][0].json["activity"][0]["result"]["status"], "paid");
         assert_eq!(harness.fakes.models.calls()[0].1.tools[0].name, "get_invoice");
+    }
+
+    struct DownTool;
+
+    #[async_trait]
+    impl AgentTool for DownTool {
+        fn name(&self) -> &str {
+            "get_invoice"
+        }
+        fn description(&self) -> &str {
+            "Look up an invoice"
+        }
+        fn schema(&self) -> serde_json::Value {
+            json!({"type":"object"})
+        }
+        async fn invoke(&self, _args: serde_json::Value) -> Result<serde_json::Value, ToolError> {
+            Err(ToolError::Failed("billing system unreachable".into()))
+        }
+    }
+
+    #[tokio::test]
+    async fn q20_a_failing_tool_is_reported_to_the_model_not_the_person() {
+        let mut harness = NodeHarness::new(super::AiAgent)
+            .settings(json!({"instructions":"Check invoices","tools":["get_invoice"],"maxSteps":3}));
+        harness.fakes.tools.push(std::sync::Arc::new(DownTool));
+        harness
+            .fakes
+            .models
+            .push_tool_call("get_invoice", json!({"id":"inv1"}))
+            .push_text("Billing is down; try later.");
+        let out = harness.run().await.unwrap();
+        assert_eq!(out.ports["out"][0].json["answer"], "Billing is down; try later.");
+        assert!(out.ports["out"][0].json["activity"][0]["result"]["error"].as_str().unwrap().contains("unreachable"));
     }
 
     #[tokio::test]
