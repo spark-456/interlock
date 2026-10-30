@@ -202,6 +202,7 @@ mod tests {
             runner: Arc::new(FakeRunner::default()),
             architect: Arc::new(FakeArchitect),
             flow_tools: Arc::new(TestToolProvider),
+            activation: std::sync::Arc::new(il_sdk::services::NoActivation),
             config: json!({}),
         };
         let router = routes(&ctx);

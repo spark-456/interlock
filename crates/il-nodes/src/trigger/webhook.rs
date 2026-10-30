@@ -251,6 +251,7 @@ mod tests {
             runner: runner.clone(),
             architect: Arc::new(FakeArchitect),
             flow_tools: Arc::new(il_sdk::services::NoFlowTools),
+            activation: std::sync::Arc::new(il_sdk::services::NoActivation),
             config: json!({}),
         };
         (routes(&rctx), runner, token)

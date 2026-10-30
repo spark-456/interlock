@@ -51,6 +51,7 @@ impl AppState {
             runner: self.runner.clone(),
             architect: self.architect.clone(),
             flow_tools: Arc::new(PublishedFlowTools { services: self.services.clone() }),
+            activation: self.triggers.clone(),
             config: self.config.raw.clone(),
         }
     }

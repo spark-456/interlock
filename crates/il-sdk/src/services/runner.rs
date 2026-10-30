@@ -63,3 +63,25 @@ pub trait FlowRunner: Send + Sync {
     /// Replays a recorded run's events into a new run id (EN-8).
     async fn replay(&self, recorded_run_id: &str) -> Result<String, RunnerError>;
 }
+
+/// Turns flows on and off: starts or stops their triggers. Used by route groups (platform MCP).
+#[async_trait]
+pub trait FlowActivation: Send + Sync {
+    /// Starts the flow's triggers and marks it active; returns how many triggers started.
+    async fn activate(&self, flow_id: &str) -> Result<usize, RunnerError>;
+    /// Stops the flow's triggers and marks it inactive.
+    async fn deactivate(&self, flow_id: &str) -> Result<(), RunnerError>;
+}
+
+/// Activation for contexts without triggers (tests): refuses.
+pub struct NoActivation;
+
+#[async_trait]
+impl FlowActivation for NoActivation {
+    async fn activate(&self, flow_id: &str) -> Result<usize, RunnerError> {
+        Err(RunnerError::Other(format!("flows can't be turned on here: {flow_id}")))
+    }
+    async fn deactivate(&self, flow_id: &str) -> Result<(), RunnerError> {
+        Err(RunnerError::Other(format!("flows can't be turned off here: {flow_id}")))
+    }
+}

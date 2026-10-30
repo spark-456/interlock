@@ -22,7 +22,7 @@ pub use knowledge::{KnowledgeError, KnowledgeService, SearchHit};
 pub use media::{MediaError, MediaGen, MediaKind, MediaRequest, MediaResult};
 pub use models::{ModelError, ModelGateway, ModelProvider, ModelRole};
 pub use notifier::{Notification, Notifier, NotifyError};
-pub use runner::{FlowRunner, RunnerError, StartRun};
+pub use runner::{FlowActivation, FlowRunner, NoActivation, RunnerError, StartRun};
 pub use store::{Credential, Store, StoreError};
 pub use tools::{AgentTool, FlowToolProvider, NoFlowTools, ToolError};
 

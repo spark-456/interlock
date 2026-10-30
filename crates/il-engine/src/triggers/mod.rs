@@ -143,3 +143,17 @@ impl TriggerSupervisor {
         self.runner.invoke(req).await.map_err(|e| TriggerError::Other(e.to_string()))
     }
 }
+
+#[async_trait::async_trait]
+impl il_sdk::services::FlowActivation for TriggerSupervisor {
+    async fn activate(&self, flow_id: &str) -> Result<usize, il_sdk::services::RunnerError> {
+        TriggerSupervisor::activate(self, flow_id)
+            .await
+            .map_err(|e| il_sdk::services::RunnerError::Other(e.to_string()))
+    }
+    async fn deactivate(&self, flow_id: &str) -> Result<(), il_sdk::services::RunnerError> {
+        TriggerSupervisor::deactivate(self, flow_id)
+            .await
+            .map_err(|e| il_sdk::services::RunnerError::Other(e.to_string()))
+    }
+}

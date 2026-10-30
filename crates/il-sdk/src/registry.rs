@@ -53,6 +53,8 @@ pub struct RouteCtx {
     pub architect: Arc<dyn crate::services::ArchitectService>,
     /// Tools resolved for a published flow and authenticated workspace.
     pub flow_tools: Arc<dyn FlowToolProvider>,
+    /// Turns flows on and off.
+    pub activation: Arc<dyn crate::services::FlowActivation>,
     /// The whole config file as JSON; each module reads its own section.
     pub config: Value,
 }
