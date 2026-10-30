@@ -40,3 +40,4 @@ tracing-subscriber.workspace = true
 tower.workspace = true
 wiremock.workspace = true
 tempfile = "3"
+zip = { version = "2.4", default-features = false, features = ["deflate"] }

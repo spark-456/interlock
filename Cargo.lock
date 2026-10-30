@@ -1372,8 +1372,11 @@ dependencies = [
  "sha2 0.10.9",
  "thiserror",
  "tokio",
+ "toml",
  "tower",
+ "tracing",
  "ulid",
+ "zip",
 ]
 
 [[package]]
@@ -1432,6 +1435,7 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "wiremock",
+ "zip",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
-//! `il-server [serve]` runs the server; `il-server catalog` prints the node catalog as JSON
-//! (used by `cargo xtask catalog`).
+//! `il-server [serve]` runs the server (with `IL_BUNDLE=<folder>`, an exported bundle: see
+//! `docs/EXPORT.md`); `il-server catalog` prints the node catalog as JSON (used by `cargo xtask catalog`).
 
 use anyhow::Context;
 use il_core::dto::CatalogResponse;
@@ -32,6 +32,9 @@ async fn serve() -> anyhow::Result<()> {
     let config = Config::load()?;
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let state = il_server::wiring::build_state_persistent(config).await?;
+    if let Some(dir) = std::env::var_os("IL_BUNDLE") {
+        il_server::bundle::load(&state, std::path::Path::new(&dir), |name| std::env::var(name).ok()).await?;
+    }
     il_server::wiring::recover_startup(&state).await?;
     tracing::info!(nodes = il_sdk::registry::catalog().len(), "node catalog loaded");
     let listener = tokio::net::TcpListener::bind(&addr).await.with_context(|| format!("binding {addr}"))?;

@@ -12,18 +12,22 @@ use tokio::sync::watch;
 use crate::ctx::{ApprovalGate, ApprovalSpec, ProgressSink, RunInfo};
 use crate::node::NodeError;
 use crate::services::clock::Clock;
-use crate::services::knowledge::{KnowledgeError, KnowledgeService, SearchHit, SourceInput};
+use crate::services::knowledge::{BaseCopy, KnowledgeError, KnowledgeService, SearchHit, SourceInput};
 use crate::services::media::{MediaError, MediaGen, MediaRequest, MediaResult};
 use crate::services::notifier::{Notification, Notifier, NotifyError};
 
-/// Returns scripted hits for every search.
+/// Returns scripted hits for every search, and scripted bases to export (any workspace owns them).
 #[derive(Default)]
 pub struct FakeKnowledge {
     pub hits: Mutex<Vec<SearchHit>>,
+    pub bases: Mutex<std::collections::BTreeMap<String, BaseCopy>>,
 }
 
 #[async_trait]
 impl KnowledgeService for FakeKnowledge {
+    async fn export_base(&self, _ws: &str, kb_id: &str) -> Result<Option<BaseCopy>, KnowledgeError> {
+        Ok(self.bases.lock().map_err(|_| KnowledgeError::Other("poisoned".into()))?.get(kb_id).cloned())
+    }
     async fn create_base(&self, _ws: &str, _name: &str) -> Result<String, KnowledgeError> {
         Ok(crate::id("kb"))
     }

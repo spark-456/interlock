@@ -39,6 +39,24 @@ pub enum SourceInput {
     InstructionsText { title: String, text: String },
 }
 
+/// A saved base's name and sources as stored (title, address, role, parsed text), so a flow that
+/// uses it can be exported with it (Q36).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BaseCopy {
+    pub name: String,
+    pub sources: Vec<SourceText>,
+}
+
+/// One stored source of a [`BaseCopy`]; `role` is `knowledge` or `instructions`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SourceText {
+    pub title: String,
+    #[serde(default)]
+    pub url: Option<String>,
+    pub role: String,
+    pub text: String,
+}
+
 /// Knowledge base operations.
 #[async_trait]
 pub trait KnowledgeService: Send + Sync {
@@ -49,6 +67,10 @@ pub trait KnowledgeService: Send + Sync {
     /// The workspace's bases, newest first: `{id, name, createdAt, sources}` (source count).
     async fn list_bases(&self, _workspace_id: &str) -> Result<Vec<Value>, KnowledgeError> {
         Ok(vec![])
+    }
+    /// The workspace's base `kb_id` with its sources' text; `None` when the workspace doesn't own it.
+    async fn export_base(&self, _workspace_id: &str, _kb_id: &str) -> Result<Option<BaseCopy>, KnowledgeError> {
+        Ok(None)
     }
     /// Creates a knowledge base and returns its id.
     async fn create_base(&self, workspace_id: &str, name: &str) -> Result<String, KnowledgeError>;

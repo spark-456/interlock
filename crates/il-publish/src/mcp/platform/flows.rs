@@ -6,8 +6,9 @@ use rmcp::model::{JsonObject, Tool};
 use serde_json::{Value, json};
 
 use super::{owned_flow, string_arg, strings_arg};
-use crate::guide;
 use crate::mcp::tool;
+use crate::openai::slug;
+use crate::{export, guide};
 
 pub(super) fn tools() -> Vec<Tool> {
     let id = json!({"type": "string", "description": "Flow id from list_flows"});
@@ -50,6 +51,13 @@ pub(super) fn tools() -> Vec<Tool> {
             "Get a published app's INTERLOCK.md: how to call it over the OpenAI-compatible API, widget and MCP.",
             json!({"type": "object", "properties": {"flow_id": id}, "required": ["flow_id"]}),
         ),
+        tool(
+            "export_flow",
+            "Export a flow as code to run self-hosted: returns a command that downloads a zip (flow JSON, prompts, \
+             files, compose.yaml, .env.example, README.md, INTERLOCK.md) into the current folder, the files it \
+             holds, and the settings it needs. Nothing secret is in it.",
+            json!({"type": "object", "properties": {"flow_id": id}, "required": ["flow_id"]}),
+        ),
     ]
 }
 
@@ -69,6 +77,7 @@ pub(super) async fn call(
         "refine_flow" => refine(ctx, workspace_id, arguments).await,
         "set_flow_active" => set_active(ctx, workspace_id, arguments).await,
         "get_integration_guide" => integration_guide(ctx, workspace_id, arguments).await,
+        "export_flow" => export_flow(ctx, workspace_id, arguments).await,
         _ => return None,
     })
 }
@@ -146,6 +155,41 @@ async fn integration_guide(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonO
     if flow.kind != FlowKind::App || !ctx.services.store.is_flow_active(&flow.id).await.map_err(|e| e.to_string())? {
         return Err("the guide is for apps that are on; turn it on with set_flow_active".into());
     }
-    let base_url = ctx.config.pointer("/server/public_url").and_then(Value::as_str).unwrap_or("http://127.0.0.1:8080");
-    Ok(Value::String(guide::generate(&flow, base_url)))
+    Ok(Value::String(guide::generate(&flow, &base_url(ctx))))
+}
+
+/// The server's public address, else the address it listens on (as the app's guide route does).
+fn base_url(ctx: &RouteCtx) -> String {
+    if let Some(url) = ctx.config.pointer("/server/public_url").and_then(Value::as_str) {
+        return url.trim_end_matches('/').to_owned();
+    }
+    let host = ctx.config.pointer("/server/host").and_then(Value::as_str).unwrap_or("127.0.0.1");
+    let port = ctx.config.pointer("/server/port").and_then(Value::as_u64).unwrap_or(8080);
+    format!("http://{host}:{port}")
+}
+
+async fn export_flow(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonObject) -> Result<Value, String> {
+    let flow = owned_flow(ctx, workspace_id, &string_arg(arguments, "flow_id")?).await?;
+    let entries = export::bundle(&ctx.services, &ctx.config, &flow).await.map_err(|e| e.to_string())?;
+    let manifest: export::Manifest = entries
+        .iter()
+        .find(|e| e.path == export::manifest::PATH)
+        .and_then(|e| serde_json::from_slice(&e.bytes).ok())
+        .ok_or("the bundle has no manifest")?;
+    let (zip, folder) = (export::file_name(&flow), slug(&flow));
+    let url = format!("{}/mcp/flows/{}/export", base_url(ctx), flow.id);
+    let download = format!("curl -fsSL -H \"Authorization: Bearer $INTERLOCK_KEY\" {url} -o {zip}");
+    Ok(json!({
+        "command": format!("{download} && unzip -q {zip} && rm {zip}"),
+        "command_windows": format!("{}; tar -xf {zip}; del {zip}", download.replacen("curl", "curl.exe", 1)),
+        "folder": folder,
+        "files": entries.iter().map(|e| e.path.as_str()).collect::<Vec<_>>(),
+        "settings": manifest.env.iter().map(|v| json!({"name": v.name, "required": v.required, "about": v.about}))
+            .collect::<Vec<_>>(),
+        "next": format!(
+            "Run the command where the folder `{folder}/` should go. Then, in it, copy .env.example to .env, fill it \
+             in (never commit .env) and run `docker compose up -d`. {folder}/INTERLOCK.md explains how to call and \
+             change it."
+        ),
+    }))
 }

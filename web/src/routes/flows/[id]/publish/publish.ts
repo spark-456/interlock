@@ -28,6 +28,12 @@ export function endpoints(origin: string, name: string): Endpoints {
   };
 }
 
+/** The command a coding agent runs to pull the flow's export into a repository (il-publish `export_flow`). */
+export function exportCommand(origin: string, flowId: string, name: string): string {
+  const zip = `${slug(name)}-interlock.zip`;
+  return `curl -fsSL -H "Authorization: Bearer $INTERLOCK_KEY" ${origin}/mcp/flows/${flowId}/export -o ${zip} && unzip -q ${zip} && rm ${zip}`;
+}
+
 /** Commands and config that add the app's MCP server to a coding tool. */
 export function mcpInstall(e: Endpoints) {
   const json = JSON.stringify({ mcpServers: { [e.model]: { url: e.mcp, headers: { Authorization: 'Bearer ${INTERLOCK_KEY}' } } } }, null, 2);
