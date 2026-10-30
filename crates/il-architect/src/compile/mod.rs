@@ -3,6 +3,7 @@
 
 mod attach;
 mod build;
+mod knowledge;
 mod progress;
 
 use std::collections::BTreeMap;
@@ -282,7 +283,9 @@ pub async fn revise(
             node.notes = old.notes.clone();
         }
     }
-    keep_knowledge(flow, &mut next);
+    if knowledge::keep(flow, &mut next) {
+        knowledge::fold_new(flow, &mut next);
+    }
     crate::layout::settle(flow, &mut next);
     next.id = flow.id.clone();
     next.workspace_id = flow.workspace_id.clone();
@@ -290,35 +293,6 @@ pub async fn revise(
     next.settings = flow.settings.clone();
     next.meta = flow.meta.clone();
     Ok(Revised { flow: next, notes, cost_usd: compiled.cost_usd })
-}
-
-/// Puts back knowledge steps that agents searched before a revision and the model left out: models
-/// rewriting a flow drop steps no edge leads to, and the agents are left with nothing to search.
-fn keep_knowledge(before: &Flow, next: &mut Flow) {
-    for step in before.nodes.iter().filter(|n| n.node_type == "knowledge.base") {
-        let agents: Vec<&str> = before
-            .nodes
-            .iter()
-            .filter(|n| n.node_type == "ai.agent")
-            .filter(|n| n.settings["knowledgeBases"].as_array().is_some_and(|b| b.iter().any(|v| v == &step.id)))
-            .map(|n| n.id.as_str())
-            .collect();
-        if next.node(&step.id).is_some() || agents.is_empty() {
-            continue;
-        }
-        next.nodes.push(step.clone());
-        for agent in agents {
-            if let Some(kept) = next.nodes.iter_mut().find(|n| n.id == agent && n.node_type == "ai.agent") {
-                let mut bases = kept.settings["knowledgeBases"].as_array().cloned().unwrap_or_default();
-                if !bases.contains(&json!(step.id)) {
-                    bases.push(json!(step.id));
-                }
-                kept.settings["knowledgeBases"] = json!(bases);
-            }
-        }
-        let linked = before.edges.iter().filter(|e| e.from.node == step.id && next.node(&e.to.node).is_some());
-        next.edges.extend(linked.cloned().collect::<Vec<_>>());
-    }
 }
 
 /// A flow in the draft format the model writes, for revising it.
@@ -432,26 +406,6 @@ mod tests {
         let hints = settings_hints(reply, &issues, &catalog);
         assert!(hints.contains("`ai.classify` settings:") && hints.contains("labels*"), "{hints}");
         assert_eq!(settings_hints(reply, &[], &catalog), "");
-    }
-
-    #[test]
-    fn q22_a_revision_keeps_the_knowledge_step_its_agents_search() {
-        let flow = |nodes: serde_json::Value| -> Flow {
-            serde_json::from_value(json!({"id": "flw_1", "workspaceId": "ws", "version": 1, "name": "Help",
-                "kind": "app", "nodes": nodes, "edges": []}))
-            .unwrap()
-        };
-        let before = flow(json!([
-            {"id": "n_agent", "type": "ai.agent", "name": "Agent", "settings": {"knowledgeBases": ["n_kb"]}},
-            {"id": "n_kb", "type": "knowledge.base", "name": "Docs", "settings": {"name": "docs"}},
-            {"id": "n_unused", "type": "knowledge.base", "name": "Old", "settings": {"name": "old"}}
-        ]));
-        let mut next =
-            flow(json!([{"id": "n_agent", "type": "ai.agent", "name": "Agent", "settings": {"knowledgeBases": []}}]));
-        keep_knowledge(&before, &mut next);
-        assert!(next.node("n_kb").is_some());
-        assert!(next.node("n_unused").is_none(), "a base no agent searched may go");
-        assert_eq!(next.node("n_agent").unwrap().settings["knowledgeBases"], json!(["n_kb"]));
     }
 
     #[test]

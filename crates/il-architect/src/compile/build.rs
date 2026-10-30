@@ -413,6 +413,7 @@ impl Inner {
             ev.cost(revised.cost_usd).await;
             let mut next = revised.flow;
             super::attach::keep_known_specs(&mut next, &flow);
+            super::knowledge::fold_new(&flow, &mut next);
             if let Err(e) = self.services.store.put_flow(&next).await {
                 ev.log(format!("Could not save the fixed flow: {e}")).await;
                 return (flow, fixed, remaining());
@@ -440,8 +441,7 @@ impl Inner {
     /// One test round: the app's suite and safety check, or one sample run for an automation.
     async fn test(&self, ev: &mut Events<'_>, flow: &Flow, sample: &Json, cases: &[Case]) -> (u32, Vec<Failure>) {
         if flow.kind == FlowKind::App && !cases.is_empty() {
-            let models = self.services.models.as_ref();
-            let (passed, mut failures, usd) = appkit::run(models, self.runner.as_ref(), &flow.id, cases).await;
+            let (passed, mut failures, usd) = appkit::run(&self.services, self.runner.as_ref(), &flow.id, cases).await;
             ev.cost(usd).await;
             failures.extend(appkit::missing_guardrails(flow, &self.catalog));
             return (passed, failures);

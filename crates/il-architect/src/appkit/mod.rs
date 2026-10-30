@@ -2,6 +2,7 @@
 //! questions and tool tasks from its goal, runs each case through the flow, and judges the answers.
 
 use il_core::{Flow, Item, Json};
+use il_sdk::Services;
 use il_sdk::services::models::{ChatMessage, ChatRequest, ModelError, ModelGateway, ModelRole};
 use il_sdk::services::runner::{FlowRunner, StartRun};
 use serde::Deserialize;
@@ -13,6 +14,10 @@ use crate::testfix::Failure;
 const GUARDRAILS: &str = "ai.guardrails";
 /// Cases in a generated suite.
 const MAX_CASES: usize = 5;
+/// Passages from the app's knowledge shown to the judge for a knowledge question.
+const PASSAGES: usize = 4;
+/// Characters of each passage shown to the judge.
+const PASSAGE_CHARS: usize = 600;
 
 /// One test case: a user message and what a good answer does.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -72,11 +77,12 @@ pub async fn suite(models: &dyn ModelGateway, flow: &Flow, brief: &str) -> Resul
 /// Sends each case to the app and judges the answer with the Fast model. Returns how many
 /// passed, a failure per failed case, and the judging cost.
 pub async fn run(
-    models: &dyn ModelGateway,
+    services: &Services,
     runner: &dyn FlowRunner,
     flow_id: &str,
     cases: &[Case],
 ) -> (u32, Vec<Failure>, f64) {
+    let models = services.models.as_ref();
     let (mut passed, mut failures, mut cost) = (0, Vec::new(), 0.0);
     for case in cases {
         let req = StartRun {
@@ -89,7 +95,12 @@ pub async fn run(
             trigger_node: None,
             only: None,
         };
-        let answer = match runner.invoke(req).await {
+        let outcome = runner.invoke(req).await;
+        let passages = match &outcome {
+            Ok(outcome) if case.kind == "knowledge" => passages(services, &outcome.run.id, &case.input).await,
+            _ => None,
+        };
+        let answer = match outcome {
             Ok(outcome) if outcome.response.is_empty() && outcome.run.error.is_some() => {
                 let error = outcome.run.error.unwrap_or_default();
                 failures.push(Failure {
@@ -105,7 +116,7 @@ pub async fn run(
                 continue;
             }
         };
-        match judge(models, case, &answer).await {
+        match judge(models, case, &answer, passages.as_deref()).await {
             Ok((verdict, usd)) => {
                 cost += usd;
                 if verdict.pass {
@@ -131,10 +142,47 @@ fn answer_text(json: &Json) -> String {
     value.as_str().map_or_else(|| value.to_string(), str::to_owned)
 }
 
-async fn judge(models: &dyn ModelGateway, case: &Case, answer: &str) -> Result<(Verdict, f64), ModelError> {
+/// What the app's knowledge bases hold on `question`, searched in the bases the run's knowledge
+/// steps used; `None` when the run used none. Generated questions can ask what the documents don't
+/// cover, and an app that says so must not fail for it.
+async fn passages(services: &Services, run_id: &str, question: &str) -> Option<String> {
+    let node_runs = services.store.node_runs(run_id).await.unwrap_or_default();
+    let bases: Vec<&str> = node_runs
+        .iter()
+        .flat_map(|n| n.output.get("kb").into_iter().flatten())
+        .filter_map(|item| item.json["knowledgeBase"].as_str())
+        .collect();
+    if bases.is_empty() {
+        return None;
+    }
+    let mut hits = Vec::new();
+    for base in bases {
+        hits.extend(services.knowledge.search(base, question, PASSAGES).await.unwrap_or_default());
+    }
+    hits.sort_by(|a, b| b.score.total_cmp(&a.score));
+    let lines: Vec<String> = hits
+        .iter()
+        .take(PASSAGES)
+        .map(|h| format!("- {}: {}", h.title, h.text.chars().take(PASSAGE_CHARS).collect::<String>()))
+        .collect();
+    Some(if lines.is_empty() { "(nothing)".into() } else { lines.join("\n") })
+}
+
+async fn judge(
+    models: &dyn ModelGateway,
+    case: &Case,
+    answer: &str,
+    passages: Option<&str>,
+) -> Result<(Verdict, f64), ModelError> {
+    let evidence = passages.map_or_else(String::new, |p| {
+        format!(
+            "\nWhat the app's documents say on this:\n{p}\nIf they don't hold what that answer needs, an answer that \
+             says honestly it couldn't find it passes, and one that makes it up fails."
+        )
+    });
     let prompt = format!(
-        "A user asked: {}\nA good answer {}\nThe app answered: {answer}\n\nDoes the answer do that? Reply with JSON: \
-         {{\"pass\": true | false, \"reason\": \"one short sentence\"}}",
+        "A user asked: {}\nA good answer {}{evidence}\nThe app answered: {answer}\n\nDoes the answer do that? Reply \
+         with JSON: {{\"pass\": true | false, \"reason\": \"one short sentence\"}}",
         case.input, case.expect
     );
     let schema = json!({"type": "object", "required": ["pass"],
@@ -157,4 +205,87 @@ fn parse<T: for<'de> Deserialize<'de>>(content: &str) -> Option<T> {
         _ => content,
     };
     serde_json::from_str(body).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use async_trait::async_trait;
+    use il_core::{ApprovalDecision, Item, NodeRun, RunStatus};
+    use il_sdk::services::knowledge::SearchHit;
+    use il_sdk::services::models::ChatRole;
+    use il_sdk::services::runner::{FlowRunner, InvokeOutcome, RunnerError, StartRun};
+    use il_sdk::services::store::Store;
+    use il_sdk::testkit::{FakeRunner, FakeServices};
+    use serde_json::json;
+
+    use super::{Case, run};
+
+    /// Answers every case "not found" after a knowledge step that used base `kb_1`.
+    struct KbRunner(Arc<dyn Store>);
+
+    #[async_trait]
+    impl FlowRunner for KbRunner {
+        async fn start(&self, _req: StartRun) -> Result<String, RunnerError> {
+            Ok("run_kb".into())
+        }
+        async fn invoke(&self, req: StartRun) -> Result<InvokeOutcome, RunnerError> {
+            let mut run = FakeRunner::default().invoke(req).await?.run;
+            run.id = "run_kb".into();
+            let output = [("kb".to_string(), vec![Item::json(json!({"knowledgeBase": "kb_1"}))])].into();
+            let node_run = NodeRun {
+                run_id: run.id.clone(),
+                node_id: "n_kb".into(),
+                status: RunStatus::Succeeded,
+                attempt: 1,
+                input: vec![],
+                output,
+                error: None,
+                ms: 1,
+                cost_usd: 0.0,
+            };
+            self.0.put_node_run(&node_run).await.unwrap();
+            Ok(InvokeOutcome { run, response: vec![Item::json(json!({"answer": "Our documents don't say."}))] })
+        }
+        async fn decide(&self, _id: &str, _d: ApprovalDecision, _by: Option<String>) -> Result<(), RunnerError> {
+            Ok(())
+        }
+        async fn cancel(&self, _run_id: &str) -> Result<(), RunnerError> {
+            Ok(())
+        }
+        async fn replay(&self, _id: &str) -> Result<String, RunnerError> {
+            Ok("run_replay".into())
+        }
+    }
+
+    #[tokio::test]
+    async fn q29_the_judge_sees_what_the_documents_say() {
+        let fakes = FakeServices::default();
+        fakes.knowledge.hits.lock().unwrap().push(SearchHit {
+            text: "Refunds are issued within 30 days.".into(),
+            score: 0.8,
+            source_id: "src_1".into(),
+            title: "Refunds".into(),
+            section: None,
+            url: None,
+        });
+        fakes.models.push_json(json!({"pass": true}));
+        fakes.models.push_json(json!({"pass": true}));
+        let case = |kind: &str| Case { kind: kind.into(), input: "Is there a free trial?".into(), expect: "x".into() };
+        let runner = KbRunner(fakes.store.clone());
+        let (passed, failures, _) = run(&fakes.services(), &runner, "flw_1", &[case("knowledge"), case("tool")]).await;
+        assert_eq!((passed, failures.len()), (2, 0));
+        let prompts: Vec<String> = fakes
+            .models
+            .calls()
+            .iter()
+            .map(|(_, r)| r.messages.iter().filter(|m| m.role == ChatRole::User).map(|m| m.content.clone()).collect())
+            .collect();
+        assert!(
+            prompts[0].contains("- Refunds: Refunds are issued within 30 days.")
+                && prompts[0].contains("couldn't find it")
+        );
+        assert!(!prompts[1].contains("documents say"), "a tool task is judged on its own");
+    }
 }
