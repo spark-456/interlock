@@ -92,7 +92,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 81 | Q28 | Playground replies take 8–13 s or more | P0 | — | done | claude-a | t/Q28-faster-replies | 2026-10-30 09:52 | [#103](https://github.com/spark-456/interlock/pull/103): KNN vector search (7 s → 0.07 s), hedged query embeddings with a 4 s keyword fallback, `[models.request]` (agent thinking off, fast reasoning low), parallel tool calls, at most 3 searches; Test 2 median 3.4 s |
 | 82 | Q29 | Builds: tests fail on questions the documents don't cover; a fix round can leave two knowledge steps | P1 | — | done | claude-a | t/Q29-build-tests | 2026-10-30 12:37 | [#105](https://github.com/spark-456/interlock/pull/105): the judge sees the documents' passages and passes honest "not found" answers; fixes keep the attached documents and fold extra knowledge steps; no tool tests for apps without tools. Real build: 1/5 → 5/5 |
 | 83 | Q30 | The Publish page shows MCP setup for Claude Code only, not Codex | P2 | — | done | claude-a | t/Q30-codex-mcp | 2026-10-30 12:26 | [#104](https://github.com/spark-456/interlock/pull/104): Codex `~/.codex/config.toml` table beside the Claude Code command, and an "Add to Codex" button on the app's MCP card |
-| 84 | Q31 | MCP builds can attach links and API specs but not files (PDFs, voice memos) | P1 | — | claimed | claude-a | t/Q31-mcp-files | 2026-10-30 12:40 | |
+| 84 | Q31 | MCP builds can attach links and API specs but not files (PDFs, voice memos) | P1 | — | done | claude-a | t/Q31-mcp-files | 2026-10-30 13:02 | [#106](https://github.com/spark-456/interlock/pull/106): `POST /mcp/files` (API key, raw body, X-File-Name) and `files` on create_flow_from_goal; voice memos default to instructions |
 
 ## Waiting on the owner
 
