@@ -6,6 +6,7 @@
   let { open = $bindable(false), title, children, footer }: {
     open?: boolean; title: string; children: Snippet; footer?: Snippet;
   } = $props();
+  const id = $props.id();
   let dialog: HTMLDialogElement | undefined = $state();
 
   $effect(() => {
@@ -15,9 +16,9 @@
   });
 </script>
 
-<dialog bind:this={dialog} onclose={() => (open = false)} aria-labelledby="modal-title">
+<dialog bind:this={dialog} onclose={() => (open = false)} aria-labelledby="{id}-title">
   <header>
-    <h2 id="modal-title">{title}</h2>
+    <h2 id="{id}-title">{title}</h2>
     <IconButton icon="x" label="Close" onclick={() => (open = false)} />
   </header>
   <div class="body">{@render children()}</div>
@@ -29,7 +30,7 @@
     width: min(560px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--border); border-radius: var(--r-panel);
     background: var(--surface); color: var(--text); box-shadow: var(--shadow-sheet);
   }
-  dialog::backdrop { background: rgba(16, 24, 40, .4); }
+  dialog::backdrop { background: var(--scrim); }
   header { display: flex; align-items: center; justify-content: space-between; padding: var(--s-5) var(--s-6) var(--s-3); }
   h2 { font: var(--t-h3); font-weight: 700; }
   .body { padding: 0 var(--s-6) var(--s-6); }

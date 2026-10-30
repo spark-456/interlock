@@ -236,9 +236,9 @@
       {:else if dirty}<StatusPill tone="waiting" label="Unsaved changes" size={26} />{/if}
     {/snippet}
     {#snippet actions()}
-      <Button icon="plus" size="s" aria-pressed={palette === 'add'} onclick={() => (palette = palette === 'add' ? null : 'add')}>Add step</Button>
-      <Button icon="sparkle" size="s" aria-pressed={asking} onclick={() => (asking ? closeAsk() : (asking = true))}>Refine</Button>
-      <Button icon="play" size="s" loading={run.status === 'running' || saving} disabled={!flow || !!proposal} onclick={testRun}>
+      <Button icon="plus" size="s" data-tour="add-step" aria-pressed={palette === 'add'} onclick={() => (palette = palette === 'add' ? null : 'add')}>Add step</Button>
+      <Button icon="sparkle" size="s" data-tour="refine" aria-pressed={asking} onclick={() => (asking ? closeAsk() : (asking = true))}>Refine</Button>
+      <Button icon="play" size="s" data-tour="test-run" loading={run.status === 'running' || saving} disabled={!flow || !!proposal} onclick={testRun}>
         {dirty ? 'Save & test run' : 'Test run'}
       </Button>
       <Button size="s" icon="globe" href="/flows/{flowId}/publish">{flow?.kind === 'app' ? 'Connect' : 'Activate'}</Button>
@@ -261,7 +261,7 @@
         onclose={() => (palette = null)}
       />
     {/if}
-    <div class="stage" class:list={listView || mobile.current}>
+    <div class="stage" class:list={listView || mobile.current} data-tour="canvas">
       {#if loadError}
         <p class="state">Couldn't open this flow: {loadError}</p>
       {:else if !flow}

@@ -223,7 +223,7 @@
     <span><strong>About 2 minutes</strong><span class="muted">You'll watch it build, then open it in the editor.</span></span>
   </span>
   <Button variant="ghost" href="/flows">Cancel</Button>
-  <Button variant="primary" size="l" loading={starting} disabled={!canBuild} onclick={build}>Build it</Button>
+  <Button variant="primary" size="l" loading={starting} disabled={!canBuild} onclick={build} data-tour="build">Build it</Button>
 </footer>
 
 <style>
@@ -269,6 +269,7 @@
     .card { padding: var(--s-4); }
     .add { flex-wrap: wrap; }
     .estimate { display: none; }
-    .bar { padding: var(--s-3) var(--s-4); justify-content: flex-end; }
+    /* Above the tab bar, which would otherwise cover Build it. */
+    .bar { bottom: var(--tabbar); padding: var(--s-3) var(--s-4); justify-content: flex-end; }
   }
 </style>

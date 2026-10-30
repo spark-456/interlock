@@ -12,6 +12,8 @@
   import Toast from '$lib/design/Toast.svelte';
   import { toast } from '$lib/design/toasts.svelte';
   import { isCanvasRoute } from '$lib/design/nav';
+  import Onboarding from '$lib/onboarding/Onboarding.svelte';
+  import { onboarding } from '$lib/onboarding/state.svelte';
 
   let { children }: { children: Snippet } = $props();
   let me = $state<Me | null>(null);
@@ -62,7 +64,7 @@
   {@render children()}
 {:else}
 <div class="app">
-  <Sidebar collapsed={isCanvasRoute(page.route.id)} path={page.url.pathname} {user} {plan} />
+  <Sidebar collapsed={isCanvasRoute(page.route.id)} path={page.url.pathname} {user} {plan} onhelp={() => (onboarding.helpOpen = true)} />
   <div class="content">
     {#if !online}<Banner kind="offline">You're offline. Saving, builds and runs work again once you reconnect.</Banner>{/if}
     {#if me?.demo}
@@ -75,6 +77,7 @@
     <TabBar path={page.url.pathname} />
   </div>
 </div>
+<Onboarding {me} />
 {/if}
 <Toast />
 <svelte:window ononline={() => (online = true)} onoffline={() => (online = false)} />

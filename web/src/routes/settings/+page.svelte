@@ -9,6 +9,8 @@
   import { toast } from '$lib/design/toasts.svelte';
   import { ago } from '../flows/flows';
   import Skeleton from '$lib/design/Skeleton.svelte';
+  import Checklist from '$lib/onboarding/Checklist.svelte';
+  import { onboarding, startTour } from '$lib/onboarding/state.svelte';
 
   type Key = Awaited<ReturnType<typeof api.keys>>[number];
   let me = $state.raw<Me | null>(null);
@@ -173,6 +175,16 @@
       When a cap is reached the run stops and says so. A flow can set its own lower per-run cap in its settings.{#if me?.demo} Demo workspaces use small caps, the smaller models and recorded media.{/if}
     </p>
   </section>
+
+  <section aria-labelledby="start">
+    <h2 id="start">Getting started</h2>
+    <p class="muted">The tour points at each screen in about a minute. The checklist ticks itself off as you go.</p>
+    <Checklist />
+    <div class="row">
+      <Button variant="primary" icon="play" onclick={startTour}>Take the tour</Button>
+      <Button onclick={() => (onboarding.welcomeOpen = true)}>Show the welcome</Button>
+    </div>
+  </section>
 </div>
 
 <style>
@@ -203,6 +215,7 @@
   h3 { font: var(--t-body); margin: 0; }
   .create { display: flex; align-items: flex-end; gap: var(--s-2); }
   .create :global(.field) { flex: 1; }
+  .row { display: flex; flex-wrap: wrap; gap: var(--s-2); }
   .keys { list-style: none; margin: 0; padding: 0; }
   .keys li { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) 0; border-bottom: 1px solid var(--border); }
   .name { flex: 1; font-weight: 600; }

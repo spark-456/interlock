@@ -17,7 +17,7 @@
 {/if}
 
 <style>
-  .scrim { position: fixed; inset: 0; background: rgba(16, 24, 40, .4); z-index: 40; }
+  .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; }
   .sheet {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 85vh; overflow: auto;
     padding: var(--s-2) var(--s-4) var(--s-6); background: var(--surface); border-radius: var(--r-panel) var(--r-panel) 0 0;
