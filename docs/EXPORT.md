@@ -20,11 +20,16 @@ support-agent/
   flows/<flow id>.json   the flow definition (versioned JSON)
   prompts/<step>.<field>.md   each step's prompt or instructions, referenced from the flow
   files/<file id>/<name> documents, API specs and sample files the flow uses
+  knowledge/<kb id>.json saved knowledge bases the flow names by id, as their sources' text
 ```
+
+A flow's Knowledge steps travel inside the flow (their files, links and text); the engine builds
+those bases on the first run, as it does in Interlock.
 
 On start, `il-server` with `IL_BUNDLE=<folder>` reads the manifest and, idempotently:
 
-1. stores the bundle's files and points the flow at them,
+1. stores the bundle's files and rebuilds its saved knowledge bases (embedding their text with the
+   configured model), and points the flow at them,
 2. fills each `@prompts/…` reference from its file,
 3. saves the flow (a new version only when it changed),
 4. saves each connection from its env vars (encrypted with `IL_MASTER_KEY`, as everywhere),

@@ -137,4 +137,25 @@ async fn q36_exported_template_runs_from_its_bundle_offline() {
     // Loading again (a restart) changes nothing.
     il_server::bundle::load(&runtime, bundle.path(), lookup).await.unwrap();
     assert_eq!(rt_store.get_flow(&flow_id).await.unwrap().unwrap().version, loaded.version);
+
+    // A saved knowledge base the flow names by id is rebuilt from its text and the flow points at it.
+    let old_kb = "kb_01JABCDEFGHJKMNPQRSTVWXYZ0";
+    let manifest_path = bundle.path().join("interlock.bundle.json");
+    let mut manifest: Value = serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    let kb_path = format!("knowledge/{old_kb}.json");
+    manifest["knowledge"] = json!([{"id": old_kb, "name": "Policies", "path": kb_path}]);
+    std::fs::write(&manifest_path, manifest.to_string()).unwrap();
+    std::fs::create_dir_all(bundle.path().join("knowledge")).unwrap();
+    let copy = json!({"name": "Policies", "sources": [{"title": "Returns", "role": "knowledge", "text": "30 days."}]});
+    std::fs::write(bundle.path().join(&kb_path), copy.to_string()).unwrap();
+    let flow_path = bundle.path().join(manifest["flows"][0].as_str().unwrap());
+    let mut flow_json: Value = serde_json::from_slice(&std::fs::read(&flow_path).unwrap()).unwrap();
+    let support = flow_json["nodes"].as_array_mut().unwrap().iter_mut().find(|n| n["id"] == "n_support").unwrap();
+    support["settings"]["knowledgeBases"] = json!(["n_kb", old_kb]);
+    std::fs::write(&flow_path, flow_json.to_string()).unwrap();
+    il_server::bundle::load(&runtime, bundle.path(), lookup).await.unwrap();
+    let reloaded = rt_store.get_flow(&flow_id).await.unwrap().unwrap();
+    let bases = &reloaded.node("n_support").unwrap().settings["knowledgeBases"];
+    let rebuilt = bases[1].as_str().unwrap();
+    assert!(bases[0] == "n_kb" && rebuilt.starts_with("kb_") && rebuilt != old_kb, "{bases}");
 }

@@ -45,17 +45,17 @@ pub fn resolve_prompts(flow: &mut Flow, read: impl Fn(&str) -> Option<String>) -
     Ok(())
 }
 
-/// Every stored file id (`file_<ULID>`) mentioned in the flow's step settings.
-pub(super) fn file_ids(flow: &Flow) -> BTreeSet<String> {
+/// Every stored id with this prefix and a ULID (`file_…`, `kb_…`) mentioned in the flow's step settings.
+pub(super) fn ids(flow: &Flow, prefix: &str) -> BTreeSet<String> {
     let mut ids = BTreeSet::new();
     for node in &flow.nodes {
         visit(&node.settings, &mut |text| {
             let mut rest = text;
-            while let Some(at) = rest.find("file_") {
-                let tail = &rest[at + 5..];
+            while let Some(at) = rest.find(prefix) {
+                let tail = &rest[at + prefix.len()..];
                 let len = tail.chars().take_while(char::is_ascii_alphanumeric).count();
                 if len == 26 {
-                    ids.insert(format!("file_{}", &tail[..26]));
+                    ids.insert(format!("{prefix}{}", &tail[..26]));
                 }
                 rest = &tail[len..];
             }
@@ -73,8 +73,8 @@ fn visit(value: &Value, f: &mut impl FnMut(&str)) {
     }
 }
 
-/// Points the flow's file references at the stored copies (`old id → new id`).
-pub fn rewrite_file_ids(flow: &mut Flow, ids: &BTreeMap<String, String>) {
+/// Points the flow's file and knowledge base references at the stored copies (`old id → new id`).
+pub fn rewrite_ids(flow: &mut Flow, ids: &BTreeMap<String, String>) {
     fn rewrite(value: &mut Value, ids: &BTreeMap<String, String>) {
         match value {
             Value::String(text) => {
@@ -188,8 +188,8 @@ mod tests {
         let id = "file_01JABCDEFGHJKMNPQRSTVWXYZ0";
         let mut f = flow(json!({"apiTools":{"spec":id},"sampleItems":[{"files":{"a":{"id":id,
             "previewUrl":format!("/api/files/{id}")}}}],"note":"file_short"}));
-        assert_eq!(file_ids(&f).into_iter().collect::<Vec<_>>(), vec![id.to_owned()]);
-        rewrite_file_ids(&mut f, &BTreeMap::from([(id.to_owned(), "file_NEW".to_owned())]));
+        assert_eq!(ids(&f, "file_").into_iter().collect::<Vec<_>>(), vec![id.to_owned()]);
+        rewrite_ids(&mut f, &BTreeMap::from([(id.to_owned(), "file_NEW".to_owned())]));
         let s = &f.nodes[0].settings;
         assert_eq!((s["apiTools"]["spec"].as_str(), s["note"].as_str()), (Some("file_NEW"), Some("file_short")));
         assert_eq!(s["sampleItems"][0]["files"]["a"]["previewUrl"], "/api/files/file_NEW");

@@ -18,10 +18,10 @@ use il_sdk::Services;
 use serde_json::Value;
 
 pub use manifest::Manifest;
-pub use scan::{resolve_prompts, rewrite_file_ids};
+pub use scan::{resolve_prompts, rewrite_ids};
 
 use crate::openai::slug;
-use manifest::{Connection, Engine, Field, FileSpec, Webhook};
+use manifest::{Connection, Engine, Field, FileSpec, KnowledgeSpec, Webhook};
 
 /// Export errors.
 #[derive(Debug, thiserror::Error)]
@@ -68,7 +68,7 @@ pub async fn bundle(services: &Services, config: &Value, flow: &Flow) -> Result<
     let mut entries = Vec::new();
 
     let mut files = Vec::new();
-    for id in scan::file_ids(&exported) {
+    for id in scan::ids(&exported, "file_") {
         let owner = services.files.owner(&id).await.map_err(|e| ExportError::Files(e.to_string()))?;
         if owner.is_some_and(|owner| owner != workspace_id) {
             continue;
@@ -78,6 +78,16 @@ pub async fn bundle(services: &Services, config: &Value, flow: &Flow) -> Result<
         let path = format!("files/{id}/{}", scan::safe(&file.name));
         entries.push(Entry { path: path.clone(), bytes: bytes.to_vec() });
         files.push(FileSpec { id, path, name: file.name, mime: file.mime });
+    }
+
+    let mut knowledge = Vec::new();
+    for id in scan::ids(&exported, "kb_") {
+        let copy =
+            services.knowledge.export_base(&workspace_id, &id).await.map_err(|e| ExportError::Store(e.to_string()))?;
+        let Some(copy) = copy else { continue };
+        let path = format!("knowledge/{id}.json");
+        entries.push(Entry { path: path.clone(), bytes: pretty(&copy)? });
+        knowledge.push(KnowledgeSpec { id, name: copy.name, path });
     }
 
     let connections = connections(services, &workspace_id, &mut exported).await?;
@@ -98,6 +108,7 @@ pub async fn bundle(services: &Services, config: &Value, flow: &Flow) -> Result<
         engine: engine(config),
         flows: vec![flow_path.clone()],
         files,
+        knowledge,
         env: docs::env_vars(config, &exported, &connections, !webhooks.is_empty()),
         connections,
         webhooks,
@@ -208,6 +219,7 @@ pub async fn response(services: &Services, config: &Value, flow: &Flow) -> Respo
 #[cfg(test)]
 mod tests {
     use il_sdk::prelude::*;
+    use il_sdk::services::knowledge::{BaseCopy, SourceText};
     use il_sdk::services::store::Credential;
     use il_sdk::services::{FileStore, Store};
     use il_sdk::testkit::FakeServices;
@@ -256,10 +268,14 @@ mod tests {
             meta: json!({"label": "Team Slack"}),
         };
         fakes.store.put_credential("ws_a", &credential).await.unwrap();
+        let kb = "kb_01JABCDEFGHJKMNPQRSTVWXYZ0";
+        let text = SourceText { title: "Returns".into(), url: None, role: "knowledge".into(), text: "30 days.".into() };
+        let copy = BaseCopy { name: "Policies".into(), sources: vec![text] };
+        fakes.knowledge.bases.lock().unwrap().insert(kb.into(), copy.clone());
         let flow: Flow = serde_json::from_value(json!({"id": "flw_1", "workspaceId": "ws_a", "version": 4,
             "name": "Help desk", "kind": "app", "edges": [], "nodes": [
                 {"id": "n_a", "type": "test.export", "name": "Answer", "credentials": {"slack": "cred_slack"},
-                 "settings": {"instructions": "Answer kindly.", "spec": own.id}},
+                 "settings": {"instructions": "Answer kindly.", "spec": own.id, "knowledgeBases": [kb, "n_kb"]}},
                 {"id": "n_b", "type": "test.export", "name": "Escalate",
                  "settings": {"instructions": "Hand off.", "spec": foreign.id}},
                 {"id": "n_hook", "type": "trigger.webhook", "name": "Inbound", "settings": {}}]}))
@@ -282,6 +298,8 @@ mod tests {
         assert!(entries.iter().any(|e| e.path == format!("files/{}/faq.md", own.id)));
         assert_eq!(text("prompts/n_a.instructions.md"), "Answer kindly.\n");
 
+        let saved: BaseCopy = serde_json::from_str(&text(&format!("knowledge/{kb}.json"))).unwrap();
+        assert_eq!(saved, copy, "a saved knowledge base travels as its sources' text");
         let exported: Flow = serde_json::from_str(&text("flows/flw_1.json")).unwrap();
         assert_eq!(exported.nodes[0].settings["instructions"], "@prompts/n_a.instructions.md");
         assert_eq!(exported.nodes[1].credentials["slack"], "cred_n_b_slack", "a required connection gets an id");
@@ -305,8 +323,14 @@ mod tests {
         assert!(toml.contains("local_workspace = false") && toml.contains("max_parallel = 4"), "{toml}");
         assert!(!toml.contains("api_key") && !toml.contains("github"), "{toml}");
         let readme = text("README.md");
-        for part in ["/v1/chat/completions", "/mcp/help-desk", "/hooks/flw_1/", "SLACK_BOT_TOKEN", "docker compose up"]
-        {
+        for part in [
+            "/v1/chat/completions",
+            "/mcp/help-desk",
+            "/hooks/flw_1/",
+            "SLACK_BOT_TOKEN",
+            "docker compose up",
+            "`knowledge/`",
+        ] {
             assert!(readme.contains(part), "README lacks {part}");
         }
         assert!(text("INTERLOCK.md").contains("Never commit `.env`"));

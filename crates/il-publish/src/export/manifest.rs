@@ -20,6 +20,9 @@ pub struct Manifest {
     /// Flow definitions, as paths inside the bundle.
     pub flows: Vec<String>,
     pub files: Vec<FileSpec>,
+    /// Saved knowledge bases the flow refers to by id (its Knowledge steps travel inside the flow).
+    #[serde(default)]
+    pub knowledge: Vec<KnowledgeSpec>,
     pub connections: Vec<Connection>,
     pub webhooks: Vec<Webhook>,
     /// Every environment variable the bundle reads, as listed in `.env.example`.
@@ -44,6 +47,16 @@ pub struct FileSpec {
     pub path: String,
     pub name: String,
     pub mime: String,
+}
+
+/// A saved knowledge base: `path` holds its sources' text (`il_sdk`'s `BaseCopy`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KnowledgeSpec {
+    /// The id the exported flow uses; the loader points it at the base it rebuilds.
+    pub id: String,
+    pub name: String,
+    pub path: String,
 }
 
 /// A connection (credential) a flow's steps use. Only its shape is exported; the values come from env.

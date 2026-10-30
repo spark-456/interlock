@@ -8,8 +8,9 @@ use std::path::{Component, Path};
 use anyhow::Context;
 use il_core::Flow;
 use il_publish::export::manifest::{self, Manifest};
-use il_publish::export::{resolve_prompts, rewrite_file_ids};
+use il_publish::export::{resolve_prompts, rewrite_ids};
 use il_publish::keys::KeyManager;
+use il_sdk::services::knowledge::{BaseCopy, SourceInput};
 use il_sdk::services::store::Credential;
 use serde_json::{Value, json};
 
@@ -32,22 +33,9 @@ pub async fn load(state: &AppState, dir: &Path, env: impl Fn(&str) -> Option<Str
     );
     let store = &state.services.store;
 
-    let mut file_ids = BTreeMap::new();
-    for file in &manifest.files {
-        let key = format!("bundle:file:{}", file.id);
-        let known = store.kv_get(&key).await?.and_then(|v| v.as_str().map(str::to_owned));
-        let id = match known {
-            Some(id) if state.services.files.get(&id).await.is_ok() => id,
-            _ => {
-                let bytes = read(dir, &file.path)?;
-                let stored =
-                    state.services.files.put_for_workspace(WORKSPACE, &file.name, &file.mime, bytes.into()).await?;
-                store.kv_put(&key, &json!(stored.id)).await?;
-                stored.id
-            }
-        };
-        file_ids.insert(file.id.clone(), id);
-    }
+    let mut ids = store_files(state, dir, &manifest).await?;
+    let files = ids.len();
+    ids.extend(rebuild_knowledge(state, dir, &manifest).await?);
 
     let mut flow_ids = Vec::new();
     for path in &manifest.flows {
@@ -55,7 +43,7 @@ pub async fn load(state: &AppState, dir: &Path, env: impl Fn(&str) -> Option<Str
             serde_json::from_slice(&read(dir, path)?).with_context(|| format!("{path} is not a valid flow"))?;
         resolve_prompts(&mut flow, |p| read(dir, p).ok().and_then(|b| String::from_utf8(b).ok()))
             .map_err(anyhow::Error::msg)?;
-        rewrite_file_ids(&mut flow, &file_ids);
+        rewrite_ids(&mut flow, &ids);
         flow.workspace_id = WORKSPACE.into();
         let saved = store.get_flow(&flow.id).await?;
         if saved.as_ref().is_none_or(|s| *s != Flow { version: s.version, ..flow.clone() }) {
@@ -132,8 +120,67 @@ pub async fn load(state: &AppState, dir: &Path, env: impl Fn(&str) -> Option<Str
             tracing::error!(flow_id = %id, %error, "bundle flow could not be turned on");
         }
     }
-    tracing::info!(flows = flow_ids.len(), files = file_ids.len(), "bundle loaded from {}", dir.display());
+    tracing::info!(flows = flow_ids.len(), files, "bundle loaded from {}", dir.display());
     Ok(())
+}
+
+/// Stores the bundle's files once each; returns old id → stored id.
+async fn store_files(state: &AppState, dir: &Path, manifest: &Manifest) -> anyhow::Result<BTreeMap<String, String>> {
+    let store = &state.services.store;
+    let mut ids = BTreeMap::new();
+    for file in &manifest.files {
+        let key = format!("bundle:file:{}", file.id);
+        let known = store.kv_get(&key).await?.and_then(|v| v.as_str().map(str::to_owned));
+        let id = match known {
+            Some(id) if state.services.files.get(&id).await.is_ok() => id,
+            _ => {
+                let bytes = read(dir, &file.path)?;
+                let stored =
+                    state.services.files.put_for_workspace(WORKSPACE, &file.name, &file.mime, bytes.into()).await?;
+                store.kv_put(&key, &json!(stored.id)).await?;
+                stored.id
+            }
+        };
+        ids.insert(file.id.clone(), id);
+    }
+    Ok(ids)
+}
+
+/// Rebuilds each saved knowledge base from its sources' text once (embedding them with the configured
+/// model); returns old id → rebuilt id.
+async fn rebuild_knowledge(
+    state: &AppState,
+    dir: &Path,
+    manifest: &Manifest,
+) -> anyhow::Result<BTreeMap<String, String>> {
+    let (store, knowledge) = (&state.services.store, &state.services.knowledge);
+    let mut ids = BTreeMap::new();
+    for kb in &manifest.knowledge {
+        let key = format!("bundle:kb:{}", kb.id);
+        let known = store.kv_get(&key).await?.and_then(|v| v.as_str().map(str::to_owned));
+        let id = match known {
+            Some(id) if knowledge.owns_base(WORKSPACE, &id).await.unwrap_or(false) => id,
+            _ => {
+                let copy: BaseCopy = serde_json::from_slice(&read(dir, &kb.path)?)
+                    .with_context(|| format!("{} is not a valid knowledge base", kb.path))?;
+                let id = knowledge.create_base(WORKSPACE, &copy.name).await?;
+                let sources = copy
+                    .sources
+                    .into_iter()
+                    .map(|s| match s.role.as_str() {
+                        "instructions" => SourceInput::InstructionsText { title: s.title, text: s.text },
+                        _ => SourceInput::Text { title: s.title, text: s.text },
+                    })
+                    .collect();
+                knowledge.add_sources(&id, sources).await.with_context(|| format!("rebuilding {}", kb.name))?;
+                store.kv_put(&key, &json!(id)).await?;
+                tracing::info!(kb_id = %id, name = %kb.name, "bundle knowledge base rebuilt");
+                id
+            }
+        };
+        ids.insert(kb.id.clone(), id);
+    }
+    Ok(ids)
 }
 
 /// A file inside the bundle; paths that leave the folder are refused.

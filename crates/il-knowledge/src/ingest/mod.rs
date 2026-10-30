@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use chrono::Utc;
-use il_sdk::services::knowledge::{KnowledgeError, KnowledgeService, SearchHit, SourceInput};
+use il_sdk::services::knowledge::{BaseCopy, KnowledgeError, KnowledgeService, SearchHit, SourceInput};
 use il_sdk::services::{FileStore, ModelGateway, StoreError};
 use il_store::db::SqliteStore;
 use rusqlite::{OptionalExtension, params};
@@ -16,6 +16,8 @@ use crate::chunk::{self, Chunk};
 use crate::crawl::Tavily;
 use crate::parse::{self, ParsedDocument, Section};
 use crate::search;
+
+mod copy;
 
 /// Documents ready to chunk: each with its source URL and role (`knowledge`, `instructions`).
 type Prepared = Vec<(ParsedDocument, Option<String>, &'static str)>;
@@ -241,6 +243,10 @@ fn insert_chunk(
 
 #[async_trait]
 impl KnowledgeService for Knowledge {
+    async fn export_base(&self, workspace_id: &str, kb_id: &str) -> Result<Option<BaseCopy>, KnowledgeError> {
+        copy::export_base(&self.store, workspace_id, kb_id).await.map_err(knowledge)
+    }
+
     async fn list_bases(&self, workspace_id: &str) -> Result<Vec<Value>, KnowledgeError> {
         let workspace = workspace_id.to_owned();
         self.store

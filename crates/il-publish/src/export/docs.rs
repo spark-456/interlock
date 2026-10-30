@@ -246,6 +246,9 @@ fn steps_table(flow: &Flow) -> String {
     out
 }
 
+const KNOWLEDGE_ROW: &str =
+    "| `knowledge/` | Saved knowledge bases the steps search, as text (rebuilt on first start) |\n";
+
 /// README.md for the person who runs it.
 pub(super) fn readme(flow: &Flow, manifest: &Manifest) -> String {
     let goal = flow.meta.goal.as_deref().map(|g| format!("> {g}\n\n")).unwrap_or_default();
@@ -271,6 +274,7 @@ pub(super) fn readme(flow: &Flow, manifest: &Manifest) -> String {
          | `{flow_file}` | The flow: steps, settings and connections between them |\n\
          | `prompts/` | Each step's instructions or prompt, one Markdown file per prompt |\n\
          | `files/` | Documents, API specs and samples the steps use |\n\
+         {knowledge}\
          | `interlock.toml` | Models, limits and spend caps (no secrets) |\n\
          | `interlock.bundle.json` | What the engine loads, and the env var behind each connection |\n\
          | `compose.yaml`, `.env.example` | How it runs, and the keys it needs |\n\
@@ -297,6 +301,7 @@ pub(super) fn readme(flow: &Flow, manifest: &Manifest) -> String {
         usage = usage(flow, manifest),
         settings = settings_table(manifest),
         steps = steps_table(flow),
+        knowledge = if manifest.knowledge.is_empty() { "" } else { KNOWLEDGE_ROW },
         date = manifest.exported_at.format("%Y-%m-%d"),
         version_engine = e.version,
         git_ref = e.git_ref,
