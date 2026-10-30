@@ -12,6 +12,21 @@ pub const ROW: f64 = 200.0;
 /// The y of a single-row column, so one straight line of steps sits at the same height.
 const MIDDLE: f64 = 200.0;
 
+/// Positions for a revised flow: steps keep where they were (the person may have moved them),
+/// unless the revision added steps, which fit only into a fresh layout of the whole flow — a new
+/// step's place next to old positions overlapped them.
+pub fn settle(before: &Flow, after: &mut Flow) {
+    if after.nodes.iter().any(|n| before.node(&n.id).is_none()) {
+        apply(after);
+        return;
+    }
+    for node in &mut after.nodes {
+        if let Some(old) = before.node(&node.id) {
+            node.position = old.position;
+        }
+    }
+}
+
 /// Sets every node's position.
 pub fn apply(flow: &mut Flow) {
     let index: BTreeMap<&str, usize> = flow.nodes.iter().enumerate().map(|(i, n)| (n.id.as_str(), i)).collect();
@@ -108,5 +123,21 @@ mod tests {
         let mut f = flow(&[("a", "g1"), ("b", "g1")], &[("a", "b"), ("b", "a")]);
         apply(&mut f);
         assert_ne!(at(&f, "a"), at(&f, "b"));
+    }
+
+    #[test]
+    fn q27_revisions_keep_places_unless_they_add_steps() {
+        let mut before = flow(&[("a", "g1"), ("b", "g2")], &[("a", "b")]);
+        before.nodes[1].position = Position { x: 900.0, y: 50.0 };
+        let mut edited = before.clone();
+        edited.nodes[1].name = "renamed".into();
+        edited.nodes[1].position = Position { x: 0.0, y: 0.0 };
+        settle(&before, &mut edited);
+        assert_eq!(at(&edited, "b"), (900.0, 50.0), "a moved step stays where the person put it");
+
+        let mut grown = flow(&[("a", "g1"), ("c", "g1"), ("b", "g2")], &[("a", "c"), ("c", "b")]);
+        settle(&before, &mut grown);
+        let places: Vec<_> = ["a", "c", "b"].iter().map(|id| at(&grown, id)).collect();
+        assert!(places[0].0 < places[1].0 && places[1].0 < places[2].0, "a new step gets its own column: {places:?}");
     }
 }

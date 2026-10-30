@@ -9,14 +9,19 @@
   import TextArea from '$lib/design/TextArea.svelte';
   import { toast } from '$lib/design/toasts.svelte';
 
+  import { editableText, withText } from './approval';
+
   let { approval, flowName, ondecided }: { approval: Approval; flowName?: string; ondecided?: (d: Decision) => void } = $props();
 
-  const original = $derived(JSON.stringify(approval.payload, null, 2));
+  // The text that will be sent when there is one; otherwise the whole payload as JSON.
+  const plain = $derived(editableText(approval.payload));
+  const original = $derived(plain ? plain.text : JSON.stringify(approval.payload, null, 2));
   let edited = $state<string | null>(null);
   let comment = $state('');
   let busy = $state<Decision | null>(null);
   const text = $derived(edited ?? original);
   const invalid = $derived.by(() => {
+    if (plain) return undefined;
     try {
       JSON.parse(text);
       return undefined;
@@ -24,6 +29,10 @@
       return 'This isn’t valid JSON.';
     }
   });
+  const changed = (): JsonValue | null => {
+    if (edited === null || edited === original) return null;
+    return plain ? withText(approval.payload, plain, edited) : JSON.parse(edited);
+  };
   const pending = $derived(approval.status === 'pending');
   const outcome = $derived(
     approval.status === 'approved' ? 'Approved' : approval.status === 'rejected' ? 'Rejected' : 'Expired'
@@ -32,8 +41,7 @@
   async function decide(decision: Decision) {
     busy = decision;
     try {
-      const payload: JsonValue | null = edited !== null && edited !== original ? JSON.parse(edited) : null;
-      await api.decide(approval.id, { decision, payload, comment: comment.trim() || null });
+      await api.decide(approval.id, { decision, payload: changed(), comment: comment.trim() || null });
       ondecided?.(decision);
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Could not send the decision.', 'error');
@@ -58,7 +66,9 @@
   {#if approval.message}<p>{approval.message}</p>{/if}
   {#if pending}
     {#if approval.payload !== null}
-      <TextArea label="What will be sent (you can edit it)" rows={6} value={text} oninput={(e: Event) => (edited = (e.currentTarget as HTMLTextAreaElement).value)} error={invalid} />
+      <div class:json={!plain}>
+        <TextArea label="What will be sent (you can edit it)" rows={6} value={text} oninput={(e: Event) => (edited = (e.currentTarget as HTMLTextAreaElement).value)} error={invalid} />
+      </div>
     {/if}
     <Input label="Comment (optional)" bind:value={comment} />
     <div class="actions">
@@ -81,5 +91,5 @@
   p { margin: 0; color: var(--text-2); }
   .by { color: var(--text-3); font: var(--t-small); }
   .actions { display: flex; justify-content: flex-end; gap: var(--s-2); }
-  .card :global(textarea) { font: var(--t-small); font-family: var(--font-mono); }
+  .json :global(textarea) { font: var(--t-small); font-family: var(--font-mono); }
 </style>

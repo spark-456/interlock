@@ -277,13 +277,13 @@ pub async fn revise(
     let mut next = *next;
     for node in &mut next.nodes {
         if let Some(old) = flow.node(&node.id).filter(|old| old.node_type == node.node_type) {
-            node.position = old.position;
             node.credentials = old.credentials.clone();
             node.disabled = old.disabled;
             node.notes = old.notes.clone();
         }
     }
     keep_knowledge(flow, &mut next);
+    crate::layout::settle(flow, &mut next);
     next.id = flow.id.clone();
     next.workspace_id = flow.workspace_id.clone();
     next.version = flow.version;
