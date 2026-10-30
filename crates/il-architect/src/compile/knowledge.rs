@@ -88,12 +88,23 @@ pub(super) fn fold_new(before: &Flow, next: &mut Flow) {
     }
 }
 
+/// Gives every knowledge step that was in `before` its sources from then. A fix answers failed
+/// tests, and models "fix" an answer the documents lack by swapping the attachments for a link they
+/// make up, which then fails to load on every run.
+pub(super) fn keep_sources(before: &Flow, next: &mut Flow) {
+    for step in next.nodes.iter_mut().filter(|n| n.node_type == STEP) {
+        if let Some(old) = before.node(&step.id).filter(|old| old.node_type == STEP) {
+            step.settings["sources"] = old.settings["sources"].clone();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use il_core::Flow;
     use serde_json::json;
 
-    use super::{fold_new, keep};
+    use super::{fold_new, keep, keep_sources};
 
     fn flow(nodes: serde_json::Value, edges: serde_json::Value) -> Flow {
         serde_json::from_value(json!({"id": "flw_1", "workspaceId": "ws", "version": 1, "name": "Help",
@@ -156,5 +167,14 @@ mod tests {
         );
         fold_new(&before, &mut next);
         assert!(next.node("n_kb").is_some());
+    }
+
+    #[test]
+    fn q29_a_fix_keeps_the_attached_documents() {
+        let kb = |sources: serde_json::Value| json!([{"id": "n_kb1", "type": "knowledge.base", "name": "Docs", "settings": {"name": "docs", "sources": sources}}]);
+        let before = flow(kb(json!([{"kind": "file", "value": "file_1"}])), json!([]));
+        let mut next = flow(kb(json!([{"kind": "url", "value": "https://help.invented.example"}])), json!([]));
+        keep_sources(&before, &mut next);
+        assert_eq!(next.node("n_kb1").unwrap().settings["sources"], json!([{"kind": "file", "value": "file_1"}]));
     }
 }

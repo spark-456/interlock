@@ -38,6 +38,12 @@ struct Verdict {
     pass: bool,
     #[serde(default)]
     reason: String,
+    /// With passages: whether they hold what a good answer needs.
+    #[serde(default)]
+    covered: Option<bool>,
+    /// With passages: whether the answer says it couldn't find it, without making anything up.
+    #[serde(default)]
+    declines: Option<bool>,
 }
 
 /// A failure when the catalog offers safety rules and the app has none.
@@ -51,16 +57,26 @@ pub fn missing_guardrails(flow: &Flow, catalog: &Catalog) -> Option<Failure> {
 
 /// Writes up to [`MAX_CASES`] cases for the app from `brief`; returns them with their cost.
 pub async fn suite(models: &dyn ModelGateway, flow: &Flow, brief: &str) -> Result<(Vec<Case>, f64), ModelError> {
+    // An app without tools can only fail a task that needs one, however good it is.
+    let has_tools = flow.nodes.iter().any(|n| {
+        n.node_type == "ai.agent"
+            && (n.settings["tools"].as_array().is_some_and(|t| !t.is_empty()) || n.settings["apiTools"].is_object())
+    });
+    let (kinds, wanted) = if has_tools {
+        (json!(["knowledge", "tool"]), "questions its knowledge should answer and tasks that need its tools")
+    } else {
+        (json!(["knowledge"]), "questions its knowledge should answer (it has no tools, so no tasks that need one)")
+    };
     let text = json!({"type": "string"});
     let schema = json!({"type": "object", "required": ["cases"], "properties": {"cases": {"type": "array",
         "items": {"type": "object", "required": ["kind", "input", "expect"], "properties": {
-            "kind": {"type": "string", "enum": ["knowledge", "tool"]}, "input": text, "expect": text}}}}});
+            "kind": {"type": "string", "enum": kinds}, "input": text, "expect": text}}}}});
     let prompt = format!(
         "{brief}\n\nThe AI app \"{}\" was built for this. Write {MAX_CASES} test cases a real user would send: \
-         questions its knowledge should answer and tasks that need its tools. For each, say in one sentence what a \
-         good answer does. Don't invent account details (emails, ids, orders) and expect them to be found: a tool \
-         task should expect the app to try the lookup and either use what it finds or say honestly it found nothing. Reply with JSON: {{\"cases\": [{{\"kind\": \"knowledge\" | \"tool\", \"input\": \"…\", \
-         \"expect\": \"…\"}}]}}",
+         {wanted}. For each, say in one sentence what a good answer does. Don't invent account details (emails, ids, \
+         orders) and expect them to be found: a tool task should expect the app to try the lookup and either use what \
+         it finds or say honestly it found nothing. Reply with JSON: {{\"cases\": [{{\"kind\": \"knowledge\" | \
+         \"tool\", \"input\": \"…\", \"expect\": \"…\"}}]}}",
         flow.name
     );
     let req = ChatRequest {
@@ -71,7 +87,8 @@ pub async fn suite(models: &dyn ModelGateway, flow: &Flow, brief: &str) -> Resul
     };
     let resp = models.chat(ModelRole::Architect, req).await?;
     let cases = parse::<Suite>(&resp.content).map(|s| s.cases).unwrap_or_default();
-    Ok((cases.into_iter().take(MAX_CASES).collect(), resp.usage.cost_usd))
+    let cases = cases.into_iter().filter(|c| has_tools || c.kind != "tool").take(MAX_CASES).collect();
+    Ok((cases, resp.usage.cost_usd))
 }
 
 /// Sends each case to the app and judges the answer with the Fast model. Returns how many
@@ -168,25 +185,36 @@ async fn passages(services: &Services, run_id: &str, question: &str) -> Option<S
     Some(if lines.is_empty() { "(nothing)".into() } else { lines.join("\n") })
 }
 
+/// Judges `answer` with the Fast model. Given passages, the model says whether they cover the question
+/// and whether the answer declines honestly, and an uncovered question passes on an honest decline:
+/// asked only "does it do what a good answer does", models fail every honest "I couldn't find that".
 async fn judge(
     models: &dyn ModelGateway,
     case: &Case,
     answer: &str,
     passages: Option<&str>,
 ) -> Result<(Verdict, f64), ModelError> {
-    let evidence = passages.map_or_else(String::new, |p| {
-        format!(
-            "\nWhat the app's documents say on this:\n{p}\nIf they don't hold what that answer needs, an answer that \
-             says honestly it couldn't find it passes, and one that makes it up fails."
-        )
-    });
+    let flag = json!({"type": "boolean"});
+    let (evidence, fields, schema) = match passages {
+        Some(p) => (
+            format!("\nWhat the app's documents say on this:\n{p}"),
+            "\"covered\": do those passages hold what that good answer needs?, \"declines\": does the app say it \
+             couldn't find it, without making anything up?, ",
+            json!({"type": "object", "required": ["covered", "declines", "pass"], "properties": {
+                "covered": flag, "declines": flag, "pass": flag, "reason": {"type": "string"}}}),
+        ),
+        None => (
+            String::new(),
+            "",
+            json!({"type": "object", "required": ["pass"],
+            "properties": {"pass": flag, "reason": {"type": "string"}}}),
+        ),
+    };
     let prompt = format!(
-        "A user asked: {}\nA good answer {}{evidence}\nThe app answered: {answer}\n\nDoes the answer do that? Reply \
-         with JSON: {{\"pass\": true | false, \"reason\": \"one short sentence\"}}",
+        "A user asked: {}\nA good answer {}{evidence}\nThe app answered: {answer}\n\nReply with JSON: {{{fields}\
+         \"pass\": does the answer do what a good answer does?, \"reason\": one short sentence}}",
         case.input, case.expect
     );
-    let schema = json!({"type": "object", "required": ["pass"],
-        "properties": {"pass": {"type": "boolean"}, "reason": {"type": "string"}}});
     let req = ChatRequest {
         messages: vec![ChatMessage::user(prompt)],
         json_schema: Some(schema),
@@ -194,8 +222,16 @@ async fn judge(
         ..Default::default()
     };
     let resp = models.chat(ModelRole::Fast, req).await?;
-    let verdict =
-        parse(&resp.content).unwrap_or(Verdict { pass: false, reason: "the judge's reply was unreadable".into() });
+    let mut verdict = parse(&resp.content).unwrap_or(Verdict {
+        pass: false,
+        reason: "the judge's reply was unreadable".into(),
+        covered: None,
+        declines: None,
+    });
+    if verdict.covered == Some(false) {
+        verdict.pass = verdict.declines == Some(true);
+        verdict.reason = format!("the documents don't cover it; {}", verdict.reason);
+    }
     Ok((verdict, resp.usage.cost_usd))
 }
 
@@ -220,7 +256,7 @@ mod tests {
     use il_sdk::testkit::{FakeRunner, FakeServices};
     use serde_json::json;
 
-    use super::{Case, run};
+    use super::{Case, run, suite};
 
     /// Answers every case "not found" after a knowledge step that used base `kb_1`.
     struct KbRunner(Arc<dyn Store>);
@@ -270,7 +306,7 @@ mod tests {
             section: None,
             url: None,
         });
-        fakes.models.push_json(json!({"pass": true}));
+        fakes.models.push_json(json!({"covered": false, "declines": true, "pass": false}));
         fakes.models.push_json(json!({"pass": true}));
         let case = |kind: &str| Case { kind: kind.into(), input: "Is there a free trial?".into(), expect: "x".into() };
         let runner = KbRunner(fakes.store.clone());
@@ -283,9 +319,24 @@ mod tests {
             .map(|(_, r)| r.messages.iter().filter(|m| m.role == ChatRole::User).map(|m| m.content.clone()).collect())
             .collect();
         assert!(
-            prompts[0].contains("- Refunds: Refunds are issued within 30 days.")
-                && prompts[0].contains("couldn't find it")
+            prompts[0].contains("- Refunds: Refunds are issued within 30 days.") && prompts[0].contains("\"covered\"")
         );
         assert!(!prompts[1].contains("documents say"), "a tool task is judged on its own");
+    }
+
+    #[tokio::test]
+    async fn q29_an_app_without_tools_gets_no_tool_tasks() {
+        let fakes = FakeServices::default();
+        fakes.models.push_json(json!({"cases": [
+            {"kind": "knowledge", "input": "What is the refund window?", "expect": "says 30 days"},
+            {"kind": "tool", "input": "Which card do you have on file?", "expect": "looks it up"}]}));
+        let flow: il_core::Flow = serde_json::from_value(json!({"id": "flw_1", "workspaceId": "ws", "version": 1,
+            "name": "Help", "kind": "app", "edges": [],
+            "nodes": [{"id": "n_agent", "type": "ai.agent", "name": "Agent", "settings": {"knowledgeBases": ["n_kb"]}}]}))
+        .unwrap();
+        let (cases, _) = suite(fakes.models.as_ref(), &flow, "Goal: answer billing questions").await.unwrap();
+        assert_eq!(cases.iter().map(|c| c.kind.as_str()).collect::<Vec<_>>(), ["knowledge"]);
+        let (_, req) = &fakes.models.calls()[0];
+        assert!(req.messages[0].content.contains("it has no tools"));
     }
 }

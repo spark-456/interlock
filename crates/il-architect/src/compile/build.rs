@@ -414,6 +414,7 @@ impl Inner {
             let mut next = revised.flow;
             super::attach::keep_known_specs(&mut next, &flow);
             super::knowledge::fold_new(&flow, &mut next);
+            super::knowledge::keep_sources(&flow, &mut next);
             if let Err(e) = self.services.store.put_flow(&next).await {
                 ev.log(format!("Could not save the fixed flow: {e}")).await;
                 return (flow, fixed, remaining());
