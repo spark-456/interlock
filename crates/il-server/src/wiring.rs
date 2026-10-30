@@ -192,6 +192,7 @@ fn wire_knowledge(services: &mut Services, store: Arc<SqliteStore>, config: &Con
     let knowledge =
         il_knowledge::ingest::Knowledge::new(store, services.files.clone(), services.models.clone(), tavily)
             .with_recorded_sites(fixtures.join("docs"));
+    il_connectors::openapi::request::record_example_apis(fixtures.join("apis"));
     services.knowledge = Arc::new(knowledge);
 }
 
