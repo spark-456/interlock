@@ -31,6 +31,11 @@ embed = "Qwen/Qwen3-Embedding-8B"       # embeddings for knowledge search
 # Retries after rate limits or provider outages (backoff doubles from backoff_ms).
 # retries = 3
 # backoff_ms = 500
+# Extra request fields per role. Nemotron reasons at length before every reply by default, which
+# makes agents and checks several times slower; the architect keeps it for planning flows.
+[models.request]
+agent = { chat_template_kwargs = { enable_thinking = false } }
+fast = { reasoning_effort = "low" }   # with no reasoning at all it mislabels borderline messages
 # USD per 1M tokens (input, output), for cost metering and caps.
 [models.prices]
 architect = [1.0, 3.0]

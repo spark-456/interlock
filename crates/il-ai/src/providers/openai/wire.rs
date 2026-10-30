@@ -48,6 +48,11 @@ pub fn chat_body(model: &str, req: &ChatRequest, stream: bool) -> Value {
     if let Some(n) = req.max_tokens {
         body["max_tokens"] = json!(n);
     }
+    if let Some(Value::Object(extra)) = &req.extra {
+        for (key, value) in extra {
+            body[key] = value.clone();
+        }
+    }
     if stream {
         body["stream"] = json!(true);
         body["stream_options"] = json!({"include_usage": true});
@@ -130,5 +135,13 @@ mod tests {
         let body = chat_body("vision", &ChatRequest { messages: vec![message], ..Default::default() }, false);
         assert_eq!(body["messages"][0]["content"][0]["text"], "Describe this");
         assert_eq!(body["messages"][0]["content"][1]["image_url"]["url"], "data:image/png;base64,AQID");
+    }
+
+    #[test]
+    fn q28_request_fields_join_the_body() {
+        let extra = json!({"chat_template_kwargs": {"enable_thinking": false}});
+        let body = chat_body("m", &ChatRequest { extra: Some(extra), ..Default::default() }, true);
+        assert_eq!(body["chat_template_kwargs"]["enable_thinking"], false);
+        assert_eq!(body["stream"], true);
     }
 }

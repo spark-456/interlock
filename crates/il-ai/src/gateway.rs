@@ -5,7 +5,7 @@
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use futures::StreamExt;
@@ -27,21 +27,28 @@ struct Link {
     provider: Arc<dyn ModelProvider>,
     roles: Roles,
     prices: HashMap<String, [f64; 2]>,
+    request: HashMap<String, Value>,
 }
 
 impl Link {
-    fn meter(&self, role: &str, model: &str, mut usage: Usage) -> Usage {
+    fn meter(&self, role: &str, model: &str, mut usage: Usage, started: Instant) -> Usage {
         usage.cost_usd = cost(&self.prices, role, &usage);
         tracing::debug!(
             provider = self.provider.name(),
             role,
             model,
+            ms = started.elapsed().as_millis() as u64,
             prompt = usage.prompt_tokens,
             completion = usage.completion_tokens,
             cost_usd = usage.cost_usd,
             "model call"
         );
         usage
+    }
+
+    /// `req` with the role's configured body fields (e.g. reasoning off).
+    fn with_request(&self, role: &str, req: &ChatRequest) -> ChatRequest {
+        ChatRequest { extra: self.request.get(role).cloned(), ..req.clone() }
     }
 }
 
@@ -60,20 +67,26 @@ impl Gateway {
         Self { links: vec![], retries: config.retries, backoff_ms: config.backoff_ms, prompt_only: Mutex::default() }
     }
 
-    fn push(&mut self, provider: Arc<dyn ModelProvider>, roles: Roles, prices: HashMap<String, [f64; 2]>) {
-        self.links.push(Link { provider, roles, prices });
+    fn push(
+        &mut self,
+        provider: Arc<dyn ModelProvider>,
+        roles: Roles,
+        prices: HashMap<String, [f64; 2]>,
+        request: HashMap<String, Value>,
+    ) {
+        self.links.push(Link { provider, roles, prices, request });
     }
 
     /// A gateway over an already-built provider.
     pub fn new(provider: Arc<dyn ModelProvider>, config: GatewayConfig) -> Self {
         let mut gateway = Self::empty(&config);
-        gateway.push(provider, config.roles, config.prices);
+        gateway.push(provider, config.roles, config.prices, config.request);
         gateway
     }
 
     /// Adds `provider` as the next fallback, with the model ids and prices in `fallback`.
     pub fn with_fallback(mut self, provider: Arc<dyn ModelProvider>, fallback: Fallback) -> Self {
-        self.push(provider, fallback.roles, fallback.prices);
+        self.push(provider, fallback.roles, fallback.prices, fallback.request);
         self
     }
 
@@ -92,7 +105,7 @@ impl Gateway {
         let mut gateway = Self::empty(&config);
         let primary_error = match build(&config.provider, models) {
             Ok(p) => {
-                gateway.push(p, config.roles.clone(), config.prices.clone());
+                gateway.push(p, config.roles.clone(), config.prices.clone(), config.request.clone());
                 None
             }
             Err(e) => Some(e),
@@ -102,7 +115,7 @@ impl Gateway {
             match build(&fallback.provider, section) {
                 Ok(p) => {
                     tracing::info!(provider = fallback.provider, "fallback model provider ready");
-                    gateway.push(p, fallback.roles, fallback.prices);
+                    gateway.push(p, fallback.roles, fallback.prices, fallback.request);
                 }
                 Err(e) => tracing::info!(provider = fallback.provider, error = %e, "fallback model provider skipped"),
             }
@@ -252,9 +265,11 @@ impl Gateway {
         role: &str,
         req: &ChatRequest,
     ) -> Result<ChatResponse, ModelError> {
+        let started = Instant::now();
+        let req = &link.with_request(role, req);
         let resp = self.call(&*link.provider, model, req).await?;
         let mut resp = self.ensure_schema(&*link.provider, model, req, resp).await?;
-        resp.usage = link.meter(role, model, resp.usage);
+        resp.usage = link.meter(role, model, resp.usage, started);
         resp.model = model.to_string();
         Ok(resp)
     }
@@ -269,6 +284,7 @@ impl Gateway {
         if !req.tools.is_empty() && self.prompt_only(model) {
             return Err(ModelError::Unsupported("tools in prompt".into()));
         }
+        let req = link.with_request(role, req);
         let stream = self.retry(|| link.provider.chat_stream(model, req.clone())).await?;
         let (prices, provider, model) = (link.prices.clone(), link.provider.name().to_string(), model.to_string());
         Ok(Box::pin(stream.map(move |d| match d {
@@ -336,9 +352,13 @@ impl ModelGateway for Gateway {
     async fn embed(&self, texts: &[String]) -> Result<Vec<Vec<f32>>, ModelError> {
         let mut last = unset("embed");
         for (link, model) in self.offering(|l| (!l.roles.embed.is_empty()).then_some(l.roles.embed.as_str())) {
+            let started = Instant::now();
             match self.retry(|| link.provider.embed(model, texts)).await {
                 Err(e) if moves_on(link, model, &e) => last = e,
-                other => return other,
+                other => {
+                    tracing::debug!(model, ms = started.elapsed().as_millis() as u64, texts = texts.len(), "embed");
+                    return other;
+                }
             }
         }
         Err(last)

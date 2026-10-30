@@ -108,6 +108,9 @@ pub struct ChatRequest {
     pub temperature: Option<f32>,
     #[serde(default)]
     pub max_tokens: Option<u32>,
+    /// Provider-specific body fields from the role's `[models.request]` config, set by the gateway.
+    #[serde(default)]
+    pub extra: Option<Value>,
 }
 
 /// Token and cost accounting for one call.

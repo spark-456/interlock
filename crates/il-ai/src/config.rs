@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use il_sdk::services::models::{ModelRole, Usage};
 use serde::Deserialize;
+use serde_json::Value;
 
 /// Provider, role → model id, prices, retry policy and fallback providers.
 #[derive(Debug, Clone, Deserialize)]
@@ -21,6 +22,8 @@ pub struct GatewayConfig {
     pub backoff_ms: u64,
     /// Providers tried in order when the ones before can't answer (rate limit, outage, key, credit).
     pub fallbacks: Vec<Fallback>,
+    /// Extra request body fields, keyed by role name.
+    pub request: HashMap<String, Value>,
 }
 
 impl Default for GatewayConfig {
@@ -33,6 +36,7 @@ impl Default for GatewayConfig {
             retries: 3,
             backoff_ms: 500,
             fallbacks: vec![],
+            request: HashMap::new(),
         }
     }
 }
@@ -61,6 +65,8 @@ pub struct Fallback {
     pub roles: Roles,
     /// USD per 1M tokens `[input, output]`, keyed by role name.
     pub prices: HashMap<String, [f64; 2]>,
+    /// Extra request body fields, keyed by role name.
+    pub request: HashMap<String, Value>,
 }
 
 impl Roles {
