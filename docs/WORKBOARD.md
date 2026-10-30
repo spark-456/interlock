@@ -89,6 +89,7 @@ Owner names: `claude-a`, `claude-b`, `codex-1`, `codex-2`, `human` (add more as 
 | 78 | Q25 | MCP builds can't attach an API spec | P1 | — | done | claude-a | t/Q25-mcp-specs | 2026-10-30 06:45 | [#100](https://github.com/spark-456/interlock/pull/100): create_flow_from_goal takes api_specs |
 | 79 | Q26 | MCP get_build shows answered questions as still open | P1 | — | done | claude-a | t/Q26-answers-ack | 2026-10-30 06:45 | [#101](https://github.com/spark-456/interlock/pull/101): the build logs the answers at once. Testing kit run over MCP: 7/7 tests behave, see notes in the owner improvement list |
 | 80 | Q27 | MCP kit run findings: agents read out other customers' accounts; chat shows raw markdown; approval card shows raw JSON; Refine-added steps overlap | P0 | — | done | claude-a | t/Q27-kit-findings | 2026-10-30 07:40 | [#102](https://github.com/spark-456/interlock/pull/102): privacy rule last in every agent's prompt; markdown renderer; approval shows the reply text; revisions that add steps are laid out afresh |
+| 81 | Q28 | Playground replies take 8–13 s or more | P0 | — | claimed | claude-a | t/Q28-faster-replies | 2026-10-30 08:51 | |
 
 ## Waiting on the owner
 
