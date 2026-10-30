@@ -1,10 +1,12 @@
 <script lang="ts">
-  // Settings: the workspace you're in, API keys (create once, revoke), and how spending is capped.
+  // Settings: the workspace you're in, API keys (create once, revoke), how spending is capped, and
+  // deleting your account.
   import { api, type Me, type UsageCaps, type UsageReport } from '$lib/api';
   import { usd } from '$lib/design/format';
   import Button from '$lib/design/Button.svelte';
   import CopyField from '$lib/design/CopyField.svelte';
   import Input from '$lib/design/Input.svelte';
+  import Modal from '$lib/design/Modal.svelte';
   import StatusPill from '$lib/design/StatusPill.svelte';
   import { toast } from '$lib/design/toasts.svelte';
   import { ago } from '../flows/flows';
@@ -19,6 +21,8 @@
   let name = $state('');
   let created = $state<string | null>(null);
   let busy = $state<string | null>(null);
+  let confirmingDelete = $state(false);
+  let deleteText = $state('');
   const now = new Date();
 
   api.me().then((m) => (me = m), () => {});
@@ -96,6 +100,17 @@
       busy = null;
     }
   }
+
+  async function deleteAccount() {
+    busy = 'delete';
+    try {
+      await api.deleteAccount();
+      location.assign('/');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not delete the account.', 'error');
+      busy = null;
+    }
+  }
 </script>
 
 <svelte:head><title>Settings · Interlock</title></svelte:head>
@@ -114,7 +129,7 @@
       {#if me.user}
         <Button loading={busy === 'signout'} onclick={signOut}>Sign out</Button>
       {:else}
-        <Button variant="primary" href="/api/auth/github/start">Sign in with GitHub</Button>
+        <Button variant="primary" href="/signin">Sign in</Button>
       {/if}
     {:else}
       <Skeleton lines={3} />
@@ -196,7 +211,26 @@
       <Button onclick={() => (onboarding.welcomeOpen = true)}>Show the welcome</Button>
     </div>
   </section>
+
+  {#if me?.user}
+    <section aria-labelledby="account">
+      <h2 id="account">Delete account</h2>
+      <p class="muted">Turns off your flows and permanently deletes them, with their runs, knowledge bases, files, connections and API keys. This can't be undone.</p>
+      <Button variant="danger" onclick={() => ((deleteText = ''), (confirmingDelete = true))}>Delete my account</Button>
+    </section>
+  {/if}
 </div>
+
+<Modal bind:open={confirmingDelete} title="Delete your account?">
+  <div class="confirm">
+    <p class="muted">Everything in your workspace is deleted for good. Type DELETE to confirm.</p>
+    <Input label="Type DELETE" bind:value={deleteText} />
+  </div>
+  {#snippet footer()}
+    <Button onclick={() => (confirmingDelete = false)}>Cancel</Button>
+    <Button variant="danger" loading={busy === 'delete'} disabled={deleteText !== 'DELETE'} onclick={deleteAccount}>Delete everything</Button>
+  {/snippet}
+</Modal>
 
 <style>
   .page { max-width: 760px; margin: 0 auto; padding: var(--s-8) var(--s-6) var(--s-10); display: flex; flex-direction: column; gap: var(--s-5); }
@@ -208,6 +242,7 @@
   section > :global(*) { align-self: stretch; }
   section > :global(.btn) { align-self: flex-start; }
   h2 { font: var(--t-h3); margin: 0; }
+  .confirm { display: flex; flex-direction: column; gap: var(--s-3); }
   dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin: 0; }
   dt { color: var(--text-3); font: var(--t-small); }
   dd { margin: var(--s-1) 0 0; overflow-wrap: anywhere; }

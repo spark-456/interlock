@@ -6,6 +6,7 @@ import type {
   ApprovalDecision,
   AskDiff,
   AskRequest,
+  AuthProvider,
   BuildAnswers,
   BuildCreated,
   BuildEvent,
@@ -49,6 +50,10 @@ export const api = {
   guide: (flowId: string) => get<string>(`/api/flows/${flowId}/guide`),
   /** Ends the session (even an expired one) and clears its browser cookie. */
   signOut: () => post<void>('/api/auth/sign-out', {}),
+  /** The providers this server can sign people in with. */
+  authProviders: () => get<AuthProvider[]>('/api/auth/providers'),
+  /** Deletes the signed-in account and everything in its workspace. */
+  deleteAccount: () => del<void>('/api/me'),
   keys: () => get<{ id: string; name: string; revoked: boolean; lastUsedAt: string | null }[]>('/api/keys'),
   revokeKey: (id: string) => del<void>(`/api/keys/${id}`),
   /** Creates an API key; the full key is in this response only. */

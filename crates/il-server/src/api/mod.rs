@@ -3,10 +3,10 @@
 mod builds;
 mod connections;
 mod flows;
-mod github;
 mod misc;
 mod runs;
 mod session;
+mod signin;
 mod sse;
 mod templates;
 mod usage;
@@ -28,7 +28,7 @@ pub fn router() -> Router<AppState> {
         .merge(runs::routes())
         .merge(builds::routes())
         .merge(misc::routes())
-        .merge(github::routes())
+        .merge(signin::routes())
         .merge(templates::routes())
         .merge(usage::routes())
         .merge(connections::routes())

@@ -174,7 +174,7 @@ P1: Outlook, Notion, Google Drive new file, HubSpot, Airtable, Code node (sandbo
 
 | ID | Requirement | P |
 |---|---|---|
-| WS-1 | Sign in with GitHub OAuth | P0 |
+| WS-1 | Sign in with Google or GitHub (name, email and picture only); sign out; delete your account and everything in its workspace | P0 |
 | WS-2 | Removed 2026-10-30 (Q34): demo mode. Everyone signs in and works in their own workspace; templates are copied on use | — |
 | WS-3 | Connections page: OAuth for Google (Gmail, Sheets, YouTube), Slack, Discord/Telegram bots, Bluesky app password, API keys for "Any API"; tokens encrypted at rest; never returned to the browser | P0 |
 | WS-4 | Approvals inbox (desktop and mobile) | P0 mobile / P1 desktop |
@@ -379,7 +379,7 @@ Unknown event types must be ignored by the UI (forward compatible).
 
 ### 8.5 HTTP API (internal, `/api`)
 
-`GET /api/nodes` (catalog) · `GET|POST /api/flows` · `GET|PUT|DELETE /api/flows/:id` · `GET /api/flows/:id/versions` · `POST /api/flows/:id/activate|deactivate` · `POST /api/flows/:id/test` · `POST /api/flows/:id/ask` → diff · `POST /api/flows/:id/nodes/:nodeId/run` · `GET /api/flows/:id/runs` · `GET /api/runs/:id` · `GET /api/runs/:id/events` (SSE) · `POST /api/approvals/:id/decide` · `GET /api/approvals` · `POST /api/builds` (goal + attachments) · `GET /api/builds/:id/events` (SSE) · `POST /api/builds/:id/answers` · `POST /api/files` (multipart) · `GET /api/files/:id` · `GET|POST /api/knowledge` · `GET /api/connections` · `GET /api/oauth/:app/start` · `GET /api/oauth/:app/callback` · `GET /api/templates` · `POST /api/templates/:id/use` · `GET /api/me` · `POST /api/demo/session`.
+`GET /api/nodes` (catalog) · `GET|POST /api/flows` · `GET|PUT|DELETE /api/flows/:id` · `GET /api/flows/:id/versions` · `POST /api/flows/:id/activate|deactivate` · `POST /api/flows/:id/test` · `POST /api/flows/:id/ask` → diff · `POST /api/flows/:id/nodes/:nodeId/run` · `GET /api/flows/:id/runs` · `GET /api/runs/:id` · `GET /api/runs/:id/events` (SSE) · `POST /api/approvals/:id/decide` · `GET /api/approvals` · `POST /api/builds` (goal + attachments) · `GET /api/builds/:id/events` (SSE) · `POST /api/builds/:id/answers` · `POST /api/files` (multipart) · `GET /api/files/:id` · `GET|POST /api/knowledge` · `GET /api/connections` · `GET /api/oauth/:app/start` · `GET /api/oauth/:app/callback` · `GET /api/templates` · `POST /api/templates/:id/use` · `GET|DELETE /api/me` · `GET /api/auth/providers` · `GET /api/auth/:provider/start|callback` · `POST /api/auth/sign-out` · `POST /api/demo/session`.
 
 Public: `POST /hooks/:flowId/:token` · `POST /v1/chat/completions` · `GET /v1/models` · `/mcp` (platform) · `/mcp/:slug` (per flow) · `GET /w/:slug.js` (widget) · `GET /healthz`.
 

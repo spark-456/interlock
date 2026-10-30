@@ -137,7 +137,7 @@ Things only the owner can do (accounts, keys, money, decisions). Agents add a ro
 
 | Date (UTC) | PR | Change | Who must rebase |
 |---|---|---|---|
-| 2026-10-30 | Q34 part 1 | Demo mode removed: `Me.demo` and `Session.demo` gone, `/api/demo/session` gone, `Store` demo methods replaced by `delete_workspace`, `POST /api/auth/sign-out` added | Branches that read `me.demo` or call the demo store methods |
+| 2026-10-30 | [#112](https://github.com/spark-456/interlock/pull/112) | Demo mode removed: `Me.demo` and `Session.demo` gone, `/api/demo/session` gone, `Store` demo methods replaced by `delete_workspace`, `POST /api/auth/sign-out` added | Branches that read `me.demo` or call the demo store methods |
 
 ---
 

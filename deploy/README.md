@@ -28,7 +28,7 @@ global_daily_usd = 2.0                  # the example's 25.0 is for local use
 workspace_daily_usd = 0.5               # what one person can spend per day
 ```
 
-Everyone signs in (GitHub; set `[auth.github] client_id` and `GITHUB_CLIENT_SECRET`, with the callback `https://<your domain>/api/auth/github/callback` on the GitHub OAuth app) and works in their own workspace.
+Everyone signs in with Google or GitHub and works in their own workspace. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (add `https://<your domain>/api/auth/google/callback` and `https://<your domain>/api/oauth/google/callback` to the Google client's redirect URIs, and publish its consent screen so anyone can sign in), and/or `[auth.github] client_id` with `GITHUB_CLIENT_SECRET` (callback `https://<your domain>/api/auth/github/callback`).
 
 Set `NEBIUS_API_KEY`, `IL_MASTER_KEY` (base64 of 32 random bytes), and any enabled connector or media provider keys through `/etc/interlock/secrets.env`, readable only by the VM administrator. Compose passes these as environment variables to the container. The image defaults to `IL_PROVIDERS=real` and `IL_CONFIG=/etc/interlock/interlock.toml`. Keep the configured storage path at `/data` (the example config uses `data` relative to the container's `/` working directory).
 

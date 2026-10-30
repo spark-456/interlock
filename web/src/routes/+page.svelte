@@ -41,7 +41,7 @@
     <a href={GITHUB}>GitHub</a>
   </nav>
   <div class="nav-actions">
-    <a class="signin" href="/api/auth/github/start">Sign in</a>
+    <a class="signin" href="/signin">Sign in</a>
     <Button variant="primary" size="s" href="/flows">Get started</Button>
   </div>
 </header>

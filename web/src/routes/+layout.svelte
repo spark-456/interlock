@@ -30,7 +30,7 @@
           location.reload();
           return;
         }
-        if (page.route.id !== '/') await goto('/');
+        if (page.route.id !== '/' && page.route.id !== '/signin') await goto('/signin');
       }
     );
   });
@@ -41,8 +41,8 @@
   const user = $derived(me?.user?.name ?? 'Guest');
 </script>
 
-{#if page.route.id === '/'}
-  <!-- The landing page brings its own header. -->
+{#if page.route.id === '/' || page.route.id === '/signin'}
+  <!-- The landing and sign-in pages bring their own layout. -->
   {@render children()}
 {:else}
 <div class="app">

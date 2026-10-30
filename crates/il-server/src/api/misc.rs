@@ -1,4 +1,4 @@
-//! Me, sign-out, files, knowledge.
+//! Me, sign-out, account deletion, files, knowledge.
 
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Multipart, Path, State};
@@ -21,7 +21,7 @@ const MAX_UPLOAD: usize = 50 * 1024 * 1024;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/api/me", get(me))
+        .route("/api/me", get(me).delete(delete_account))
         .route("/api/auth/sign-out", post(sign_out))
         .route("/api/files", post(upload).layer(DefaultBodyLimit::max(MAX_UPLOAD + 64 * 1024)))
         .route("/api/files/{id}", get(download))
@@ -38,6 +38,24 @@ async fn sign_out(State(state): State<AppState>, headers: HeaderMap) -> ApiResul
     if let Some(token) = cookie_value(&headers, SESSION_COOKIE) {
         state.services.store.kv_put(&session_key(&token), &Value::Null).await.map_err(ApiErr::internal)?;
     }
+    let cleared = set_cookie(&state, SESSION_COOKIE, "", 0, "/");
+    Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, cleared)]).into_response())
+}
+
+/// Deletes the signed-in person's account: turns their flows off, then removes their files and
+/// every record in their workspace, sessions included. The local workspace has no account.
+async fn delete_account(State(state): State<AppState>, ws: Ws) -> ApiResult<Response> {
+    if ws.0.user.is_none() {
+        return Err(ApiErr::bad_request("Only a signed-in account can be deleted."));
+    }
+    let id = ws.id();
+    for flow in state.services.store.list_flows(id).await.map_err(ApiErr::internal)? {
+        if state.services.store.is_flow_active(&flow.id).await.map_err(ApiErr::internal)? {
+            state.triggers.deactivate(&flow.id).await.map_err(ApiErr::internal)?;
+        }
+    }
+    state.services.files.delete_workspace_files(id).await.map_err(ApiErr::internal)?;
+    state.services.store.delete_workspace(id).await.map_err(ApiErr::internal)?;
     let cleared = set_cookie(&state, SESSION_COOKIE, "", 0, "/");
     Ok((StatusCode::NO_CONTENT, [(header::SET_COOKIE, cleared)]).into_response())
 }

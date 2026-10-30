@@ -305,6 +305,15 @@ pub struct Me {
     pub workspace_id: String,
 }
 
+/// `GET /api/auth/providers`: a way this server can sign people in.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
+#[ts(export)]
+pub struct AuthProvider {
+    /// `google` or `github`; sign in at `/api/auth/<id>/start`.
+    pub id: String,
+    pub label: String,
+}
+
 /// Signed-in user.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]

@@ -27,6 +27,7 @@ pub struct AppState {
     pub triggers: Arc<il_engine::triggers::TriggerSupervisor>,
     pub rate_limiter: Arc<crate::rate_limit::RateLimiter>,
     pub(crate) github_secret: Option<String>,
+    pub(crate) google_secret: Option<String>,
 }
 
 struct PublishedFlowTools {
@@ -140,6 +141,7 @@ fn finish_state(config: Config, mut services: Services, store: Option<Arc<Sqlite
         triggers,
         rate_limiter: Arc::default(),
         github_secret: std::env::var("GITHUB_CLIENT_SECRET").ok().filter(|s| !s.is_empty()),
+        google_secret: std::env::var("GOOGLE_CLIENT_SECRET").ok().filter(|s| !s.is_empty()),
     }
 }
 
