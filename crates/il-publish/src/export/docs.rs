@@ -284,8 +284,9 @@ pub(super) fn readme(flow: &Flow, manifest: &Manifest) -> String {
          to a tag or commit and run `docker compose build`.\n\n\
          ## Security\n\n\
          - Keys live only in `.env`, which git ignores. Connections are stored encrypted with `IL_MASTER_KEY`.\n\
-         - Every endpoint needs the API key or the webhook token. The port is published on 127.0.0.1 only; put a \
-         TLS proxy in front before exposing it.\n\
+         - The API and MCP need the API key and webhooks their token; the chat widget, as on the hosted app, \
+         answers any page that embeds it. The port is published on 127.0.0.1 only; put a TLS proxy in front \
+         before exposing it.\n\
          - To use the Interlock app at {LOCAL} on a trusted machine, set `local_workspace = true` in \
          `interlock.toml`.\n\n\
          Exported {date} · engine {version_engine} from `{source}` at `{git_ref}`.\n",

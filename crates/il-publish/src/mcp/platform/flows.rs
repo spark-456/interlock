@@ -53,7 +53,9 @@ pub(super) fn tools() -> Vec<Tool> {
         ),
         tool(
             "export_flow",
-            "Export a flow as code to run self-hosted: returns a command that downloads a zip (flow JSON, prompts,              files, compose.yaml, .env.example, README.md, INTERLOCK.md) into the current folder, the files it              holds, and the settings it needs. Nothing secret is in it.",
+            "Export a flow as code to run self-hosted: returns a command that downloads a zip (flow JSON, prompts, \
+             files, compose.yaml, .env.example, README.md, INTERLOCK.md) into the current folder, the files it \
+             holds, and the settings it needs. Nothing secret is in it.",
             json!({"type": "object", "properties": {"flow_id": id}, "required": ["flow_id"]}),
         ),
     ]
@@ -153,11 +155,17 @@ async fn integration_guide(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonO
     if flow.kind != FlowKind::App || !ctx.services.store.is_flow_active(&flow.id).await.map_err(|e| e.to_string())? {
         return Err("the guide is for apps that are on; turn it on with set_flow_active".into());
     }
-    Ok(Value::String(guide::generate(&flow, base_url(ctx))))
+    Ok(Value::String(guide::generate(&flow, &base_url(ctx))))
 }
 
-fn base_url(ctx: &RouteCtx) -> &str {
-    ctx.config.pointer("/server/public_url").and_then(Value::as_str).unwrap_or("http://127.0.0.1:8080")
+/// The server's public address, else the address it listens on (as the app's guide route does).
+fn base_url(ctx: &RouteCtx) -> String {
+    if let Some(url) = ctx.config.pointer("/server/public_url").and_then(Value::as_str) {
+        return url.trim_end_matches('/').to_owned();
+    }
+    let host = ctx.config.pointer("/server/host").and_then(Value::as_str).unwrap_or("127.0.0.1");
+    let port = ctx.config.pointer("/server/port").and_then(Value::as_u64).unwrap_or(8080);
+    format!("http://{host}:{port}")
 }
 
 async fn export_flow(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonObject) -> Result<Value, String> {
@@ -169,7 +177,7 @@ async fn export_flow(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonObject)
         .and_then(|e| serde_json::from_slice(&e.bytes).ok())
         .ok_or("the bundle has no manifest")?;
     let (zip, folder) = (export::file_name(&flow), slug(&flow));
-    let url = format!("{}/mcp/flows/{}/export", base_url(ctx).trim_end_matches('/'), flow.id);
+    let url = format!("{}/mcp/flows/{}/export", base_url(ctx), flow.id);
     let download = format!("curl -fsSL -H \"Authorization: Bearer $INTERLOCK_KEY\" {url} -o {zip}");
     Ok(json!({
         "command": format!("{download} && unzip -q {zip} && rm {zip}"),
@@ -178,6 +186,10 @@ async fn export_flow(ctx: &RouteCtx, workspace_id: &str, arguments: &JsonObject)
         "files": entries.iter().map(|e| e.path.as_str()).collect::<Vec<_>>(),
         "settings": manifest.env.iter().map(|v| json!({"name": v.name, "required": v.required, "about": v.about}))
             .collect::<Vec<_>>(),
-        "next": format!("Run the command where the folder `{folder}/` should go, then in it: copy .env.example to             .env and fill it in (never commit .env), and `docker compose up -d`. {folder}/INTERLOCK.md explains             how to call and change it."),
+        "next": format!(
+            "Run the command where the folder `{folder}/` should go. Then, in it, copy .env.example to .env, fill it \
+             in (never commit .env) and run `docker compose up -d`. {folder}/INTERLOCK.md explains how to call and \
+             change it."
+        ),
     }))
 }

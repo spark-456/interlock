@@ -165,11 +165,12 @@ P1: Outlook, Notion, Google Drive new file, HubSpot, Airtable, Code node (sandbo
 |---|---|---|
 | PB-1 | OpenAI-compatible `POST /v1/chat/completions` (streaming and non-streaming) and `GET /v1/models`; `model` = published flow slug; Bearer API key | P0 |
 | PB-2 | Per-flow MCP server (streamable HTTP) exposing `ask_<slug>`, `search_<kb>` and each tool | P0 |
-| PB-3 | Platform MCP for coding agents, covering what a person does in the app: `list_flows`, `get_flow`, `update_flow`, `refine_flow` (with `focus` steps), `set_flow_active`, `get_integration_guide`, `create_flow_from_goal`, `get_build`, `answer_build_questions`, `list_step_types`, `list_knowledge_bases`, `add_documents`, `test_flow` (no side effects), `run_flow`, `get_run`, `list_runs`, `list_approvals`, `decide_approval`; local files a build attaches are uploaded first with `POST /mcp/files` (same API key) | P0 |
+| PB-3 | Platform MCP for coding agents, covering what a person does in the app: `list_flows`, `get_flow`, `update_flow`, `refine_flow` (with `focus` steps), `set_flow_active`, `get_integration_guide`, `create_flow_from_goal`, `get_build`, `answer_build_questions`, `list_step_types`, `list_knowledge_bases`, `add_documents`, `test_flow` (no side effects), `run_flow`, `get_run`, `list_runs`, `list_approvals`, `decide_approval`, `export_flow`; local files a build attaches are uploaded first with `POST /mcp/files` (same API key) | P0 |
 | PB-4 | Chat widget: one script tag; themable; streams answers with sources | P0 |
 | PB-5 | Integration guide (`INTERLOCK.md`) generated per flow: endpoints, auth, schemas, examples in cURL, JS, Python, Rust | P0 |
 | PB-6 | API keys: create, reveal once, revoke, last used | P0 |
 | PB-7 | Shareable chat page per AI app | P1 |
+| PB-8 | Export as code (`docs/EXPORT.md`): any flow downloads as a self-contained bundle (flow JSON, prompts, files, `compose.yaml`, `.env.example` with placeholders only, README, `INTERLOCK.md`) that the open-source engine runs with `IL_BUNDLE` and the same endpoints; from the Publish page, `GET /mcp/flows/:id/export` (API key) and the platform MCP tool `export_flow`. Never contains secrets | P1 |
 
 ### 5.7 Workspace, auth, connections (`il-server`, `il-connectors`)
 
@@ -380,9 +381,9 @@ Unknown event types must be ignored by the UI (forward compatible).
 
 ### 8.5 HTTP API (internal, `/api`)
 
-`GET /api/nodes` (catalog) · `GET|POST /api/flows` · `GET|PUT|DELETE /api/flows/:id` · `GET /api/flows/:id/versions` · `POST /api/flows/:id/activate|deactivate` · `POST /api/flows/:id/test` · `POST /api/flows/:id/ask` → diff · `POST /api/flows/:id/nodes/:nodeId/run` · `GET /api/flows/:id/runs` · `GET /api/runs/:id` · `GET /api/runs/:id/events` (SSE) · `POST /api/approvals/:id/decide` · `GET /api/approvals` · `POST /api/builds` (goal + attachments) · `GET /api/builds/:id/events` (SSE) · `POST /api/builds/:id/answers` · `POST /api/files` (multipart) · `GET /api/files/:id` · `GET|POST /api/knowledge` · `GET /api/connections` · `GET /api/oauth/:app/start` · `GET /api/oauth/:app/callback` · `GET /api/templates` · `POST /api/templates/:id/use` · `GET /api/me` · `POST /api/demo/session`.
+`GET /api/nodes` (catalog) · `GET|POST /api/flows` · `GET|PUT|DELETE /api/flows/:id` · `GET /api/flows/:id/versions` · `GET /api/flows/:id/export` (zip) · `POST /api/flows/:id/activate|deactivate` · `POST /api/flows/:id/test` · `POST /api/flows/:id/ask` → diff · `POST /api/flows/:id/nodes/:nodeId/run` · `GET /api/flows/:id/runs` · `GET /api/runs/:id` · `GET /api/runs/:id/events` (SSE) · `POST /api/approvals/:id/decide` · `GET /api/approvals` · `POST /api/builds` (goal + attachments) · `GET /api/builds/:id/events` (SSE) · `POST /api/builds/:id/answers` · `POST /api/files` (multipart) · `GET /api/files/:id` · `GET|POST /api/knowledge` · `GET /api/connections` · `GET /api/oauth/:app/start` · `GET /api/oauth/:app/callback` · `GET /api/templates` · `POST /api/templates/:id/use` · `GET /api/me` · `POST /api/demo/session`.
 
-Public: `POST /hooks/:flowId/:token` · `POST /v1/chat/completions` · `GET /v1/models` · `/mcp` (platform) · `/mcp/:slug` (per flow) · `GET /w/:slug.js` (widget) · `GET /healthz`.
+Public: `POST /hooks/:flowId/:token` · `POST /v1/chat/completions` · `GET /v1/models` · `/mcp` (platform) · `/mcp/:slug` (per flow) · `GET /mcp/flows/:id/export` (bundle zip, API key) · `GET /w/:slug.js` (widget) · `GET /healthz`.
 
 All errors: `{ "error": { "code": "snake_case", "message": "Human sentence.", "details": {} } }`.
 
