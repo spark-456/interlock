@@ -78,8 +78,10 @@ impl NodeExecutor for AiGuardrails {
                 ChatMessage::system(format!(
                     "You check an assistant's answer against rules. A rule matches only when the answer clearly \
                      breaks it; if you are unsure, or the rule needs facts you can't see, it does not match. Details \
-                     the person gave about themselves are theirs, not another customer's. Return JSON with the name \
-                     of the first matching rule, or none. Never choose an action. Rules: {}",
+                     the person gave about themselves are theirs, not another customer's. A rule for a situation \
+                     (the person is angry, asks for a refund…) matches only when what the person wrote clearly shows \
+                     it. Return JSON: first a one-sentence check of the rules that could apply, then the name of the \
+                     first matching rule, or none. Never choose an action. Rules: {}",
                     serde_json::to_string(rules).map_err(|e| NodeError::Failed(e.to_string()))?
                 )),
                 ChatMessage::user(if asked.is_empty() {
@@ -88,9 +90,10 @@ impl NodeExecutor for AiGuardrails {
                     format!("The person wrote:\n{asked}\n\nThe answer to check:\n{answer}")
                 }),
             ],
-            json_schema: Some(
-                json!({"type":"object","required":["rule"],"properties":{"rule":{"type":"string","enum":names}},"additionalProperties":false}),
-            ),
+            // The check comes before the verdict so a model that isn't reasoning doesn't match on a rule's
+            // topic alone: an answer offering a ticket to a calm customer matched an angry-customer rule.
+            json_schema: Some(json!({"type":"object","required":["check","rule"],"properties":{
+                "check":{"type":"string"},"rule":{"type":"string","enum":names}},"additionalProperties":false})),
             // The same answer must get the same verdict; sampling made small models flag good answers.
             temperature: Some(0.0),
             ..Default::default()
@@ -134,8 +137,10 @@ mod tests {
         let harness = NodeHarness::new(super::AiGuardrails)
             .settings(json!({"rules":[{"name":"unsafe","description":"No unsafe claims","action":"block"}]}))
             .input_json(vec![json!({"answer":"Hello"})]);
-        harness.fakes.models.push_json(json!({"rule":"none"}));
+        harness.fakes.models.push_json(json!({"check":"No unsafe claim.","rule":"none"}));
         assert_eq!(harness.run().await.unwrap().ports["pass"][0].json["guardrails"]["decision"], "pass");
+        let schema = harness.fakes.models.calls()[0].1.json_schema.clone().unwrap();
+        assert_eq!(schema["required"], json!(["check", "rule"]), "the check is written before the verdict");
     }
 
     #[tokio::test]

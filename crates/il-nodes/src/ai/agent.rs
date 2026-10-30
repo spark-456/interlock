@@ -14,6 +14,8 @@ const PRIVACY: &str = include_str!("../../../../prompts/nodes/agent_privacy.md")
 /// Searches per answer. Each one waits on the embedding model, and rewording a search rarely finds
 /// what the first two missed.
 const MAX_SEARCHES: usize = 3;
+/// Sent once when an agent with knowledge answers without searching it.
+const SEARCH_FIRST: &str = "Search your knowledge base for this first, then answer only from what it says.";
 
 /// Agent node.
 #[derive(Debug, Default)]
@@ -154,7 +156,8 @@ impl NodeExecutor for AiAgent {
         let max_steps = ctx.settings["maxSteps"].as_u64().unwrap_or(8).clamp(1, 20);
         let mut sources = Vec::new();
         let mut searches = 0;
-        for _ in 0..max_steps {
+        let mut nudged = false;
+        for step in 0..max_steps {
             let response = ctx
                 .models()
                 .chat(
@@ -163,6 +166,14 @@ impl NodeExecutor for AiAgent {
                 )
                 .await
                 .map_err(|e| NodeError::Failed(e.to_string()))?;
+            // Models sometimes answer from what they think they know, inventing details the documents
+            // contradict; one reminder makes them look first.
+            if response.tool_calls.is_empty() && searches == 0 && !bases.is_empty() && !nudged && step + 1 < max_steps {
+                nudged = true;
+                messages.push(ChatMessage::assistant(response.content));
+                messages.push(ChatMessage::user(SEARCH_FIRST));
+                continue;
+            }
             if response.tool_calls.is_empty() {
                 let mut item = input.main().first().cloned().unwrap_or_default();
                 if !item.json.is_object() {
@@ -280,6 +291,28 @@ mod tests {
         assert_eq!(output.ports["out"][0].json["answer"], "Refunds within 30 days.");
         assert_eq!(output.ports["out"][0].json["sources"][0]["sourceId"], "src1");
         assert_eq!(harness.fakes.models.calls()[1].1.messages.len(), 4);
+    }
+
+    #[tokio::test]
+    async fn q32_an_answer_given_without_searching_gets_one_reminder() {
+        let harness = NodeHarness::new(super::AiAgent)
+            .settings(json!({"instructions":"Answer","knowledgeBases":["help"],"maxSteps":4}))
+            .input_json(vec![json!({"message":"Which cards do you take?"})]);
+        harness
+            .fakes
+            .models
+            .push_text("Cards and PayPal.")
+            .push_tool_call("search_help", json!({"query":"payment methods"}))
+            .push_text("Visa, Mastercard and Amex.");
+        let output = harness.run().await.unwrap();
+        assert_eq!(output.ports["out"][0].json["answer"], "Visa, Mastercard and Amex.");
+        let calls = harness.fakes.models.calls();
+        assert_eq!(calls[1].1.messages.last().unwrap().content, super::SEARCH_FIRST);
+
+        let without = NodeHarness::new(super::AiAgent).settings(json!({"instructions":"Answer","maxSteps":4}));
+        without.fakes.models.push_text("Hello!");
+        without.run().await.unwrap();
+        assert_eq!(without.fakes.models.calls().len(), 1, "no knowledge, no reminder");
     }
 
     #[tokio::test]
