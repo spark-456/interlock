@@ -183,7 +183,9 @@ impl NodeExecutor for MediaCaptions {
         let mut cues = timed_cues(&ctx.settings["segments"])?;
         if cues.is_empty() {
             let text = ctx.settings["text"].as_str().filter(|t| !t.trim().is_empty());
-            cues = cues_from(text.ok_or_else(|| NodeError::Failed("caption text or timed segments are required".into()))?)?;
+            cues = cues_from(
+                text.ok_or_else(|| NodeError::Failed("caption text or timed segments are required".into()))?,
+            )?;
         }
         let work = std::env::temp_dir().join(il_sdk::id("caption"));
         tokio::fs::create_dir(&work).await.map_err(|e| NodeError::Failed(e.to_string()))?;
