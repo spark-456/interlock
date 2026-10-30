@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="docs/media/logo.svg" alt="Interlock" height="56">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/logo-dark.svg">
+  <img src="docs/media/logo.svg" alt="Interlock" height="56">
+</picture>
 
 ### Your AI backend, built from a sentence.
 
