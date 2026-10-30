@@ -49,7 +49,7 @@ fn last_user_message(gw: &FakeGateway) -> String {
 #[tokio::test]
 async fn hero_goals_compile_into_valid_flows() {
     let catalog = catalog();
-    for (goal, name, nodes, edges) in [(FA, "fa", 18, 18), (FB, "fb", 10, 12), (FC, "fc", 8, 7)] {
+    for (goal, name, nodes, edges) in [(FA, "fa", 20, 20), (FB, "fb", 10, 12), (FC, "fc", 8, 7)] {
         let gw = FakeGateway::default();
         gw.push_json(draft(name));
         let compiled = compile(&gw, &catalog, goal, goal, true).await.unwrap();

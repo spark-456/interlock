@@ -92,6 +92,14 @@ async fn m01_ffmpeg_ops_process_real_fixture() {
     )
     .await;
     assert!(srt.ports["out"][0].files.contains_key("captioned"));
+    let (timed, _) = run(
+        super::captions::MediaCaptions,
+        json!({"segments": json!([{"start":0.0,"end":0.9,"text":"Hello from the voiceover"}]).to_string()}),
+        &video,
+        "video",
+    )
+    .await;
+    assert!(timed.ports["out"][0].files.contains_key("captioned"));
 
     let (converted, _) = run(super::convert::MediaConvert, json!({"format":"mp3"}), &video, "file").await;
     assert_eq!(converted.ports["out"][0].files["converted"].mime, "audio/mpeg");

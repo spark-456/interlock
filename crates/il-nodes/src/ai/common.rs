@@ -66,6 +66,7 @@ mod tests {
             ("agent", include_str!("../../../../prompts/nodes/agent.md")),
             ("agent_privacy", include_str!("../../../../prompts/nodes/agent_privacy.md")),
             ("describe_image", include_str!("../../../../prompts/nodes/describe_image.md")),
+            ("shot_list", include_str!("../../../../prompts/nodes/shot_list.md")),
         ];
         let combined =
             prompts.into_iter().map(|(name, text)| format!("{name}: {}", text.trim())).collect::<Vec<_>>().join("\n");

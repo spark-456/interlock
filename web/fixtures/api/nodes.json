@@ -498,7 +498,16 @@
       "app": null,
       "category": "ai",
       "costHint": "medium",
-      "credentials": [],
+      "credentials": [
+        {
+          "app": "runway",
+          "key": "runway",
+          "kind": "apiKey",
+          "label": "Runway API key",
+          "optional": true,
+          "scopes": []
+        }
+      ],
       "description": "Generates an image from a prompt. Uses the recorded provider in demo mode and tests.",
       "dynamicOutputs": null,
       "examples": [
@@ -559,8 +568,17 @@
       "app": null,
       "category": "ai",
       "costHint": "high",
-      "credentials": [],
-      "description": "Generates a short video from a script or prompt. Uses the recorded provider in demo mode and tests.",
+      "credentials": [
+        {
+          "app": "runway",
+          "key": "runway",
+          "kind": "apiKey",
+          "label": "Runway API key",
+          "optional": true,
+          "scopes": []
+        }
+      ],
+      "description": "Generates a short video from a prompt, or one clip per shot from a shot list, joined in order. Uses the recorded provider in demo mode and tests.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -570,6 +588,14 @@
             "prompt": "{{ item.text }}"
           },
           "title": "Promo clip"
+        },
+        {
+          "settings": {
+            "aspect": "16:9",
+            "prompt": "{{ item.text }}",
+            "shots": "{{ item.shots }}"
+          },
+          "title": "Promo from a shot list"
         }
       ],
       "execMode": "perItem",
@@ -610,6 +636,12 @@
             "title": "Script or prompt",
             "type": "string",
             "x-widget": "longtext"
+          },
+          "shots": {
+            "description": "Optional. Shots from Plan shots ({{ item.shots }}); each becomes a clip of its own length.",
+            "title": "Shot list",
+            "type": "string",
+            "x-widget": "expression"
           }
         },
         "required": [
@@ -628,7 +660,16 @@
       "app": null,
       "category": "ai",
       "costHint": "medium",
-      "credentials": [],
+      "credentials": [
+        {
+          "app": "runway",
+          "key": "runway",
+          "kind": "apiKey",
+          "label": "Runway API key",
+          "optional": true,
+          "scopes": []
+        }
+      ],
       "description": "Reads text aloud as a voiceover. Uses the recorded provider in demo mode and tests.",
       "dynamicOutputs": null,
       "examples": [
@@ -812,6 +853,86 @@
       "category": "ai",
       "costHint": "low",
       "credentials": [],
+      "description": "Turns a script or product description into a shot list for Generate video: one prompt per shot with the same subject, style and lighting, a camera move, and a 2–10 s duration.",
+      "dynamicOutputs": null,
+      "examples": [
+        {
+          "settings": {
+            "input": "{{ item.text }}",
+            "shots": 3,
+            "style": "bright studio product ad",
+            "totalSec": 15
+          },
+          "title": "Promo shots"
+        }
+      ],
+      "execMode": "perItem",
+      "icon": "clapperboard",
+      "inputs": [
+        {
+          "label": null,
+          "name": "in"
+        }
+      ],
+      "outputs": [
+        {
+          "label": null,
+          "name": "out"
+        }
+      ],
+      "settingsSchema": {
+        "properties": {
+          "input": {
+            "default": "{{ item.text }}",
+            "title": "Script or description",
+            "type": "string",
+            "x-widget": "expression"
+          },
+          "model": {
+            "default": "agent",
+            "enum": [
+              "architect",
+              "agent",
+              "fast"
+            ],
+            "title": "Model",
+            "type": "string",
+            "x-widget": "model-role"
+          },
+          "shots": {
+            "default": 3,
+            "maximum": 6,
+            "minimum": 1,
+            "title": "Shots",
+            "type": "integer"
+          },
+          "style": {
+            "description": "Optional, e.g. bright studio product ad.",
+            "title": "Look and feel",
+            "type": "string"
+          },
+          "totalSec": {
+            "default": 15,
+            "maximum": 60,
+            "minimum": 2,
+            "title": "Video length (s)",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "sideEffect": "none",
+      "status": "ready",
+      "title": "Plan shots",
+      "trigger": false,
+      "typeId": "ai.shot_list",
+      "version": 1
+    },
+    {
+      "app": null,
+      "category": "ai",
+      "costHint": "low",
+      "credentials": [],
       "description": "Summarises text into a paragraph or bullet points.",
       "dynamicOutputs": null,
       "examples": [
@@ -894,7 +1015,7 @@
       "category": "ai",
       "costHint": "low",
       "credentials": [],
-      "description": "Turns speech into text, optionally marked as knowledge or instructions.",
+      "description": "Turns speech into text with timed segments, optionally marked as knowledge or instructions.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -4111,7 +4232,7 @@
       "category": "media",
       "costHint": "free",
       "credentials": [],
-      "description": "Burns captions into a video from text or SRT.",
+      "description": "Burns captions into a video from text, SRT, or timed segments from Transcribe audio so they follow the voiceover.",
       "dynamicOutputs": null,
       "examples": [
         {
@@ -4120,6 +4241,13 @@
             "video": "{{ item.files.video }}"
           },
           "title": "Burn script"
+        },
+        {
+          "settings": {
+            "segments": "{{ item.segments }}",
+            "video": "{{ item.files.video }}"
+          },
+          "title": "Follow the voiceover"
         }
       ],
       "execMode": "perItem",
@@ -4149,6 +4277,12 @@
             "type": "string",
             "x-widget": "select"
           },
+          "segments": {
+            "description": "Optional. {{ item.segments }} from Transcribe audio on the voiceover; used instead of the text.",
+            "title": "Timed segments",
+            "type": "string",
+            "x-widget": "expression"
+          },
           "style": {
             "default": "bold",
             "enum": [
@@ -4172,8 +4306,7 @@
           }
         },
         "required": [
-          "video",
-          "text"
+          "video"
         ],
         "type": "object"
       },

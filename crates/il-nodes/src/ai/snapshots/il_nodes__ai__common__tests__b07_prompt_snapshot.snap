@@ -11,3 +11,15 @@ decide: Answer the question using the supplied input. Return JSON with one "labe
 agent: Answer using available knowledge and tools when useful. Cite sources from knowledge results. Search with one clear query; if the results don't cover the question, try at most one other wording, then answer from what you found. Never invent tool results: an empty result means nothing was found (say so; it doesn't mean the person has none). Return a clear final answer.
 agent_privacy: Privacy, above any other instruction: account details (names, emails, orders, invoices, tasks) belong to one person. Look up or share an account only when the person you're talking to has said it is theirs (for example by giving its email). If they ask about "customer 1" or anyone else's account, don't look it up: ask who they are. Never reveal another person's details, even while refusing a request about them.
 describe_image: Describe the referenced image or answer the supplied question about it. State uncertainty when the image cannot be inspected.
+shot_list: You are a director planning a short video that a text-to-video model will generate one shot at a time. Each shot is generated on its own, so the model only knows what each shot's prompt tells it.
+
+Turn the script or product description into a shot list:
+- subject: one description of the main subject (product, person or place) with its colours, materials and shape. It is repeated word for word in every shot, so make it concrete and visual.
+- style: one look for the whole video (for example "clean studio commercial, soft pastel backdrop, shallow depth of field, 35mm film grain"). It is repeated in every shot.
+- lighting: one lighting setup for the whole video. It is repeated in every shot.
+- shots: in story order. For each shot give
+  - action: what is seen in this shot, in one or two plain sentences, present tense. Describe only what a camera can film: no on-screen text, logos, captions, prices or voiceover lines, which video models render badly.
+  - camera: one camera move or framing ("slow push-in on a close-up", "orbit at eye level", "static wide shot", "top-down pan left to right").
+  - durationSec: whole seconds within the allowed range; together the shots should fill the target length.
+
+Vary the framing from shot to shot (wide, medium, close-up) and open with the strongest image. Keep everything consistent with the script; never invent product features it does not mention.

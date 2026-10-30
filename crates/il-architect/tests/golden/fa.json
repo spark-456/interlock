@@ -67,13 +67,25 @@
    }
   },
   {
+   "id": "n_shots",
+   "type": "ai.shot_list",
+   "name": "Plan shots",
+   "group": "g_make",
+   "settings": {
+    "input": "{{ item.text }}",
+    "shots": 3,
+    "totalSec": 15,
+    "style": "bright, clean studio product ad"
+   }
+  },
+  {
    "id": "n_video",
    "type": "ai.generate_video",
    "name": "Generate promo video",
    "group": "g_make",
    "settings": {
     "prompt": "{{ item.text }}",
-    "durationSec": 5,
+    "shots": "{{ item.shots }}",
     "aspect": "16:9"
    }
   },
@@ -85,6 +97,15 @@
    "settings": {
     "text": "{{ nodes.n_script.json.text }}",
     "voice": "Maya"
+   }
+  },
+  {
+   "id": "n_transcribe",
+   "type": "ai.transcribe",
+   "name": "Time the captions",
+   "group": "g_make",
+   "settings": {
+    "audio": "{{ item.files.audio }}"
    }
   },
   {
@@ -118,7 +139,8 @@
    "group": "g_cut",
    "settings": {
     "video": "{{ item.files.video }}",
-    "text": "{{ nodes.n_script.json.text }}"
+    "text": "{{ nodes.n_script.json.text }}",
+    "segments": "{{ nodes.n_transcribe.json.segments }}"
    }
   },
   {
@@ -240,6 +262,10 @@
   },
   {
    "from": "n_script",
+   "to": "n_shots"
+  },
+  {
+   "from": "n_shots",
    "to": "n_video"
   },
   {
@@ -252,6 +278,10 @@
   },
   {
    "from": "n_voice",
+   "to": "n_transcribe"
+  },
+  {
+   "from": "n_transcribe",
    "to": "n_merge"
   },
   {

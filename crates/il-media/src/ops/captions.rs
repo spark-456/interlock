@@ -31,7 +31,7 @@ fn timecode(value: &str) -> Option<f64> {
     Some(hours * 3600.0 + minutes * 60.0 + seconds)
 }
 
-fn cues(text: &str) -> Result<Vec<Cue>, NodeError> {
+fn cues_from(text: &str) -> Result<Vec<Cue>, NodeError> {
     if !text.contains("-->") {
         return Ok(vec![Cue { timing: None, text: text.to_owned() }]);
     }
@@ -56,6 +56,45 @@ fn cues(text: &str) -> Result<Vec<Cue>, NodeError> {
         .collect()
 }
 
+/// Words per caption, so long transcript segments become readable lines.
+const WORDS_PER_CUE: usize = 6;
+
+/// Cues from transcript segments (`{start, end, text}`), split into short lines timed by their length.
+/// `{{ item.segments }}` renders to the list, or to its JSON inside longer text.
+fn timed_cues(value: &Value) -> Result<Vec<Cue>, NodeError> {
+    let parsed;
+    let list = match value {
+        Value::Array(list) => list,
+        Value::String(text) if text.trim_start().starts_with('[') => {
+            parsed = serde_json::from_str::<Vec<Value>>(text)
+                .map_err(|e| NodeError::Failed(format!("timed segments are not a list: {e}")))?;
+            &parsed
+        }
+        _ => return Ok(Vec::new()),
+    };
+    let mut cues = Vec::new();
+    for segment in list {
+        let (Some(start), Some(end), Some(text)) =
+            (segment["start"].as_f64(), segment["end"].as_f64(), segment["text"].as_str())
+        else {
+            return Err(NodeError::Failed("each timed segment needs start, end and text".into()));
+        };
+        let words: Vec<&str> = text.split_whitespace().collect();
+        if words.is_empty() || !start.is_finite() || !end.is_finite() || end <= start {
+            continue;
+        }
+        let lines: Vec<String> = words.chunks(WORDS_PER_CUE).map(|chunk| chunk.join(" ")).collect();
+        let chars: usize = lines.iter().map(|line| line.chars().count()).sum();
+        let mut at = start;
+        for line in lines {
+            let until = at + (end - start) * line.chars().count() as f64 / chars as f64;
+            cues.push(Cue { timing: Some((at, until)), text: line });
+            at = until;
+        }
+    }
+    Ok(cues)
+}
+
 /// Add captions node.
 #[derive(Debug, Default)]
 pub struct MediaCaptions;
@@ -65,15 +104,14 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
         "media.captions",
         Category::Media,
         "Add captions",
-        "Burns captions into a video from text or SRT.",
+        "Burns captions into a video from text, SRT, or timed segments from Transcribe audio so they follow the voiceover.",
     )
     .icon("captions")
     .status(NodeStatus::Ready)
     .settings_schema(json!({
         "type": "object",
         "required": [
-            "video",
-            "text"
+            "video"
         ],
         "properties": {
             "video": {
@@ -85,6 +123,12 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
             "text": {
                 "type": "string",
                 "title": "Captions (text or SRT)",
+                "x-widget": "expression"
+            },
+            "segments": {
+                "type": "string",
+                "title": "Timed segments",
+                "description": "Optional. {{ item.segments }} from Transcribe audio on the voiceover; used instead of the text.",
                 "x-widget": "expression"
             },
             "position": {
@@ -117,6 +161,13 @@ static MANIFEST: LazyLock<NodeManifest> = LazyLock::new(|| {
             "text": "{{ item.script }}"
         }),
     )
+    .example(
+        "Follow the voiceover",
+        json!({
+            "video": "{{ item.files.video }}",
+            "segments": "{{ item.segments }}"
+        }),
+    )
 });
 
 #[async_trait]
@@ -129,7 +180,11 @@ impl NodeExecutor for MediaCaptions {
         let id = super::ffmpeg::file_id(ctx, &input, "video")?;
         let source = super::ffmpeg::input_path(ctx, &id).await?;
         let duration = super::ffmpeg::duration(&source).await?;
-        let text = ctx.settings["text"].as_str().ok_or_else(|| NodeError::Failed("caption text is required".into()))?;
+        let mut cues = timed_cues(&ctx.settings["segments"])?;
+        if cues.is_empty() {
+            let text = ctx.settings["text"].as_str().filter(|t| !t.trim().is_empty());
+            cues = cues_from(text.ok_or_else(|| NodeError::Failed("caption text or timed segments are required".into()))?)?;
+        }
         let work = std::env::temp_dir().join(il_sdk::id("caption"));
         tokio::fs::create_dir(&work).await.map_err(|e| NodeError::Failed(e.to_string()))?;
         let result = async {
@@ -140,7 +195,7 @@ impl NodeExecutor for MediaCaptions {
             };
             let size = if ctx.settings["style"].as_str() == Some("clean") { 36 } else { 48 };
             let mut filters = Vec::new();
-            for (index, cue) in cues(text)?.into_iter().enumerate() {
+            for (index, cue) in cues.into_iter().enumerate() {
                 let name = format!("caption-{index}.txt");
                 tokio::fs::write(work.join(&name), cue.text).await.map_err(|e| NodeError::Failed(e.to_string()))?;
                 let enable = cue.timing.map(|(start, end)| format!(":enable='between(t,{start},{end})'")).unwrap_or_default();
@@ -165,8 +220,30 @@ inventory::submit! { NodeFactory::new(|| Box::new(MediaCaptions)) }
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     #[test]
     fn manifest_is_valid() {
         il_sdk::testkit::assert_manifest_valid(&super::MediaCaptions);
+    }
+
+    #[test]
+    fn timed_segments_become_short_lines_that_follow_the_voice() {
+        let segments = json!([
+            {"start": 0.0, "end": 4.0, "text": "Meet the Ember mug, it keeps your coffee hot"},
+            {"start": 4.5, "end": 5.0, "text": "  "},
+            {"start": 5.0, "end": 6.5, "text": "for three hours."}
+        ]);
+        let cues = super::timed_cues(&json!(segments.to_string())).unwrap();
+        let lines: Vec<_> = cues.iter().map(|c| (c.text.as_str(), c.timing.unwrap())).collect();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[0].0, "Meet the Ember mug, it keeps");
+        assert_eq!(lines[1].0, "your coffee hot");
+        assert_eq!(lines[0].1.0, 0.0);
+        assert!((lines[0].1.1 - lines[1].1.0).abs() < 1e-9 && lines[0].1.1 > 2.0);
+        assert!((lines[1].1.1 - 4.0).abs() < 1e-9);
+        assert_eq!(lines[2], ("for three hours.", (5.0, 6.5)));
+        assert!(super::timed_cues(&json!("")).unwrap().is_empty());
+        assert!(super::timed_cues(&json!([{"text": "no times"}])).is_err());
     }
 }
