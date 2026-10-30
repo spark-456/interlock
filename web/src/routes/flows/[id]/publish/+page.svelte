@@ -83,7 +83,7 @@
 
     {#if app}
       {#if demo}<p class="demo-note">API keys are unavailable in demo workspaces. Use a non-demo workspace to connect an external API or MCP client.</p>{/if}
-      <div class="three">
+      <div class="three" data-tour="publish">
         <ApiCard endpoints={ends} appName={flow.name} {demo} />
         <McpCard endpoints={ends} tools={[`ask_${ends.model}`]} />
         <WidgetCard endpoints={ends} appName={flow.name} greeting={chat?.welcomeMessage ?? 'Hi! Ask me anything.'} />

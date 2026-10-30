@@ -6,7 +6,9 @@
   import { initials } from './format';
   import { isActive, sidebarNav } from './nav';
 
-  let { collapsed = false, path, user, plan }: { collapsed?: boolean; path: string; user: string; plan: string } = $props();
+  let { collapsed = false, path, user, plan, onhelp }: {
+    collapsed?: boolean; path: string; user: string; plan: string; onhelp?: () => void;
+  } = $props();
 </script>
 
 <aside class="sidebar" class:collapsed aria-label="Main">
@@ -32,6 +34,12 @@
     {/each}
   </nav>
   <div class="foot">
+    {#if onhelp}
+      <button type="button" class="help" data-tour="help" onclick={onhelp} aria-label={collapsed ? 'Help' : undefined} title={collapsed ? 'Help' : undefined}>
+        <Icon name="help" size={20} />
+        {#if !collapsed}<span>Help</span>{/if}
+      </button>
+    {/if}
     {#if !collapsed}<BuiltWithStrip />{/if}
     <div class="account">
       <span class="avatar" aria-hidden={!collapsed} title={collapsed ? user : undefined}>{initials(user)}</span>
@@ -56,15 +64,17 @@
   }
   .new:hover { background: var(--primary-hover); }
   nav { display: flex; flex-direction: column; gap: 2px; }
-  nav a {
+  nav a, .help {
     display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: var(--r-control);
     color: var(--control-text); font-weight: 600; font-size: 14px; text-decoration: none;
   }
-  nav a :global(svg) { color: var(--text-3); }
-  nav a:hover { background: var(--surface-2); }
+  .help { width: 100%; border: 0; background: none; cursor: pointer; }
+  nav a :global(svg), .help :global(svg) { color: var(--text-3); }
+  nav a:hover, .help:hover { background: var(--surface-2); }
   nav a.active { background: var(--primary-soft); color: var(--primary); }
   nav a.active :global(svg) { color: var(--primary); }
   .foot { margin-top: auto; display: flex; flex-direction: column; gap: 14px; }
+  .collapsed .foot { align-items: center; }
   .account { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
   .avatar {
     width: 36px; height: 36px; flex: none; border-radius: 50%; background: var(--primary-soft); color: var(--primary);
@@ -78,7 +88,7 @@
   .collapsed .brand { width: 40px; height: 40px; padding: 0; justify-content: center; margin-bottom: 12px; }
   .collapsed .new { width: 40px; border-radius: var(--r-tile); margin-bottom: 12px; }
   .collapsed nav { gap: 4px; }
-  .collapsed nav a { width: 40px; padding: 0; justify-content: center; border-radius: var(--r-tile); }
+  .collapsed nav a, .collapsed .help { width: 40px; padding: 0; justify-content: center; border-radius: var(--r-tile); }
   .collapsed nav a.active { background: var(--primary-soft); }
   .collapsed .account { padding: 0; }
 

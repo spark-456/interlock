@@ -9,6 +9,8 @@
   import Modal from '$lib/design/Modal.svelte';
   import Skeleton from '$lib/design/Skeleton.svelte';
   import { toast } from '$lib/design/toasts.svelte';
+  import Checklist from '$lib/onboarding/Checklist.svelte';
+  import { onboarding, remember } from '$lib/onboarding/state.svelte';
   import FlowCard from './FlowCard.svelte';
   import { filterFlows, type Filter } from './flows';
 
@@ -65,6 +67,8 @@
     </div>
   </header>
 
+  {#if !onboarding.progress.checklistHidden}<Checklist onhide={() => remember({ checklistHidden: true })} />{/if}
+
   {#if failed}
     <p role="alert" class="error">Could not load your flows. Refresh to try again.</p>
   {:else if flows}
@@ -75,7 +79,7 @@
         {/each}
       </div>
     {/if}
-    <div class="grid">
+    <div class="grid" data-tour="flows">
       {#each shown as f (f.id)}
         <FlowCard flow={f} {appNames} {now} ondelete={() => ((deleting = f), (confirming = true))} />
       {/each}

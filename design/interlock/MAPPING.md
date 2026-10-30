@@ -22,6 +22,7 @@ Web tasks must match this folder and this file. When a screen changes, update it
 | M4 | Playground (mobile) | `/flows/[id]/chat` @390 | same as S5 | W06 | Responsive layout of S5. |
 | — | NodeCanvas component | used by `/`, `/new/[id]/building`, `/flows/[id]`, run view | `lib/canvas/` | W02 (foundation **in this PR**) | Built on Svelte Flow (`@xyflow/svelte`) for drag, pan and zoom, as the PRD requires. The design describes its own pointer handling; Svelte Flow provides the same behaviour. |
 | SP1 | Spec sheet | `/dev/components` (gallery) | `lib/design/` | W01, W01b (**built**) | Every component in every state at `/dev/components`. W01b added Checkbox, KindBadge, Tooltip, Menu, EmptyState, Skeleton, CodeTabs, DropZone, FileRow (Knowledge/Instructions) and ApiCard; their interactive logic (menu keys, file checks) is in `interactions.ts` with unit tests. |
+| — | First-run onboarding (no design screen) | every app screen | `lib/onboarding/` | Q35 (**built**) | Built from the design's parts: the welcome and Help are `Modal`s with `KindBadge` pop cards, the getting-started card is a pop card on `/flows` (hidden by the user or once all four steps are done) and in Settings, and the tour is a coach-mark card over a `--scrim` spotlight on the real screens. Progress is per user in `localStorage`; no API. Steps that need a flow use the first AI app, else a centred card says to build one. |
 | SP2 | Brand sheet | — | `lib/design/Logo.svelte`, `static/favicon.svg` | W01 | The mark, lockup and app icon come from `brand/*.svg`. |
 
 ## App shell
@@ -31,6 +32,7 @@ Web tasks must match this folder and this file. When a screen changes, update it
 | Sidebar items: New backend, Backends, Playground, Logs, Docs, Settings | **PRD routes win.** Items are New (→ `/new`), Flows (→ `/flows`), Templates, Approvals, Connections and Settings (PRD §7.3). Logs live in each flow's runs, and Docs is the per-flow integration guide (PB-5), so neither gets a top-level item. Styling follows the design exactly. |
 | Sidebar collapses to 64 px on canvas screens (S3, S6) | The `collapsed` prop on `Sidebar` is set by `/new/[id]/building` and `/flows/[id]`. |
 | Mobile tab bar: Backends, New, Playground, Settings | Flows, New, Approvals, Settings. Approvals replaces Playground because the PRD makes the approvals inbox mobile-first (WS-4 P0 mobile). |
+| — (no design item) Help | A Help item above the account block (Q35) opens the getting-started checklist, the tour and the welcome. On phones they live in Settings, since the tab bar has four fixed tabs. |
 | Account block "Dana Ruiz · Larkspur · Free" | Comes from `GET /api/me`. In demo mode it shows "Demo workspace". |
 
 ## Node categories
